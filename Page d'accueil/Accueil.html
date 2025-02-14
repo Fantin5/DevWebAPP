@@ -1,109 +1,113 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Accueil</title>
-<link rel="stylesheet" href="Accueil.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-
-</head>
-
-<body>
+    <link rel="stylesheet" href="Accueil.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+  </head>
+  <!-- NIGGER -->
+  <body>
     <!-- 1 partie header -->
     <div class="header">
-        <img class="logo" src="logo-transparent-pdf.png" >
-        <p>
-            Devenez Prestataire
-        </p>
-        <p>
-            Concept
-        </p>
+      <img class="logo" src="logo-transparent-pdf.png" />
+      <p>Devenez Prestataire</p>
+      <p>Concept</p>
 
-<!-- On crée un container pour les icones pour pouvoir les espacer plus facilement du reste -->
-        <div class="container-icones"> 
-            <i class="fa-regular fa-heart"></i>
-            <a href="../Connexion-Inscription/Connexion.html" class="connexion-profil">
-                 <i class="fa-solid fa-user"></i> 
-            </a>
-        </div>
+      <!-- On crée un container pour les icones pour pouvoir les espacer plus facilement du reste -->
+      <div class="container-icones">
+        <i class="fa-regular fa-heart"></i>
+        <a
+          href="../Connexion-Inscription/Connexion.html"
+          class="connexion-profil"
+        >
+          <i class="fa-solid fa-user"></i>
+        </a>
+      </div>
     </div>
 
-
     <!-- 2 partie bandeau -->
-     <img class="bandeau" src="WhatsApp Image 2025-02-04 à 14.55.09_a4664920.jpg">
-
+    <img
+      class="bandeau"
+      src="WhatsApp Image 2025-02-04 à 14.55.09_a4664920.jpg"
+    />
 
     <!-- 3 partie barre de recherche-->
-    
-     <div class="container-barre-de-recherche">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <!-- On regroupe dans un div la barre de recherche et le fa-bars -->
-         <div class="demi-container-recherche">
-            <input type="search" placeholder="Rechercher" class="barre-de-recherche">
-            <i class="fa-solid fa-bars"></i>
-        </div>
-     </div>
-     
 
-     <!-- 4 Partie carousel -->
-     <div class="carrousel">
-        <!-- Conteneur des images -->
-        <div class="carrousel-images">
-            <img src="chef.png" alt="Image 1">
-            <img src="grotte.png" alt="Image 2">
-            <img src="sports.png" alt="Image 3">
-            <img src="tableau.png" alt="Image 4">
-            <img src="yoga.png" alt="Image 5">
-        </div>
-    
-        <!-- Boutons de navigation -->
-        <button class="carrousel-button prev">&#10094;</button>
-        <button class="carrousel-button next">&#10095;</button>
-    
-        <!-- Indicateurs de position -->
-        <div class="carrousel-indicators">
-            <div class="carrousel-indicator active"></div>
-            <div class="carrousel-indicator"></div>
-            <div class="carrousel-indicator"></div>
-            <div class="carrousel-indicator"></div>
-            <div class="carrousel-indicator"></div>
-        </div>
+    <div class="container-barre-de-recherche">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <!-- On regroupe dans un div la barre de recherche et le fa-bars -->
+      <div class="demi-container-recherche">
+        <input
+          type="search"
+          placeholder="Rechercher"
+          class="barre-de-recherche"
+        />
+        <i class="fa-solid fa-bars"></i>
+      </div>
+    </div>
+
+    <!-- 4 Partie carousel -->
+    <div class="carrousel">
+      <!-- Conteneur des images -->
+      <div class="carrousel-images">
+        <img src="chef.png" alt="Image 1" />
+        <img src="grotte.png" alt="Image 2" />
+        <img src="sports.png" alt="Image 3" />
+        <img src="tableau.png" alt="Image 4" />
+        <img src="yoga.png" alt="Image 5" />
+      </div>
+
+      <!-- Boutons de navigation -->
+      <button class="carrousel-button prev">&#10094;</button>
+      <button class="carrousel-button next">&#10095;</button>
+
+      <!-- Indicateurs de position -->
+      <div class="carrousel-indicators">
+        <div class="carrousel-indicator active"></div>
+        <div class="carrousel-indicator"></div>
+        <div class="carrousel-indicator"></div>
+        <div class="carrousel-indicator"></div>
+        <div class="carrousel-indicator"></div>
+      </div>
     </div>
 
     <!-- 5 partie barre de separation -->
-     <div class="barre-de-separation"></div>
-
+    <div class="barre-de-separation"></div>
 
     <!-- 6 paragraphe derniere chance  -->
-     <p class="derniere-chance">Dernière Chance !</p>
+    <p class="derniere-chance">Dernière Chance !</p>
 
     <!-- bouton pour switch temporaire -->
     <!-- on peut rajouter fonction java comme dans l exemple pour ouvrir en blank -->
-    <button class="test" onclick="window.location.href='../Messagerie/messagerie.html'" >Test</button>
+    <button
+      class="test"
+      onclick="window.location.href='../Messagerie/messagerie.html'"
+    >
+      Test
+    </button>
 
-
-     <!-- 7 footer --> 
-      <!-- on met des divs pour ne pas etre géné par les margins initiaux (de p par exemple)on pourras tjr modifier plus tard si necessaire -->
-      <div class="footer">
-        <div class="footer1">FAQ</div>
-        <div class="footer2">CGU</div>
-        <div class="footer3">Mentions Légales</div>
-        <div class="footer4">06 01 02 03 04 </div>
-        <i class="fa-solid fa-phone"></i>
-        <div class="footer5">synapse@gmail.com</div>
-        <i class="fa-regular fa-envelope"></i>
-        <div class="footer6">synapse.off</div>
-        <i class="fa-brands fa-facebook-f"></i>
-        <div class="footer7">synapse.off</div>
-        <i class="fa-brands fa-instagram"></i>
-        <div class="footer8">Lundi-Vendredi: 9h à 20h</div>
-        <div class="footer9">Samedi : 10h à 16h</div>
-      </div>
-
-
-
- 
-</body>
-<script src="Carousel.js"></script>
+    <!-- 7 footer -->
+    <!-- on met des divs pour ne pas etre géné par les margins initiaux (de p par exemple)on pourras tjr modifier plus tard si necessaire -->
+    <div class="footer">
+      <div class="footer1">FAQ</div>
+      <div class="footer2">CGU</div>
+      <div class="footer3">Mentions Légales</div>
+      <div class="footer4">06 01 02 03 04</div>
+      <i class="fa-solid fa-phone"></i>
+      <div class="footer5">synapse@gmail.com</div>
+      <i class="fa-regular fa-envelope"></i>
+      <div class="footer6">synapse.off</div>
+      <i class="fa-brands fa-facebook-f"></i>
+      <div class="footer7">synapse.off</div>
+      <i class="fa-brands fa-instagram"></i>
+      <div class="footer8">Lundi-Vendredi: 9h à 20h</div>
+      <div class="footer9">Samedi : 10h à 16h</div>
+    </div>
+  </body>
+  <script src="Carousel.js"></script>
 </html>
