@@ -1,0 +1,318 @@
+body {
+    margin: 0px;    
+    background-color:#E4D8C8 ;
+    padding-bottom: 800px;
+    position: relative; 
+    /* en relative pour pouvoir positionner le footer correctement */
+}
+/*1 partie header */
+.header{
+    background-color: #828977 ;
+    color: #E4D8C8;
+    display: flex;
+    gap: 40px;
+
+}
+/* ici la taille du logo adapte la taille du container mais on peut faire differemment en reglant directement la taille du header puis celle du logo */
+.logo{
+    height: 50px;
+}
+
+
+.container-icones{
+    display: flex;
+    position: absolute;
+    right:10px;
+    top: 10px;
+    gap: 20px;
+
+}
+.connexion-profil{
+    color: #E4D8C8
+}
+
+/* 2 partie bandeau */
+.bandeau {
+    height: 180px;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+   
+}
+
+
+
+
+/*3 partie recherche */
+.fa-magnifying-glass{
+    color: #828977;
+    font-size: 25px;
+}
+
+
+.container-barre-de-recherche {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center; 
+    align-items: center;
+    width: 100%; 
+    margin-bottom: 30px;
+}
+
+
+
+.demi-container-recherche{ 
+    margin-left: 15px;
+    background-color: #828977;
+    padding: 8px;
+    border-radius: 25px;
+     
+}  
+
+.barre-de-recherche{
+    background-color: #828977;
+    border: none;
+    
+}
+
+.barre-de-recherche::placeholder{
+    color: beige;
+}
+
+.fa-bars{
+    color:#E4D8C8;
+    font-size: 20px;
+}
+
+/* 4 partie carroussel */
+
+/* Style de base pour le carrousel */
+.carrousel {
+    position: relative;
+    width: 80%;
+    max-width: 600px;
+    height: 400px;
+    margin: auto;
+    overflow: hidden;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+}
+
+/* Conteneur des images */
+.carrousel-images {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+}
+
+/* Style des images */
+.carrousel-images img {
+    width: 100%;
+    height: auto;
+    flex-shrink: 0;
+}
+
+/* Boutons de navigation */
+.carrousel-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 18px;
+}
+
+.carrousel-button.prev {
+    left: 10px;
+}
+
+.carrousel-button.next {
+    right: 10px;
+}
+
+/* Indicateurs de position */
+.carrousel-indicators {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+}
+
+.carrousel-indicator {
+    width: 10px;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.carrousel-indicator.active {
+    background-color: white;
+}
+
+.carrousel-item {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    flex-shrink: 0;
+}
+
+
+
+.carrousel-text {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+
+/* 5 partie barre de separation */
+
+.barre-de-separation {
+    background-color: #828977;
+    height: 5px;
+    width: 1300px;
+    display: block;
+    margin: 50px auto; /* auto permet de centrer horizontalement ici */
+}
+    
+/* 6 paragraphe derniere chance */
+.derniere-chance {
+    color: #828977;
+    font-size: 50px;
+    font-weight: bold;
+    display: flex; 
+    justify-content: center; 
+}
+
+/* 7 footer */
+.footer{
+    background-color: #828977;
+    height: 80px;
+    position:absolute;
+    bottom: 0px;
+    right: 0px;
+    left: 0px;
+}
+
+/* ici on configure tt les elements  1 par  1 en absolute c'est peut etre plus pratique jsp */
+.footer1{
+    color: #E4D8C8;
+    position: absolute;
+    left: 80px;
+    bottom:45px ;
+    font-weight: bold;
+}
+.footer2{
+    color: #E4D8C8;
+    position: absolute;
+    left: 150px;
+    bottom:45px ;
+    font-weight: bold;
+}
+.footer3{
+    color: #E4D8C8;
+    position: absolute;
+    left: 225px;
+    bottom:45px ;
+    font-weight: bold;
+}
+
+.fa-phone{
+    color: #E4D8C8;
+    font-size: 28px;
+    position: absolute;
+    left: 900px;
+    bottom:45px ;
+}
+.footer4{
+    color: #E4D8C8;
+    position: absolute;
+    left: 935px;
+    bottom:45px ;
+    font-weight: bold;
+}
+.footer5{
+    color: #E4D8C8;
+    position: absolute;
+    left: 935px;
+    bottom:10px ;
+    font-weight: bold;
+}
+.fa-envelope{
+    color: #E4D8C8;
+    font-size: 28px;
+    position: absolute;
+    left: 900px;
+    bottom:10px ;
+
+}
+.footer6{
+    color: #E4D8C8;
+    position: absolute;
+    left: 1130px;
+    bottom:45px ;
+    font-weight: bold;
+}
+.fa-facebook-f{
+    font-size: 28px;
+    color: #E4D8C8;
+    position: absolute;
+    left: 1100px;
+    bottom:45px ;
+
+}
+.footer7{
+    color: #E4D8C8;
+    position: absolute;
+    left: 1130px;
+    bottom:10px ;
+    font-weight: bold;
+}
+.fa-instagram{
+    font-size: 28px;
+    color: #E4D8C8;
+    position: absolute;
+    left: 1100px;
+    bottom:10px ;
+
+}
+.footer8{
+    color: #E4D8C8;
+    position: absolute;
+    left: 1310px;
+    top:10px ;
+    font-weight: bold;
+}
+.footer9{
+    color: #E4D8C8;
+    position: absolute;
+    left: 1310px;
+    top:35px ;
+    font-weight: bold;
+}
+
+
+
+    
+
+    
+    
+
+
+
+    
+
+
+
