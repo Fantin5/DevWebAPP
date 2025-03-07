@@ -141,3 +141,11 @@ body {
 .conditions{
     display: inline-block;
 }
+
+.fa-square-plus{
+    color: #828977;
+    font-size: 70px;
+    position: absolute;
+    
+    top:60px ;
+}
