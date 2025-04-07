@@ -1,0 +1,77 @@
+/* === Header === */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #828977;
+    padding: 10px 30px;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.header .logo {
+    height: 60px;
+}
+
+.header p {
+    margin: 0 15px;
+    font-weight: bold;
+}
+
+.container-icones {
+    display: flex;
+    gap: 15px;
+    font-size: 20px;
+    color: white;
+}
+
+
+/* Icônes à droite */
+.container-icones {
+    display: flex;
+    gap: 15px;
+    font-size: 18px;
+    align-items: center;
+}
+
+/* === Footer === */
+.footer {
+    background-color: #828977;
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: space-around;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+.footer i {
+    margin-right: 8px;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+    .bloc, .bloc.inverse {
+        flex-direction: column;
+    }
+
+    .bloc img, .texte {
+        width: 100%;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .container-icones {
+        margin-top: 10px;
+    }
+
+    .footer {
+        flex-direction: column;
+        text-align: center;
+    }
+}
