@@ -6,6 +6,10 @@
   
   body {
     font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensure the body takes the full height of the viewport */
+    margin: 0;
   }
   .header {
     display: flex;
@@ -19,6 +23,9 @@
   .logo {
     height: 50px;
   }
+  .connexion-profil{
+    color: #E4D8C8
+}
   
   .nav-links ul {
     margin: 0;
@@ -37,14 +44,15 @@
 /* 2 partie messages */
 
 .message-system {
+    flex: 1; /* Allow the message system to take up available space */
     display: flex;
     flex-direction: column;
-    height: 80vh; /* Adjust height to make the window smaller */
-    width: 60%; /* Adjust width to make the window smaller */
-    margin: 20px auto; /* Center the message system */
+    height: auto; /* Let the height adjust dynamically */
+    width: 60%;
+    margin: 20px auto;
     border: 2px solid #ccc;
     border-radius: 10px;
-    background-color: #E4D8C8; /* Add background color */
+    background-color: #E4D8C8;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -112,10 +120,9 @@
     padding: 15px 30px;
     font-weight: bold;
     font-size: 16px;
-    position: absolute;
-    left: 0px;
-    right: 0px;
-    bottom: 0px;
+    position: relative; /* Change from absolute to relative */
+    bottom: 0;
+    width: 100%;
   }
   
   .footer ul {
@@ -132,7 +139,7 @@
   .footer a:hover {
     text-decoration: underline;
   }
-  
+
 
 
 
