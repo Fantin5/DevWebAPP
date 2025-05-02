@@ -1,32 +1,38 @@
-body {
-    margin: 0px;    
-    background-color:#E4D8C8 ;
-    padding-bottom: 800px;
-    position: relative; 
-    /* en relative pour pouvoir positionner le footer correctement */
-}
-/*1 partie header */
-.header{
-    background-color: #828977 ;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: sans-serif;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #828977;
     color: #E4D8C8;
-    display: flex;
-    gap: 40px;
-
-}
-/* ici la taille du logo adapte la taille du container mais on peut faire differemment en reglant directement la taille du header puis celle du logo */
-.logo{
+    padding: 10px 35px; 
+  }
+  
+  .logo {
     height: 50px;
-}
-
-
-.container-icones{
+  }
+  
+  .nav-links ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
     display: flex;
-    position: absolute;
-    right:10px;
-    top: 10px;
-    gap: 20px;
-
-}
+    gap: 90px;             
+  }
+  
+  .nav-links a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: bold;
+  }
 
 /* 2 partie messages */
 
@@ -98,112 +104,35 @@ body {
     background-color: #6b6f5e;
 }
 
-/* 3 footer */
-.footer{
+.footer {
+    display: flex;
+    justify-content: space-between;
     background-color: #828977;
-    height: 80px;
-    position:absolute;
-    bottom: 0px;
-    right: 0px;
+    color: #e4d8c8;
+    padding: 15px 30px;
+    font-weight: bold;
+    font-size: 16px;
+    position: absolute;
     left: 0px;
-}
-
-/* ici on configure tt les elements  1 par  1 en absolute c'est peut etre plus pratique jsp */
-.footer1{
-    color: #E4D8C8;
-    position: absolute;
-    left: 80px;
-    bottom:45px ;
-    font-weight: bold;
-}
-.footer2{
-    color: #E4D8C8;
-    position: absolute;
-    left: 150px;
-    bottom:45px ;
-    font-weight: bold;
-}
-.footer3{
-    color: #E4D8C8;
-    position: absolute;
-    left: 225px;
-    bottom:45px ;
-    font-weight: bold;
-}
-
-.fa-phone{
-    color: #E4D8C8;
-    font-size: 28px;
-    position: absolute;
-    left: 900px;
-    bottom:45px ;
-}
-.footer4{
-    color: #E4D8C8;
-    position: absolute;
-    left: 935px;
-    bottom:45px ;
-    font-weight: bold;
-}
-.footer5{
-    color: #E4D8C8;
-    position: absolute;
-    left: 935px;
-    bottom:10px ;
-    font-weight: bold;
-}
-.fa-envelope{
-    color: #E4D8C8;
-    font-size: 28px;
-    position: absolute;
-    left: 900px;
-    bottom:10px ;
-
-}
-.footer6{
-    color: #E4D8C8;
-    position: absolute;
-    left: 1130px;
-    bottom:45px ;
-    font-weight: bold;
-}
-.fa-facebook-f{
-    font-size: 28px;
-    color: #E4D8C8;
-    position: absolute;
-    left: 1100px;
-    bottom:45px ;
-
-}
-.footer7{
-    color: #E4D8C8;
-    position: absolute;
-    left: 1130px;
-    bottom:10px ;
-    font-weight: bold;
-}
-.fa-instagram{
-    font-size: 28px;
-    color: #E4D8C8;
-    position: absolute;
-    left: 1100px;
-    bottom:10px ;
-
-}
-.footer8{
-    color: #E4D8C8;
-    position: absolute;
-    left: 1310px;
-    top:10px ;
-    font-weight: bold;
-}
-.footer9{
-    color: #E4D8C8;
-    position: absolute;
-    left: 1310px;
-    top:35px ;
-    font-weight: bold;
-}
+    right: 0px;
+    bottom: 0px;
+  }
+  
+  .footer ul {
+    list-style: none;
+  }
+  .footer ul li {
+    margin-bottom: 10px;
+  }
+  
+  .footer a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .footer a:hover {
+    text-decoration: underline;
+  }
+  
 
 
 
