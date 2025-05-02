@@ -1,0 +1,171 @@
+/* 1. Header */
+.header {
+    background-color: #828977;
+    color: #E4D8C8;
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    padding: 10px 20px;
+    position: relative;
+  }
+  
+  .logo {
+    height: 50px;
+  }
+  
+  .container-icones {
+    display: flex;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    gap: 20px;
+  }
+  
+  .connexion-profil {
+    color: #E4D8C8;
+    text-decoration: none;
+  }
+  
+  /* 2. Bandeau */
+  .bandeau {
+    height: 180px;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  
+  /* 3. Conteneur principal */
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  /* 4. Formulaire */
+  .container-formulaire {
+    background-color: blanchedalmond;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  
+  .container-formulaire h1 {
+    grid-column: 1 / -1;
+    color: #333;
+  }
+  
+  .container-formulaire label {
+    font-weight: bold;
+  }
+  
+  .container-formulaire input,
+  .container-formulaire select,
+  .container-formulaire textarea {
+    width: 100%;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  
+  .container-formulaire textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  
+  .container-formulaire button {
+    grid-column: 1 / -1;
+    padding: 12px;
+    background-color: #828977;
+    color: #E4D8C8;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  
+  .container-formulaire button:hover {
+    background-color: #6e745f;
+  }
+  
+  /* 5. Footer */
+  .footer {
+    background-color: #828977;
+    height: 80px;
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    left: 0px;
+  }
+  
+  /* Textes du footer */
+  .footer1, .footer2, .footer3,
+  .footer4, .footer5, .footer6,
+  .footer7, .footer8, .footer9 {
+    color: #E4D8C8;
+    font-weight: bold;
+    position: absolute;
+  }
+  
+  /* Positionnement individuel des éléments */
+  .footer1 { left: 80px; bottom: 45px; }
+  .footer2 { left: 150px; bottom: 45px; }
+  .footer3 { left: 225px; bottom: 45px; }
+  
+  .fa-phone {
+    color: #E4D8C8;
+    font-size: 28px;
+    position: absolute;
+    left: 900px;
+    bottom: 45px;
+  }
+  
+  .footer4 { left: 935px; bottom: 45px; }
+  .footer5 { left: 935px; bottom: 10px; }
+  
+  .fa-envelope {
+    color: #E4D8C8;
+    font-size: 28px;
+    position: absolute;
+    left: 900px;
+    bottom: 10px;
+  }
+  
+  .fa-facebook-f {
+    font-size: 28px;
+    color: #E4D8C8;
+    position: absolute;
+    left: 1100px;
+    bottom: 45px;
+  }
+  
+  .footer6 { left: 1130px; bottom: 45px; }
+  .footer7 { left: 1130px; bottom: 10px; }
+  
+  .fa-instagram {
+    font-size: 28px;
+    color: #E4D8C8;
+    position: absolute;
+    left: 1100px;
+    bottom: 10px;
+  }
+  
+  .footer8 { left: 1310px; top: 10px; }
+  .footer9 { left: 1310px; top: 35px; }
+  
+  /* 6. Conditions */
+  .conditions {
+    display: inline-block;
+  }
+  
+  /* 7. Icône flottant ajout (+) */
+  .fa-square-plus {
+    color: #828977;
+    font-size: 70px;
+    position: absolute;
+    top: 250px;
+    left: 100px;
+  }
+  
