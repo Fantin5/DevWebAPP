@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="C:\Users\JYN INFO\Desktop\ISEP\A1\S2\APP\DEV WEB\Tests\font-awesome-4.7.0\font-awesome-4.7.0\css\font-awesome.min.css">
+  
+  <title>Connexion</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: right;
+      background: #E4D8C8;
+      font-family: sans-serif;
+      color: #828977;
+    }
+    a {
+      color: #828977;
+      font-size: 0.8em;
+    }
+    #login-section {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+      max-width: 1000px;
+      justify-content: center;
+      align-items: center;
+    }
+    #register-section {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+      max-width: 1000px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .button {
+      display: flex;
+      background-color: #828977;
+      color: #E4D8C8;
+      height : 40px;
+      width: 310.4px;
+      border-radius: 10px;
+      justify-content: center;
+      text-align: center;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+    
+    .column {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      gap: 20px;
+    }
+    .row {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        gap: 20px;
+    }
+
+    .curved-container {
+        flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 40px;
+      width: 100%;
+      padding: 2px;
+      border: 3.5px solid #828977;
+      border-radius: 10px;
+
+      background-color: transparent;
+      color: #828977;
+      text-align: left;
+    }
+    
+    .left-curved-container {
+    width: 50%; /* Ajuste la largeur pour éviter le dépassement */
+    text-align: center;
+    background-color: #828977;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-top-right-radius: 0%;   
+    border-bottom-right-radius: 0%;
+    cursor: pointer;
+    }
+    .right-curved-container {
+    width: 50%; /* Ajuste la largeur pour éviter le dépassement */
+    text-align: center;
+    background-color: #828977;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    border-top-left-radius: 0%;   
+    border-bottom-left-radius: 0%;
+    cursor: pointer;
+    }
+    /* Conteneur rempli */
+    .filled {
+        background-color: #828977;
+        color: #E4D8C8;
+        border: 2px solid #828977;
+        cursor: pointer;
+    }
+    /* Conteneur vide avec bord coloré */
+    .empty {
+        background-color: transparent;
+        color: #828977;
+        border: 2px solid #828977;
+        cursor: default;
+    }
+    .box {
+      width: 48%; /* Ajuste la largeur pour éviter le dépassement */
+      padding: 20px;
+      text-align: center;
+    }
+
+    .label {
+      font-size: 0.9em;
+      margin-bottom: 4px;
+    }
+    .input-zone {
+      flex: 1;
+      width: 100%;
+      border: none;
+      outline: none;
+      font-size: 1em;
+      background: transparent;
+      color: #828977;
+    }
+    
+
+    .input-with-icon {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .input-with-icon .input-zone {
+      flex: 1;
+    }
+
+    .fa-eye {
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+
+    .password-rules {
+      font-size: 0.6em;
+      color: #828977;
+    }
+    
+  </style>
+</head>
+
+<body>
+<div class ="button">
+  <div class="left-curved-container empty" id="box1">Se connecter</div>
+  <div class="right-curved-container filled" id="box2">Créer un compte</div>
+</div>
+<!-- Affichage "Se connecter" -->
+<div id="login-section">
+  <div class="column">
+    <div class="curved-container">
+        <span class="label">E-mail</span>
+        <input type="text" class="input-zone">
+    </div>
+    <div class="curved-container">
+        <div>
+            <span class="label">Mot de passe</span>
+            <input type="password" class="input-zone">
+        </div>
+        <i class="fa-light fa-eye" id="eye-closed"></i>
+    </div>
+    <a href="">Mot de passe oublié</a>
+    <div class="button">
+        Se connecter
+    </div>
+  </div>
+  
+</div>
+
+<!-- Affichage "Créer un compte" -->
+<div id="register-section">
+  <div class="row">
+    <div class="column">
+      <div class="row">
+          <div class="curved-container">
+              <span class="label">Prénom</span>
+              <input type="text" class="input-zone">
+          </div>
+          <div class="curved-container">
+              <span class="label">Nom</span>
+              <input type="text" class="input-zone">
+          </div>
+      </div>
+      <div class="row">
+          <div class="curved-container">
+              <span class="label">Age</span>
+              <input type="text" class="input-zone">
+          </div>
+          <div class="curved-container">
+              <span class="label">Tel</span>
+              <input type="text" class="input-zone">
+          </div>
+      </div>
+      
+      <div class="curved-container">
+          <span class="label">E-mail</span>
+          <input type="text" class="input-zone">
+      </div>
+    </div>
+  
+    <div class="column">
+      <div class="curved-container">
+        <div class="row">
+          <div class="column">
+            <span class="label">Mot de passe</span>
+            <input type="password" class="input-zone">
+          </div>
+          <i class="fa-light fa-eye"></i>
+        </div>
+      </div>
+  
+      <div class="curved-container">
+        <div class="row">
+          <div class="column">
+            <span class="label">Confirmation du mot de passe</span>
+            <input type="password" class="input-zone">
+          </div>
+          <i class="fa-light fa-eye"></i>
+        </div>
+      </div>
+  
+      <div class="password-rules" style="text-align: left;">
+        <p>Caractéristiques du mot de passe :</p>
+        <ul>
+          <li>8 caractères minimum</li>
+          <li>Au moins une majuscule</li>
+          <li>Au moins un chiffre</li>
+          <li>Au moins un caractère spécial (@#%$&*)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="button">
+    Créer un compte
+  </div>
+</div>
+<script src="switch.js"></script>
+</body>
+</html>
