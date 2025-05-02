@@ -1,10 +1,11 @@
 body {
-    margin: 0px;    
-    background-color:#E4D8C8 ;
-    padding-bottom: 800px;
-    position: relative; 
-    /* en relative pour pouvoir positionner le footer correctement */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensure the body takes the full height of the viewport */
+    margin: 0;
+    background-color: #E4D8C8;
 }
+
 /*1 partie header */
 .header{
     background-color: #828977 ;
@@ -275,19 +276,47 @@ body {
   .actions button:hover {
     background: #3abd7a;
   }
-  
-  
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    background-color: #828977;
+    color: #e4d8c8;
+    padding: 15px 30px;
+    font-weight: bold;
+    font-size: 16px;
+    margin-top: auto; /* Push the footer to the bottom */
+}
+
+.footer ul {
+    list-style: none;
+}
+
+.footer ul li {
+    margin-bottom: 10px;
+}
+
+.footer a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
 
 
 
-    
-
-    
-    
 
 
 
-    
+
+
+
+
+
+
+
 
 
 
