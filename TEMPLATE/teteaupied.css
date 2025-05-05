@@ -10,6 +10,7 @@ body {
   min-height: 100vh; /* Ensure the body takes the full height of the viewport */
   margin: 0;
   font-family: sans-serif;
+  background-color: #E4D8C8;
 }
 
 header {
@@ -46,13 +47,13 @@ header {
 
 footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   background-color: #828977;
   color: #e4d8c8;
   padding: 15px 30px;
   font-weight: bold;
   font-size: 16px;
-  margin-bottom: 0px; /* Push the footer to the bottom */
 }
 
 footer ul {
@@ -70,4 +71,12 @@ footer a {
 
 footer a:hover {
   text-decoration: underline;
+}
+
+
+
+
+/* Le conteneur principal qui entoure le contenu */
+main {
+  flex: 1; /* Prend tout l'espace dispo entre header et footer */
 }
