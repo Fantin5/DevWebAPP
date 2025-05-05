@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Devenez Prestataire</title>
+
+    <!-- Feuilles de style -->
+    <link rel="stylesheet" href="DevenezPrestataires.css" />
+    <link rel="stylesheet" href="../TEMPLATE/teteaupied.css" />
+
+    <!-- FontAwesome pour les icônes -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <!-- HEADER identique à la page d’accueil -->
+    <header class="header">
+      <img
+        class="logo"
+        src="../Connexion-Inscription/logo-transparent-pdf.png"
+        alt="Site logo"
+      />
+
+      <nav class="nav-links">
+        <ul>
+          <li><a href="#">Devenez Prestataire</a></li>
+          <li><a href="#">Concept</a></li>
+        </ul>
+      </nav>
+
+      <div class="icon">
+        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
+        <a
+          href="../Connexion-Inscription/Connexion.html"
+          class="connexion-profil"
+          aria-label="Connexion"
+        >
+          <i class="fa-solid fa-user"></i>
+        </a>
+      </div>
+    </header>
+
+    <!-- CONTENU : Formulaire -->
+    <main>
+      <section class="container-formulaire">
+        <h1>Devenez Prestataire</h1>
+        <form action="submit_form.php" method="POST">
+          <label for="nom-activite">Nom de l'activité :</label>
+          <input type="text" id="nom-activite" name="nom_activite" required />
+
+          <label for="categorie">Catégorie :</label>
+          <select id="categorie" name="categorie" required>
+            <option value="">Sélectionnez une catégorie</option>
+            <option value="sport">Sport</option>
+            <option value="bien-etre">Bien-être</option>
+            <option value="culture">Culture</option>
+            <option value="gastronomie">Gastronomie</option>
+          </select>
+
+          <label for="date-heure">Date et Heure :</label>
+          <input type="datetime-local" id="date-heure" name="date_heure" required />
+
+          <label for="prix">Prix (€) :</label>
+          <input type="number" id="prix" name="prix" required />
+
+          <label for="nb-personnes">Nombre de personnes maximum :</label>
+          <input type="number" id="nb-personnes" name="nb_personnes" required />
+
+          <label for="adresse">Adresse :</label>
+          <input type="text" id="adresse" name="adresse" required />
+
+          <label for="ville">Ville :</label>
+          <input type="text" id="ville" name="ville" required />
+
+          <label for="code-postal">Code Postal :</label>
+          <input type="text" id="code-postal" name="code_postal" required />
+
+          <label for="mots-cles">Mots-clés :</label>
+          <input
+            type="text"
+            id="mots-cles"
+            name="mots_cles"
+            placeholder="Ex : yoga, méditation, relaxation"
+            required
+          />
+
+          <label for="description">Description :</label>
+          <textarea id="description" name="description" rows="4" required></textarea>
+
+          <button type="submit">Créer l'activité</button>
+        </form>
+      </section>
+    </main>
+
+    <!-- FOOTER identique à la page d’accueil -->
+    <footer class="footer">
+      <ul>
+        <li><a href="#">FAQ</a></li>
+        <li><a href="#">CGU</a></li>
+        <li><a href="#">Mentions Légales</a></li>
+      </ul>
+
+      <ul>
+        <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
+        <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
+      </ul>
+      <ul>
+        <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
+        <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
+      </ul>
+
+      <ul>
+        <li>Lundi - Vendredi : 9h à 20h</li>
+        <li>Samedi : 10h à 16h</li>
+      </ul>
+    </footer>
+  </body>
+</html>

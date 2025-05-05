@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Accueil</title>
     <link rel="stylesheet" href="Accueil.css" />
+    <link rel="stylesheet" href="../TEMPLATE/teteaupied.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
@@ -12,23 +13,31 @@
   </head>
   <!-- hello -->
   <body>
-    <!-- 1 partie header -->
-    <div class="header">
-      <img class="logo" src="logo-transparent-pdf.png" />
-      <p>Devenez Prestataire</p>
-      <p>Concept</p>
+    <header class="header">
+      <img
+        class="logo"
+        src="../Connexion-Inscription/logo-transparent-pdf.png"
+        alt="Site logo"
+      />
+      <!-- hello -->
+      <nav class="nav-links">
+        <ul>
+          <li><a href="#">Devenez Prestataire</a></li>
+          <li><a href="#">Concept</a></li>
+        </ul>
+      </nav>
 
-      <!-- On crée un container pour les icones pour pouvoir les espacer plus facilement du reste -->
-      <div class="container-icones">
-        <i class="fa-regular fa-heart"></i>
+      <div class="icon">
+        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
         <a
           href="../Connexion-Inscription/Connexion.html"
           class="connexion-profil"
+          aria-label="Connexion"
         >
           <i class="fa-solid fa-user"></i>
         </a>
       </div>
-    </div>
+    </header>
 
     <!-- 2 partie bandeau -->
     <img
@@ -91,23 +100,88 @@
       Test
     </button>
     <!-- hahaha -->
+    <!-- Activities Section -->
+    <section class="activities">
+      <div class="card">
+        <div class="content">
+          <img src="" alt="" />
+          <div class="tag">
+            <span class="tags primary">Art</span>
+            <span class="tags accent">Free</span>
+          </div>
+        </div>
+        <div class="actions">
+          <div class="rating">★★★★☆ 4.2</div>
+          <button>Join Activity</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="content">
+          <img src="" alt="" />
+          <div class="tag">
+            <span class="tags primary">Cooking</span>
+            <span class="tags">Paid</span>
+          </div>
+        </div>
+        <div class="actions">
+          <div class="rating">★★★★★ 5.0</div>
+          <button>Join Activity</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="content">
+          <img src="" alt="" />
+          <div class="tag">
+            <span class="tags primary">Wellness</span>
+            <span class="tags accent">Free</span>
+          </div>
+        </div>
+        <div class="actions">
+          <div class="rating">★★★☆☆ 3.8</div>
+          <button>Sign Up</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="content">
+          <img src="" alt="" />
+          <div class="tag">
+            <span class="tags primary">Creative</span>
+            <span class="tags">Outdoor</span>
+          </div>
+        </div>
+        <div class="actions">
+          <div class="rating">★★★★☆ 4.5</div>
+          <button>Reserve Spot</button>
+        </div>
+      </div>
+    </section>
+
     <!-- 7 footer -->
     <!-- on met des divs pour ne pas etre géné par les margins initiaux (de p par exemple)on pourras tjr modifier plus tard si necessaire -->
-    <div class="footer">
-      <div class="footer1">FAQ</div>
-      <div class="footer2">CGU</div>
-      <div class="footer3">Mentions Légales</div>
-      <div class="footer4">06 01 02 03 04</div>
-      <i class="fa-solid fa-phone"></i>
-      <div class="footer5">synapse@gmail.com</div>
-      <i class="fa-regular fa-envelope"></i>
-      <div class="footer6">synapse.off</div>
-      <i class="fa-brands fa-facebook-f"></i>
-      <div class="footer7">synapse.off</div>
-      <i class="fa-brands fa-instagram"></i>
-      <div class="footer8">Lundi-Vendredi: 9h à 20h</div>
-      <div class="footer9">Samedi : 10h à 16h</div>
-    </div>
+    <footer class="footer">
+      <ul>
+        <li><a href="#">FAQ</a></li>
+        <li><a href="#">CGU</a></li>
+        <li><a href="#">Mentions Légales</a></li>
+      </ul>
+
+      <ul>
+        <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
+        <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
+      </ul>
+      <ul>
+        <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
+        <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
+      </ul>
+
+      <ul>
+        <li>Lundi - Vendredi : 9h à 20h</li>
+        <li>Samedi : 10h à 16h</li>
+      </ul>
+    </footer>
   </body>
   <script src="Carousel.js"></script>
 </html>

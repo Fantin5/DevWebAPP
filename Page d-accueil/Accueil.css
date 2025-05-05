@@ -1,10 +1,11 @@
 body {
-    margin: 0px;    
-    background-color:#E4D8C8 ;
-    padding-bottom: 800px;
-    position: relative; 
-    /* en relative pour pouvoir positionner le footer correctement */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensure the body takes the full height of the viewport */
+    margin: 0;
+    background-color: #E4D8C8;
 }
+
 /*1 partie header */
 .header{
     background-color: #828977 ;
@@ -195,124 +196,127 @@ body {
     display: flex; 
     justify-content: center; 
 }
-
-/* 7 footer */
-.footer{
+/* ——— Activities wrapper ——— */
+.activities {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 20px;
+    padding: 0 20px;
+    margin: 40px auto;
+  }
+  
+  /* ——— Card itself ——— */
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    flex: 1 1 250px;       /* at least 250px, grow to fill space */
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  }
+  
+  /* ——— Top image / tag ——— */
+  .content {
+    position: relative;
+  }
+  .content img {
+    width: 100%;
+    display: block;
+  }
+  .tag {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    gap: 8px;
+  }
+  .tags {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.85);
+    font-weight: bold;
+  }
+  .tags.primary { background: #a98dfd; color: #fff; }
+  .tags.accent  { background: #fdaa48; color: #fff; }
+  
+  /* ——— Actions area (rating + button) ——— */
+  .actions {
+    padding: 16px;
+    margin-top: auto;      /* push this block to bottom */
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  .rating {
+    color: #f4c150;
+    font-size: 14px;
+  }
+  
+  /* ——— Single button (no <a>) ——— */
+  .actions button {
+    border: none;
+    background: #45cf91;
+    color: #111;
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .actions button:hover {
+    background: #3abd7a;
+  }
+/* hello  */
+.footer {
+    display: flex;
+    justify-content: space-between;
     background-color: #828977;
-    height: 80px;
-    position:absolute;
-    bottom: 0px;
-    right: 0px;
-    left: 0px;
-}
-
-/* ici on configure tt les elements  1 par  1 en absolute c'est peut etre plus pratique jsp */
-.footer1{
-    color: #E4D8C8;
-    position: absolute;
-    left: 80px;
-    bottom:45px ;
+    color: #e4d8c8;
+    padding: 15px 30px;
     font-weight: bold;
-}
-.footer2{
-    color: #E4D8C8;
-    position: absolute;
-    left: 150px;
-    bottom:45px ;
-    font-weight: bold;
-}
-.footer3{
-    color: #E4D8C8;
-    position: absolute;
-    left: 225px;
-    bottom:45px ;
-    font-weight: bold;
+    font-size: 16px;
+    margin-top: auto; /* Push the footer to the bottom */
 }
 
-.fa-phone{
-    color: #E4D8C8;
-    font-size: 28px;
-    position: absolute;
-    left: 900px;
-    bottom:45px ;
+.footer ul {
+    list-style: none;
 }
-.footer4{
-    color: #E4D8C8;
-    position: absolute;
-    left: 935px;
-    bottom:45px ;
-    font-weight: bold;
-}
-.footer5{
-    color: #E4D8C8;
-    position: absolute;
-    left: 935px;
-    bottom:10px ;
-    font-weight: bold;
-}
-.fa-envelope{
-    color: #E4D8C8;
-    font-size: 28px;
-    position: absolute;
-    left: 900px;
-    bottom:10px ;
 
+.footer ul li {
+    margin-bottom: 10px;
 }
-.footer6{
-    color: #E4D8C8;
-    position: absolute;
-    left: 1130px;
-    bottom:45px ;
-    font-weight: bold;
-}
-.fa-facebook-f{
-    font-size: 28px;
-    color: #E4D8C8;
-    position: absolute;
-    left: 1100px;
-    bottom:45px ;
 
+.footer a {
+    color: inherit;
+    text-decoration: none;
 }
-.footer7{
-    color: #E4D8C8;
-    position: absolute;
-    left: 1130px;
-    bottom:10px ;
-    font-weight: bold;
-}
-.fa-instagram{
-    font-size: 28px;
-    color: #E4D8C8;
-    position: absolute;
-    left: 1100px;
-    bottom:10px ;
 
-}
-.footer8{
-    color: #E4D8C8;
-    position: absolute;
-    left: 1310px;
-    top:10px ;
-    font-weight: bold;
-}
-.footer9{
-    color: #E4D8C8;
-    position: absolute;
-    left: 1310px;
-    top:35px ;
-    font-weight: bold;
+.footer a:hover {
+    text-decoration: underline;
 }
 
 
 
-    
-
-    
-    
 
 
 
-    
+
+
+
+
+
+
+
 
 
 
