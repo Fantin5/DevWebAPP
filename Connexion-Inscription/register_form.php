@@ -44,13 +44,13 @@ if(isset($_POST['submit'])){
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <meta charset="UTF-8">
-   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <link rel="stylesheet" href="../TEMPLATE/teteaupied.css">
-   <link rel="stylesheet" href="Connexion.css">
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-   <title>Inscription</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <link rel="stylesheet" href="Connexion.css"> -->
+    <link rel="stylesheet" href="../TEMPLATE/teteaupied.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <title>Inscription</title>
 
 </head>
 <body>
@@ -79,29 +79,9 @@ if(isset($_POST['submit'])){
         </a>
       </div>
     </header>
-    <footer>
-      <ul>
-        <li><a href="#">FAQ</a></li>
-        <li><a href="#">CGU</a></li>
-        <li><a href="#">Mentions Légales</a></li>
-      </ul>
-
-      <ul>
-        <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
-        <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
-      </ul>
-      <ul>
-        <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
-        <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
-      </ul>
-
-      <ul>
-        <li>Lundi - Vendredi : 9h à 20h</li>
-        <li>Samedi : 10h à 16h</li>
-      </ul>
-    </footer>
-   
-    <div class="form-container">
+    
+    <main>
+      <div class="form-container">
 
       <form action="" method="post">
           <h3>Créez un Compte</h3>
@@ -125,15 +105,37 @@ if(isset($_POST['submit'])){
           <p>Vous avez déja un Compte? <a href="login_form.php">Connectez-Vous</a></p>
       </form>
 
-    </div>
+      </div>
 
-    <input type="radio">
-    <p class="conditions">J'accepte les conditions générales d'uttilisation</p>
+      <input type="radio">
+      <p class="conditions">J'accepte les conditions générales d'uttilisation</p>
 
-    <i class="fa-regular fa-square-plus"id="uploadIcon" font></i>
-    <img class="photo-profil" id="selectedImage" style="display: none; width: 200px;" />
-    <input type="file" id="imageInput" style="display: none;" accept="image/*" />
+      <i class="fa-regular fa-square-plus"id="uploadIcon" font></i>
+      <img class="photo-profil" id="selectedImage" style="display: none; width: 200px;" />
+      <input type="file" id="imageInput" style="display: none;" accept="image/*" />
+    </main>
+    
+    <footer>
+      <ul>
+        <li><a href="#">FAQ</a></li>
+        <li><a href="#">CGU</a></li>
+        <li><a href="#">Mentions Légales</a></li>
+      </ul>
 
+      <ul>
+        <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
+        <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
+      </ul>
+      <ul>
+        <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
+        <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
+      </ul>
+
+      <ul>
+        <li>Lundi - Vendredi : 9h à 20h</li>
+        <li>Samedi : 10h à 16h</li>
+      </ul>
+    </footer>
 
     <script src="Connexion.js"></script>
 </body>
