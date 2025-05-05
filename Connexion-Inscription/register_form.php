@@ -54,43 +54,52 @@ if(isset($_POST['submit'])){
 
 </head>
 <body>
-   <!-- 1 partie header -->
-   <header>
-      <img class="logo" src="logo-transparent-pdf.png" >
-      <p>
-         Devenez Prestataire
-      </p>
-      <p>
-         Concept
-      </p>
+<header class="header">
+      <img
+        class="logo"
+        src="../Connexion-Inscription/logo-transparent-pdf.png"
+        alt="Site logo"
+      />
+      <!-- hello  -->
+      <nav class="nav-links">
+        <ul>
+          <li><a href="#">Devenez Prestataire</a></li>
+          <li><a href="#">Concept</a></li>
+        </ul>
+      </nav>
 
-<!-- On crée un container pour les icones pour pouvoir les espacer plus facilement du reste -->
-      <div class="container-icones"> 
-         <i class="fa-regular fa-heart"></i>
-         <a href="../Connexion-Inscription/Connexion.html" class="connexion-profil">
-            <i class="fa-solid fa-user"></i> 
-         </a>
+      <div class="icon">
+        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
+        <a
+          href="../Connexion-Inscription/Connexion.html"
+          class="connexion-profil"
+          aria-label="Connexion"
+        >
+          <i class="fa-solid fa-user"></i>
+        </a>
       </div>
-   </header>
-        
-    </div>
-    <!-- 7 footer --> 
-      <!-- on met des divs pour ne pas etre géné par les margins initiaux (de p par exemple)on pourras tjr modifier plus tard si necessaire -->
-      <div class="footer">
-        <div class="footer1">FAQ</div>
-        <div class="footer2">CGU</div>
-        <div class="footer3">Mentions Légales</div>
-        <div class="footer4">06 01 02 03 04 </div>
-        <i class="fa-solid fa-phone"></i>
-        <div class="footer5">synapse@gmail.com</div>
-        <i class="fa-regular fa-envelope"></i>
-        <div class="footer6">synapse.off</div>
-        <i class="fa-brands fa-facebook-f"></i>
-        <div class="footer7">synapse.off</div>
-        <i class="fa-brands fa-instagram"></i>
-        <div class="footer8">Lundi-Vendredi: 9h à 20h</div>
-        <div class="footer9">Samedi : 10h à 16h</div>
-      </div>
+    </header>
+    <footer class="footer">
+      <ul>
+        <li><a href="#">FAQ</a></li>
+        <li><a href="#">CGU</a></li>
+        <li><a href="#">Mentions Légales</a></li>
+      </ul>
+
+      <ul>
+        <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
+        <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
+      </ul>
+      <ul>
+        <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
+        <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
+      </ul>
+
+      <ul>
+        <li>Lundi - Vendredi : 9h à 20h</li>
+        <li>Samedi : 10h à 16h</li>
+      </ul>
+    </footer>
    
 <div class="form-container">
 
