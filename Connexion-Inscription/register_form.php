@@ -1,7 +1,5 @@
-
 <!-- http://localhost/ProjetWebDev%20copy2/Connexion-Inscription/register_form.php -->
 <!-- http://localhost/phpmyadmin -->
-
 <?php
 
 @include 'config.php';
