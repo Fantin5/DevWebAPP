@@ -54,7 +54,7 @@ if(isset($_POST['submit'])){
 
 </head>
 <body>
-<header class="header">
+    <header>
       <img
         class="logo"
         src="../Connexion-Inscription/logo-transparent-pdf.png"
@@ -79,7 +79,7 @@ if(isset($_POST['submit'])){
         </a>
       </div>
     </header>
-    <footer class="footer">
+    <footer>
       <ul>
         <li><a href="#">FAQ</a></li>
         <li><a href="#">CGU</a></li>
@@ -101,40 +101,40 @@ if(isset($_POST['submit'])){
       </ul>
     </footer>
    
-<div class="form-container">
+    <div class="form-container">
 
-   <form action="" method="post">
-      <h3>Créez un Compte</h3>
-      <?php
-      if(isset($error)){
-         foreach($error as $error){
-            echo '<span class="error-msg">'.$error.'</span>';
-         };
-      };
-      ?>
-      <input type="text" name="name" required placeholder="Entrez Votre Nom">
-      <input type="email" name="email" required placeholder="Entrez Votre Email">
-      <input type="password" name="password" required placeholder="Entrez Votre Mot de Passe">
-      <input type="password" name="cpassword" required placeholder="Confirmez Votre Mot de Passe">
-      <select name="user_type">
-         <option value="user">Client</option>
-         <option value="admin">Prestataire</option>
+      <form action="" method="post">
+          <h3>Créez un Compte</h3>
+          <?php
+          if(isset($error)){
+            foreach($error as $error){
+                echo '<span class="error-msg">'.$error.'</span>';
+            };
+          };
+          ?>
+          <input type="text" name="name" required placeholder="Entrez Votre Nom">
+          <input type="email" name="email" required placeholder="Entrez Votre Email">
+          <input type="password" name="password" required placeholder="Entrez Votre Mot de Passe">
+          <input type="password" name="cpassword" required placeholder="Confirmez Votre Mot de Passe">
+          <select name="user_type">
+            <option value="user">Client</option>
+            <option value="admin">Prestataire</option>
 
-      </select>
-      <input type="submit" name="submit" value="Créez un Compte" class="form-btn">
-      <p>Vous avez déja un Compte? <a href="login_form.php">Connectez-Vous</a></p>
-   </form>
+          </select>
+          <input type="submit" name="submit" value="Créez un Compte" class="form-btn">
+          <p>Vous avez déja un Compte? <a href="login_form.php">Connectez-Vous</a></p>
+      </form>
 
-</div>
+    </div>
 
-<input type="radio">
-<p class="conditions">J'accepte les conditions générales d'uttilisation</p>
+    <input type="radio">
+    <p class="conditions">J'accepte les conditions générales d'uttilisation</p>
 
-<i class="fa-regular fa-square-plus"id="uploadIcon" font></i>
-<img class="photo-profil" id="selectedImage" style="display: none; width: 200px;" />
-<input type="file" id="imageInput" style="display: none;" accept="image/*" />
+    <i class="fa-regular fa-square-plus"id="uploadIcon" font></i>
+    <img class="photo-profil" id="selectedImage" style="display: none; width: 200px;" />
+    <input type="file" id="imageInput" style="display: none;" accept="image/*" />
 
 
-<script src="Connexion.js"></script>
+    <script src="Connexion.js"></script>
 </body>
 </html>
