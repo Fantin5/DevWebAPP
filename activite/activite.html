@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -8,6 +8,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
     <link rel="stylesheet" href="./activite.css" />
+    <title>Activité</title>
   </head>
   <body>
     <header class="header">
@@ -35,33 +36,44 @@
         </a>
       </div>
     </header>
+
+    <img class="bandeau" src="images/categorie-culture.jpg" alt="Culture" />
+
     <main>
-        <section>
-          <img src="chemin/vers/ton/image-categorie.jpg" alt="Culture" class="category-banner">
-          <h1>Culture</h1>
-      
-          <div class="activity-card">
-            <img src="chemin/vers/ton/image-activite.jpg" alt="Théâtre" class="activity-image">
-      
-            <div class="top-bar">
-              <div class="stars">⭐ ⭐ ⭐ ⭐ ⭐</div>
-              <button class="participer">Participer</button>
+      <section>
+        <h1>Culture</h1>
+
+        <div class="activity-card">
+          <img src="images/theatre.jpg" alt="Théâtre" class="activity-image">
+
+          <div class="top-bar">
+            <div class="stars">⭐ ⭐ ⭐ ⭐ ⭐</div>
+
+            <div class="button-group">
+              <button class="heart-button">
+                <i class="fa-regular fa-heart"></i>
+              </button>
+              <button class="participer" onclick="ajouterAuPanier('Dernier coup de ciseaux', '15 €')">Participer</button>
             </div>
-      
-            <p><strong>Pièce de théâtre :</strong> Dernier coup de ciseaux</p>
-            <p><strong>Jeudi 13 mars 2025 à 20h</strong></p>
-            <p><strong>À Paris :</strong> Théâtre des Mathurins, Paris 75008</p>
-            <p>10 personnes participent - 4 places restantes</p>
-            <p><strong>Prix :</strong> 15 €</p>
-      
-            <p style="margin-top: 10px;"><strong>Organisateur(s) :</strong> Martin Dupont</p>
-            <p>Contact :</p>
-            <p>martindupont@gmail.com</p>
-            <p>0634256710</p>
           </div>
-        </section>
-      </main>
-      
+
+          <p><strong>Pièce de théâtre :</strong> Dernier coup de ciseaux</p>
+          <p><strong>Jeudi 12 juin 2025 à 20h</strong></p>
+          <p><strong>À Paris :</strong> Théâtre des Mathurins, Paris 75008</p>
+          <p>10 personnes participent - 4 places restantes</p>
+          <p><strong>Prix :</strong> 15 €</p>
+
+          <p style="margin-top: 10px;"><strong>Organisateur(s) :</strong> Martin Dupont</p>
+          <p>Contact :</p>
+          <p>martindupont@gmail.com</p>
+          <p>0634256710</p>
+        </div>
+      </section>
+
+      <script src="activite.js"></script>
+
+    </main>
+
     <footer class="footer">
       <ul>
         <li><a href="#">FAQ</a></li>
@@ -83,5 +95,35 @@
         <li>Samedi : 10h à 16h</li>
       </ul>
     </footer>
+
+    <script>
+      const heartButton = document.querySelector('.heart-button');
+      const heartIcon = heartButton.querySelector('i');
+
+      heartButton.addEventListener('click', () => {
+        const activityTitle = "Dernier coup de ciseaux";
+        let favoris = JSON.parse(localStorage.getItem('favoris')) || [];
+
+        if (heartIcon.classList.contains('fa-regular')) {
+          // Remplir le cœur
+          heartIcon.classList.remove('fa-regular');
+          heartIcon.classList.add('fa-solid');
+
+          // Ajouter aux favoris si pas déjà présent
+          if (!favoris.includes(activityTitle)) {
+            favoris.push(activityTitle);
+            localStorage.setItem('favoris', JSON.stringify(favoris));
+          }
+        } else {
+          // Vider le cœur
+          heartIcon.classList.remove('fa-solid');
+          heartIcon.classList.add('fa-regular');
+
+          // Retirer des favoris
+          favoris = favoris.filter(item => item !== activityTitle);
+          localStorage.setItem('favoris', JSON.stringify(favoris));
+        }
+      });
+    </script>
   </body>
 </html>

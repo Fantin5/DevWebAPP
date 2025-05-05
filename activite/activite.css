@@ -6,29 +6,32 @@
   
   body {
     font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
   }
+  
   .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     background-color: #828977;
-    color: #E4D8C8;
-    padding: 10px 35px; 
+    color: #e4d8c8;
+    padding: 10px 35px;
   }
   
   .logo {
     height: 50px;
   }
-  .connexion-profil{
-    color: #E4D8C8
+  
+  .connexion-profil {
+    color: #e4d8c8;
   }
   
   .nav-links ul {
-    margin: 0;
-    padding: 0;
     list-style: none;
     display: flex;
-    gap: 90px;             
+    gap: 90px;
   }
   
   .nav-links a {
@@ -37,9 +40,16 @@
     font-weight: bold;
   }
 
-  /* activite.css */
-
-main {
+  .bandeau {
+    height: 180px;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  
+  
+  main {
+    flex: 1;
     padding: 30px;
     background-color: #e4d8c8;
   }
@@ -51,7 +61,10 @@ main {
   
   main img.category-banner {
     width: 100%;
+    height: 300px; /* hauteur fixée pour bel affichage */
+    object-fit: cover;
     border-radius: 10px;
+    display: block;
   }
   
   main h1 {
@@ -71,6 +84,8 @@ main {
   
   .activity-card img.activity-image {
     width: 100%;
+    height: auto;
+    object-fit: cover;
     border-radius: 10px;
     margin-bottom: 15px;
   }
@@ -106,25 +121,25 @@ main {
   
   .activity-card p strong {
     font-weight: bold;
-  }  
+  }
   
   .footer {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     background-color: #828977;
     color: #e4d8c8;
     padding: 15px 30px;
     font-weight: bold;
     font-size: 16px;
-    position: absolute;
-    left: 0px;
-    right: 0px;
-    bottom: 0px;
+    position: relative;
+    width: 100%;
   }
   
   .footer ul {
     list-style: none;
   }
+  
   .footer ul li {
     margin-bottom: 10px;
   }
@@ -133,7 +148,27 @@ main {
     color: inherit;
     text-decoration: none;
   }
+  
   .footer a:hover {
     text-decoration: underline;
   }
+
+  .button-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.heart-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5em;
+    color: red;
+}
+
+.heart-button .fa-heart.fa-solid {
+    color: red;
+}
+
   
