@@ -4,83 +4,119 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Devenez Prestataire</title>
-    <link rel="stylesheet" href="DevenezPrestataires.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
-  </head>
-  <body>
-    <!-- HEADER repris depuis la page Accueil -->
-    <div class="header">
-      <img class="logo" src="logo-transparent-pdf.png" />
-      <p>Devenez Prestataire</p>
-      <p>Concept</p>
 
-      <div class="container-icones">
-        <i class="fa-regular fa-heart"></i>
-        <a href="../Connexion-Inscription/Connexion.html" class="connexion-profil">
+    <!-- Feuilles de style -->
+    <link rel="stylesheet" href="DevenezPrestataires.css" />
+    <link rel="stylesheet" href="../TEMPLATE/teteaupied.css" />
+
+    <!-- FontAwesome pour les icônes -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <!-- HEADER identique à la page d’accueil -->
+    <header class="header">
+      <img
+        class="logo"
+        src="../Connexion-Inscription/logo-transparent-pdf.png"
+        alt="Site logo"
+      />
+
+      <nav class="nav-links">
+        <ul>
+          <li><a href="#">Devenez Prestataire</a></li>
+          <li><a href="#">Concept</a></li>
+        </ul>
+      </nav>
+
+      <div class="icon">
+        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
+        <a
+          href="../Connexion-Inscription/Connexion.html"
+          class="connexion-profil"
+          aria-label="Connexion"
+        >
           <i class="fa-solid fa-user"></i>
         </a>
       </div>
-    </div>
+    </header>
 
-    <!-- FORMULAIRE -->
-    <div class="container-formulaire">
-      <h1>Devenez Prestataire</h1>
-      <form action="submit_form.php" method="POST">
-        <label for="nom-activite">Nom de l'activité :</label>
-        <input type="text" id="nom-activite" name="nom_activite" required />
+    <!-- CONTENU : Formulaire -->
+    <main>
+      <section class="container-formulaire">
+        <h1>Devenez Prestataire</h1>
+        <form action="submit_form.php" method="POST">
+          <label for="nom-activite">Nom de l'activité :</label>
+          <input type="text" id="nom-activite" name="nom_activite" required />
 
-        <label for="categorie">Catégorie :</label>
-        <select id="categorie" name="categorie" required>
-          <option value="">Sélectionnez une catégorie</option>
-          <option value="sport">Sport</option>
-          <option value="bien-etre">Bien-être</option>
-          <option value="culture">Culture</option>
-          <option value="gastronomie">Gastronomie</option>
-        </select>
+          <label for="categorie">Catégorie :</label>
+          <select id="categorie" name="categorie" required>
+            <option value="">Sélectionnez une catégorie</option>
+            <option value="sport">Sport</option>
+            <option value="bien-etre">Bien-être</option>
+            <option value="culture">Culture</option>
+            <option value="gastronomie">Gastronomie</option>
+          </select>
 
-        <label for="date-heure">Date et Heure :</label>
-        <input type="datetime-local" id="date-heure" name="date_heure" required />
+          <label for="date-heure">Date et Heure :</label>
+          <input type="datetime-local" id="date-heure" name="date_heure" required />
 
-        <label for="prix">Prix (€) :</label>
-        <input type="number" id="prix" name="prix" required />
+          <label for="prix">Prix (€) :</label>
+          <input type="number" id="prix" name="prix" required />
 
-        <label for="nb-personnes">Nombre de personnes maximum :</label>
-        <input type="number" id="nb-personnes" name="nb_personnes" required />
+          <label for="nb-personnes">Nombre de personnes maximum :</label>
+          <input type="number" id="nb-personnes" name="nb_personnes" required />
 
-        <label for="adresse">Adresse :</label>
-        <input type="text" id="adresse" name="adresse" required />
+          <label for="adresse">Adresse :</label>
+          <input type="text" id="adresse" name="adresse" required />
 
-        <label for="ville">Ville :</label>
-        <input type="text" id="ville" name="ville" required />
+          <label for="ville">Ville :</label>
+          <input type="text" id="ville" name="ville" required />
 
-        <label for="code-postal">Code Postal :</label>
-        <input type="text" id="code-postal" name="code_postal" required />
+          <label for="code-postal">Code Postal :</label>
+          <input type="text" id="code-postal" name="code_postal" required />
 
-        <label for="mots-cles">Mots-clés :</label>
-        <input type="text" id="mots-cles" name="mots_cles" placeholder="Ex : yoga, méditation, relaxation" required />
+          <label for="mots-cles">Mots-clés :</label>
+          <input
+            type="text"
+            id="mots-cles"
+            name="mots_cles"
+            placeholder="Ex : yoga, méditation, relaxation"
+            required
+          />
 
-        <label for="description">Description :</label>
-        <textarea id="description" name="description" rows="4" required></textarea>
+          <label for="description">Description :</label>
+          <textarea id="description" name="description" rows="4" required></textarea>
 
-        <button type="submit">Créer l'activité</button>
-      </form>
-    </div>
+          <button type="submit">Créer l'activité</button>
+        </form>
+      </section>
+    </main>
 
-    <!-- FOOTER repris depuis la page Accueil -->
-    <div class="footer">
-      <div class="footer1">FAQ</div>
-      <div class="footer2">CGU</div>
-      <div class="footer3">Mentions Légales</div>
-      <div class="footer4">06 01 02 03 04</div>
-      <i class="fa-solid fa-phone"></i>
-      <div class="footer5">synapse@gmail.com</div>
-      <i class="fa-regular fa-envelope"></i>
-      <div class="footer6">synapse.off</div>
-      <i class="fa-brands fa-facebook-f"></i>
-      <div class="footer7">synapse.off</div>
-      <i class="fa-brands fa-instagram"></i>
-      <div class="footer8">Lundi-Vendredi: 9h à 20h</div>
-      <div class="footer9">Samedi : 10h à 16h</div>
-    </div>
+    <!-- FOOTER identique à la page d’accueil -->
+    <footer class="footer">
+      <ul>
+        <li><a href="#">FAQ</a></li>
+        <li><a href="#">CGU</a></li>
+        <li><a href="#">Mentions Légales</a></li>
+      </ul>
+
+      <ul>
+        <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
+        <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
+      </ul>
+      <ul>
+        <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
+        <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
+      </ul>
+
+      <ul>
+        <li>Lundi - Vendredi : 9h à 20h</li>
+        <li>Samedi : 10h à 16h</li>
+      </ul>
+    </footer>
   </body>
 </html>
