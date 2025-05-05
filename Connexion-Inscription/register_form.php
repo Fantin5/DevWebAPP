@@ -1,5 +1,5 @@
 
-<!-- http://localhost/ProjetWebDev%20copy2/Connexion-Inscription/register_form.php -->
+<!-- http://localhost/DevWebAPP/Connexion-Inscription/register_form.php -->
 <!-- http://localhost/phpmyadmin -->
 
 <?php
@@ -9,6 +9,9 @@
 if(isset($_POST['submit'])){
 
    $name = mysqli_real_escape_string($conn, $_POST['name']);
+   $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
+   $age = mysqli_real_escape_string($conn, $_POST['age']);
+   $phone_nb = mysqli_real_escape_string($conn, $_POST['phone_nb']);
    $email = mysqli_real_escape_string($conn, $_POST['email']);
    $pass = md5($_POST['password']);
    $cpass = md5($_POST['cpassword']);
@@ -44,29 +47,32 @@ if(isset($_POST['submit'])){
    <meta charset="UTF-8">
    <meta http-equiv="X-UA-Compatible" content="IE=edge">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link rel="stylesheet" href="../TEMPLATE/teteaupied.css">
    <link rel="stylesheet" href="Connexion.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <title>Inscription</title>
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+   <title>Inscription</title>
 
 </head>
 <body>
    <!-- 1 partie header -->
-   <div class="header">
-        <img class="logo" src="logo-transparent-pdf.png" >
-        <p>
-            Devenez Prestataire
-        </p>
-        <p>
-            Concept
-        </p>
+   <header>
+      <img class="logo" src="logo-transparent-pdf.png" >
+      <p>
+         Devenez Prestataire
+      </p>
+      <p>
+         Concept
+      </p>
 
 <!-- On crée un container pour les icones pour pouvoir les espacer plus facilement du reste -->
-        <div class="container-icones"> 
-            <i class="fa-regular fa-heart"></i>
-            <a href="../Connexion-Inscription/Connexion.html" class="connexion-profil">
-                 <i class="fa-solid fa-user"></i> 
-            </a>
-        </div>
+      <div class="container-icones"> 
+         <i class="fa-regular fa-heart"></i>
+         <a href="../Connexion-Inscription/Connexion.html" class="connexion-profil">
+            <i class="fa-solid fa-user"></i> 
+         </a>
+      </div>
+   </header>
+        
     </div>
     <!-- 7 footer --> 
       <!-- on met des divs pour ne pas etre géné par les margins initiaux (de p par exemple)on pourras tjr modifier plus tard si necessaire -->

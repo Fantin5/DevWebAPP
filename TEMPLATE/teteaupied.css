@@ -7,7 +7,7 @@
 body {
   font-family: sans-serif;
 }
-.header {
+header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -34,7 +34,7 @@ body {
   font-weight: bold;
 }
 
-.footer {
+footer {
   display: flex;
   justify-content: space-between;
   background-color: #828977;
