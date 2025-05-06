@@ -44,7 +44,7 @@ header {
   font-weight: bold;
 }
 
-.footer {
+footer {
   display: flex;
   justify-content: space-between;
   background-color: #828977;
