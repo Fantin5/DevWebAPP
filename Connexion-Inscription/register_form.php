@@ -93,6 +93,9 @@ if(isset($_POST['submit'])){
           };
           ?>
           <input type="text" name="name" required placeholder="Entrez Votre Nom">
+          <input type="text" name="first_name" required placeholder="Entrez votre Prénom">
+          <input type="int" name="age" required placeholder="Entrez votre Age">
+          <input type="int" name="phone_nb" required placeholder="Entrez votre numéro de téléphone">
           <input type="email" name="email" required placeholder="Entrez Votre Email">
           <input type="password" name="password" required placeholder="Entrez Votre Mot de Passe">
           <input type="password" name="cpassword" required placeholder="Confirmez Votre Mot de Passe">
