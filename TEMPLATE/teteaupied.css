@@ -11,8 +11,8 @@ body {
   margin: 0;
   font-family: sans-serif;
 }
-/* yahoo  */
-.header {
+
+header {
   display: flex;
   align-items: center;
   justify-content: space-between;
