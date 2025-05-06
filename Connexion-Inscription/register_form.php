@@ -13,28 +13,33 @@ if(isset($_POST['submit'])){
    $age = mysqli_real_escape_string($conn, $_POST['age']);
    $phone_nb = mysqli_real_escape_string($conn, $_POST['phone_nb']);
    $email = mysqli_real_escape_string($conn, $_POST['email']);
-   $pass = md5($_POST['password']);
-   $cpass = md5($_POST['cpassword']);
    $user_type = $_POST['user_type'];
 
-   $select = " SELECT * FROM user_form WHERE email = '$email' && password = '$pass' ";
+   $select = " SELECT * FROM user_form WHERE email = '$email' ";
 
    $result = mysqli_query($conn, $select);
 
-   if(mysqli_num_rows($result) > 0){
+   if ($_POST['password'] != $_POST['cpassword']) {
+    $error[] = 'Les mots de passe ne correspondent pas!';
+ } else {
+    // Vérifie si l'email existe déjà
+    $select = "SELECT * FROM user_form WHERE email = '$email'";
+    $result = mysqli_query($conn, $select);
 
-      $error[] = 'Email déjà utilisé!';
+    if (mysqli_num_rows($result) > 0) {
+       $error[] = 'Email déjà utilisé!';
+    } else {
+       // Hachage du mot de passe
+       $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
+       // Insertion en base
+       $insert = "INSERT INTO user_form(name, first_name, age, phone_nb, email, password, user_type)
+                  VALUES('$name', '$first_name', '$age', '$phone_nb', '$email', '$pass', '$user_type')";
+       mysqli_query($conn, $insert);
+       header('Location: ../Page d-Accueil/Accueil.html');
+       exit();
+    }
+ }
 
-   }else{
-
-      if($pass != $cpass){
-         $error[] = 'Les mots de passe ne correspondent pas!';
-      }else{
-         $insert = "INSERT INTO user_form(name, email, password, user_type) VALUES('$name','$email','$pass','$user_type')";
-         mysqli_query($conn, $insert);
-         header('Page d-accueil/Accueil.html');
-      }
-   }
 
 };
 
@@ -94,8 +99,8 @@ if(isset($_POST['submit'])){
           ?>
           <input type="text" name="name" required placeholder="Entrez Votre Nom">
           <input type="text" name="first_name" required placeholder="Entrez votre Prénom">
-          <input type="int" name="age" required placeholder="Entrez votre Age">
-          <input type="int" name="phone_nb" required placeholder="Entrez votre numéro de téléphone">
+          <input type="number" name="age" min="1" required placeholder="Entrez votre Age">
+          <input type="tel" name="phone_nb" pattern="[0-9]{10}" required placeholder="Entrez votre numéro de téléphone">
           <input type="email" name="email" required placeholder="Entrez Votre Email">
           <input type="password" name="password" required placeholder="Entrez Votre Mot de Passe">
           <input type="password" name="cpassword" required placeholder="Confirmez Votre Mot de Passe">
