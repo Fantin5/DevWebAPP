@@ -1,8 +1,5 @@
 body {
-    margin: 0px;    
-    background-color:#E4D8C8 ;
-    padding-bottom: 800px;
-    position: relative; 
+    margin: 0;    
     /* en relative pour pouvoir positionner le footer correctement */
 }
 /*1 partie header */
@@ -30,34 +27,32 @@ body {
 .connexion-profil{
     color: #E4D8C8
 }
+
+
 /* 7 footer */
+/* 
 .footer{
     background-color: #828977;
     height: 80px;
-    position:absolute;
     bottom: 0px;
     right: 0px;
     left: 0px;
 }
 
-/* ici on configure tt les elements  1 par  1 en absolute c'est peut etre plus pratique jsp */
 .footer1{
     color: #E4D8C8;
-    position: absolute;
     left: 80px;
     bottom:45px ;
     font-weight: bold;
 }
 .footer2{
     color: #E4D8C8;
-    position: absolute;
     left: 150px;
     bottom:45px ;
     font-weight: bold;
 }
 .footer3{
     color: #E4D8C8;
-    position: absolute;
     left: 225px;
     bottom:45px ;
     font-weight: bold;
@@ -66,20 +61,17 @@ body {
 .fa-phone{
     color: #E4D8C8;
     font-size: 28px;
-    position: absolute;
     left: 900px;
     bottom:45px ;
 }
 .footer4{
     color: #E4D8C8;
-    position: absolute;
     left: 935px;
     bottom:45px ;
     font-weight: bold;
 }
 .footer5{
     color: #E4D8C8;
-    position: absolute;
     left: 935px;
     bottom:10px ;
     font-weight: bold;
@@ -87,14 +79,12 @@ body {
 .fa-envelope{
     color: #E4D8C8;
     font-size: 28px;
-    position: absolute;
     left: 900px;
     bottom:10px ;
 
 }
 .footer6{
     color: #E4D8C8;
-    position: absolute;
     left: 1130px;
     bottom:45px ;
     font-weight: bold;
@@ -102,14 +92,12 @@ body {
 .fa-facebook-f{
     font-size: 28px;
     color: #E4D8C8;
-    position: absolute;
     left: 1100px;
     bottom:45px ;
 
 }
 .footer7{
     color: #E4D8C8;
-    position: absolute;
     left: 1130px;
     bottom:10px ;
     font-weight: bold;
@@ -117,27 +105,25 @@ body {
 .fa-instagram{
     font-size: 28px;
     color: #E4D8C8;
-    position: absolute;
     left: 1100px;
     bottom:10px ;
 
 }
 .footer8{
     color: #E4D8C8;
-    position: absolute;
     left: 1310px;
     top:10px ;
     font-weight: bold;
 }
 .footer9{
     color: #E4D8C8;
-    position: absolute;
     left: 1310px;
     top:35px ;
     font-weight: bold;
 }
 
-/* reste */
+
+
 .conditions{
     display: inline-block;
 }
@@ -145,8 +131,7 @@ body {
 .fa-square-plus{
     color: #828977;
     font-size: 70px;
-    position: absolute;
-    
+
     top:250px ;
     left: 100px;
-}
+} */
