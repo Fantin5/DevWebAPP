@@ -1,0 +1,366 @@
+/* Styles généraux */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #E4D8C8;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header et Footer sont déjà définis dans teteaupied.css */
+
+/* Bandeau */
+.bandeau {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    margin-bottom: 20px;
+}
+
+/* Barre de recherche */
+.container-barre-de-recherche {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 30px;
+    margin-bottom: 30px;
+}
+
+.demi-container-recherche {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 70%;
+    max-width: 800px;
+}
+
+.fa-magnifying-glass {
+    position: absolute;
+    left: 15px;
+    color: #666;
+    z-index: 1;
+}
+
+.barre-de-recherche {
+    width: 100%;
+    padding: 15px 15px 15px 45px;
+    border: none;
+    border-radius: 30px;
+    font-size: 16px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.barre-de-recherche:focus {
+    outline: none;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2);
+}
+
+.fa-bars {
+    margin-left: 15px;
+    font-size: 24px;
+    color: #828977;
+    cursor: pointer;
+}
+
+/* Carrousel */
+.carrousel {
+    position: relative;
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto 40px;
+    overflow: hidden;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.carrousel-images {
+    display: flex;
+    transition: transform 0.5s ease;
+    height: 400px;
+}
+
+.carrousel-images img {
+    width: 100%;
+    min-width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.carrousel-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(255, 255, 255, 0.7);
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    transition: all 0.3s;
+}
+
+.carrousel-button:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carrousel-button.prev {
+    left: 15px;
+}
+
+.carrousel-button.next {
+    right: 15px;
+}
+
+.carrousel-indicators {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.carrousel-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.carrousel-indicator.active {
+    background-color: white;
+    transform: scale(1.2);
+}
+
+/* Barre de séparation */
+.barre-de-separation {
+    width: 90%;
+    max-width: 1200px;
+    height: 2px;
+    background-color: #828977;
+    margin: 0 auto 20px;
+    opacity: 0.5;
+}
+
+/* Titre "Dernière Chance" */
+.derniere-chance {
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    color: #828977;
+    margin: 10px 0 30px;
+}
+
+/* Bouton pour créer une activité */
+.create-activity-button-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.create-activity-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 25px;
+    background-color: #45cf91;
+    color: #111;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: bold;
+    font-size: 16px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 10px rgba(69, 207, 145, 0.3);
+}
+
+.create-activity-button:hover {
+    background-color: #3abd7a;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(69, 207, 145, 0.4);
+}
+
+/* Section des activités */
+.activities {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto 50px;
+}
+
+.card {
+    background-color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card .content {
+    position: relative;
+}
+
+.card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.card .tag {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    display: flex;
+    gap: 8px;
+}
+
+.card .tags {
+    background-color: #828977;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.card .tags.accent {
+    background-color: #45cf91;
+    color: #111;
+}
+
+.card .tags.secondary {
+    background-color: #647381;
+}
+
+.card .info {
+    padding: 15px;
+    flex-grow: 1;
+}
+
+.card h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.card .period {
+    color: #666;
+    margin: 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.card .actions {
+    padding: 15px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card .rating {
+    color: #f1c40f;
+    font-size: 16px;
+}
+
+.card button {
+    background-color: #828977;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.card button:hover {
+    background-color: #6d7364;
+    transform: translateY(-2px);
+}
+
+/* Message pour aucune activité */
+.no-activities, .no-results {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 30px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    color: #666;
+    font-size: 18px;
+}
+
+/* Notification de succès */
+.notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 25px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 1;
+    transition: opacity 0.5s;
+}
+
+.notification.success {
+    background-color: #45cf91;
+    color: #111;
+}
+
+.notification.success i {
+    color: #111;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .activities {
+        grid-template-columns: 1fr;
+    }
+    
+    .carrousel-images {
+        height: 250px;
+    }
+    
+    .carrousel-button {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .demi-container-recherche {
+        width: 90%;
+    }
+    
+    .bandeau {
+        height: 200px;
+    }
+}
