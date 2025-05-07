@@ -76,6 +76,93 @@ function getTagClass($tag) {
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
+    <style>
+      /* Styles pour l'icône du panier et le compteur */
+      .panier-link {
+          position: relative;
+          display: inline-block;
+          color: #E4D8C8;
+          text-decoration: none;
+          transition: color 0.2s;
+      }
+
+      .panier-link:hover {
+          color: #fff;
+      }
+
+      .panier-count {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          background-color: #45cf91;
+          color: #111;
+          font-size: 12px;
+          font-weight: bold;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+      }
+
+      /* Styles pour le bouton d'ajout au panier */
+      .add-to-cart-button {
+          background-color: #45cf91 !important;
+          color: #111 !important;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 15px;
+          border-radius: 20px;
+          cursor: pointer;
+          font-weight: 600;
+          transition: all 0.2s;
+          border: none;
+      }
+
+      .add-to-cart-button:hover {
+          background-color: #3abd7a !important;
+          transform: translateY(-2px);
+      }
+
+      /* Notification pour l'ajout au panier */
+      .notification {
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 15px 25px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-weight: 600;
+          z-index: 1000;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          opacity: 1;
+          transition: opacity 0.5s;
+      }
+
+      .notification.success {
+          background-color: #45cf91;
+          color: #111;
+      }
+
+      .notification.info {
+          background-color: #3498db;
+          color: white;
+      }
+
+      .notification.error {
+          background-color: #e74c3c;
+          color: white;
+      }
+
+      .notification i {
+          font-size: 18px;
+      }
+    </style>
   </head>
   <body>
     <header class="header">
@@ -93,6 +180,10 @@ function getTagClass($tag) {
 
       <div class="icon">
         <i class="fa-regular fa-heart" aria-label="Favoris"></i>
+        <a href="panier.html" class="panier-link" aria-label="Panier">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <span class="panier-count" id="panier-count">0</span>
+        </a>
         <a
           href="../Connexion-Inscription/Connexion.html"
           class="connexion-profil"
@@ -162,6 +253,7 @@ function getTagClass($tag) {
         <i class="fa-solid fa-plus"></i> Créer une Activité
       </a>
     </div>
+  
 
     <!-- Activities Section -->
     <section class="activities" id="activities-container">
@@ -221,7 +313,17 @@ function getTagClass($tag) {
               
               echo '<div class="actions">';
               echo '<div class="rating">' . getStars($randomRating) . '</div>';
-              echo '<button>Rejoindre</button>';
+              
+              // Bouton "Ajouter au panier" à la place de "Rejoindre"
+              echo '<button class="add-to-cart-button" data-id="' . $row['id'] . '" 
+                    data-title="' . htmlspecialchars($row['titre']) . '" 
+                    data-price="' . $row['prix'] . '" 
+                    data-image="' . htmlspecialchars($row['image_url'] ? $row['image_url'] : '/api/placeholder/400/320') . '" 
+                    data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
+                    data-tags="' . htmlspecialchars($row['tags']) . '">
+                    <i class="fa-solid fa-cart-shopping"></i> Ajouter au panier
+                    </button>';
+              
               echo '</div>';
               
               echo '</div>';
@@ -257,6 +359,105 @@ function getTagClass($tag) {
   </body>
   <script src="Carousel.js"></script>
   <script src="search.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialiser le panier s'il n'existe pas déjà
+        if (!localStorage.getItem('synapse-cart')) {
+            localStorage.setItem('synapse-cart', JSON.stringify([]));
+        }
+        
+        // Mettre à jour le compteur du panier
+        updateCartCount();
+        
+        // Ajouter des événements pour les boutons "Ajouter au panier"
+        document.querySelectorAll('.add-to-cart-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const titre = this.getAttribute('data-title');
+                const prix = parseFloat(this.getAttribute('data-price'));
+                const image = this.getAttribute('data-image');
+                const periode = this.getAttribute('data-period');
+                const tagsStr = this.getAttribute('data-tags');
+                const tags = tagsStr ? tagsStr.split(',') : [];
+                
+                // Ajouter l'activité au panier
+                addToCart({
+                    id: id,
+                    titre: titre,
+                    prix: prix,
+                    image: image,
+                    periode: periode,
+                    tags: tags
+                });
+                
+                // Afficher une notification
+                showNotification('Activité ajoutée au panier !', 'success');
+            });
+        });
+        
+        // Fonction pour ajouter au panier
+        function addToCart(item) {
+            // Récupérer le panier actuel
+            const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+            
+            // Vérifier si l'article est déjà dans le panier
+            const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
+            
+            // Si l'article n'est pas déjà dans le panier, l'ajouter
+            if (existingItemIndex === -1) {
+                cart.push(item);
+                localStorage.setItem('synapse-cart', JSON.stringify(cart));
+                updateCartCount();
+            } else {
+                showNotification('Cette activité est déjà dans votre panier.', 'info');
+            }
+        }
+        
+        // Fonction pour mettre à jour le compteur du panier
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+            const cartCount = document.getElementById('panier-count');
+            if (cartCount) {
+                cartCount.textContent = cart.length;
+            }
+        }
+        
+        // Fonction pour afficher une notification
+        function showNotification(message, type = 'success') {
+            // Supprimer les notifications existantes
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => {
+                notification.remove();
+            });
+            
+            // Créer la notification
+            const notification = document.createElement('div');
+            notification.classList.add('notification', type);
+            
+            // Ajouter l'icône appropriée
+            let icon = 'fa-circle-check';
+            if (type === 'info') {
+                icon = 'fa-circle-info';
+            } else if (type === 'error') {
+                icon = 'fa-circle-exclamation';
+            }
+            
+            notification.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
+            
+            // Ajouter la notification au document
+            document.body.insertBefore(notification, document.body.firstChild);
+            
+            // Faire disparaître la notification après 3 secondes
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 3000);
+        }
+    });
+  </script>
 </html>
 
 <?php
