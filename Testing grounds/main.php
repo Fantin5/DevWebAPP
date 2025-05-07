@@ -31,20 +31,20 @@ function getStars($rating) {
     
     // Étoiles pleines
     for ($i = 0; $i < $fullStars; $i++) {
-        $stars .= '★';
+        $stars .= '<i class="fa-solid fa-star"></i>';
     }
     
     // Demi-étoile si nécessaire
     if ($halfStar) {
-        $stars .= '★';
+        $stars .= '<i class="fa-solid fa-star-half-stroke"></i>';
     }
     
     // Étoiles vides
     for ($i = 0; $i < $emptyStars; $i++) {
-        $stars .= '☆';
+        $stars .= '<i class="fa-regular fa-star"></i>';
     }
     
-    return $stars . ' ' . number_format($rating, 1);
+    return '<span class="stars">' . $stars . '</span> <span class="rating-value">' . number_format($rating, 1) . '</span>';
 }
 
 // Fonction pour déterminer la classe CSS du tag
@@ -77,6 +77,139 @@ function getTagClass($tag) {
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
     <style>
+      /* Styles améliorés pour les cartes d'activités */
+      .activities {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 30px;
+        width: 90%;
+        max-width: 1200px;
+        margin: 0 auto 50px;
+      }
+
+      .card {
+        background-color: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.3s, box-shadow 0.3s;
+        height: 100%;
+      }
+
+      .card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      .card .content {
+        position: relative;
+      }
+
+      .card .image-container {
+        height: 200px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s;
+      }
+
+      .card:hover img {
+        transform: scale(1.1);
+      }
+
+      .card .tag {
+        position: absolute;
+        bottom: 15px;
+        left: 15px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .card .tags {
+        background-color: #828977;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 600;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(5px);
+      }
+
+      .card .tags.accent {
+        background-color: #45cf91;
+        color: #111;
+      }
+
+      .card .tags.secondary {
+        background-color: #647381;
+      }
+
+      .card .info {
+        padding: 20px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .card h3 {
+        margin: 0 0 15px 0;
+        color: #333;
+        font-size: 18px;
+        line-height: 1.4;
+        font-weight: 700;
+      }
+
+      .card .period {
+        color: #666;
+        margin: 0 0 15px 0;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .card .period i {
+        color: #828977;
+      }
+
+      .card .actions {
+        padding: 15px 20px;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f9f9f9;
+      }
+
+      .card .rating {
+        color: #f1c40f;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      
+      .stars {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+      
+      .rating-value {
+        color: #666;
+        font-weight: 600;
+        margin-left: 5px;
+      }
+
       /* Styles pour l'icône du panier et le compteur */
       .panier-link {
           position: relative;
@@ -113,17 +246,24 @@ function getTagClass($tag) {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 8px 15px;
-          border-radius: 20px;
+          padding: 12px 20px;
+          border-radius: 30px;
           cursor: pointer;
           font-weight: 600;
           transition: all 0.2s;
           border: none;
+          box-shadow: 0 3px 8px rgba(69, 207, 145, 0.3);
       }
 
       .add-to-cart-button:hover {
           background-color: #3abd7a !important;
           transform: translateY(-2px);
+          box-shadow: 0 6px 12px rgba(69, 207, 145, 0.4);
+      }
+      
+      .add-to-cart-button:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 5px rgba(69, 207, 145, 0.3);
       }
 
       /* Notification pour l'ajout au panier */
@@ -133,13 +273,13 @@ function getTagClass($tag) {
           left: 50%;
           transform: translateX(-50%);
           padding: 15px 25px;
-          border-radius: 8px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           gap: 10px;
           font-weight: 600;
           z-index: 1000;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
           opacity: 1;
           transition: opacity 0.5s;
       }
@@ -161,6 +301,68 @@ function getTagClass($tag) {
 
       .notification i {
           font-size: 18px;
+      }
+      
+      /* Améliorations pour les autres sections */
+      .derniere-chance {
+          text-align: center;
+          font-size: 32px;
+          font-weight: bold;
+          color: #828977;
+          margin: 20px 0 40px;
+          position: relative;
+          display: inline-block;
+          left: 50%;
+          transform: translateX(-50%);
+      }
+      
+      .derniere-chance::after {
+          content: '';
+          display: block;
+          width: 80px;
+          height: 4px;
+          background-color: #45cf91;
+          margin: 10px auto 0;
+          border-radius: 2px;
+      }
+      
+      .create-activity-button {
+          padding: 14px 30px;
+          font-size: 16px;
+          box-shadow: 0 8px 15px rgba(69, 207, 145, 0.3);
+      }
+      
+      .create-activity-button:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 12px 20px rgba(69, 207, 145, 0.4);
+      }
+      
+      /* Animation pour les boutons d'ajout au panier */
+      @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+      }
+      
+      .add-to-cart-button:active i {
+          animation: pulse 0.3s ease-in-out;
+      }
+      
+      /* Responsive improvements */
+      @media (max-width: 768px) {
+          .card .image-container {
+              height: 180px;
+          }
+          
+          .card .actions {
+              flex-direction: column;
+              gap: 15px;
+          }
+          
+          .add-to-cart-button {
+              width: 100%;
+              justify-content: center;
+          }
       }
     </style>
   </head>
@@ -273,12 +475,14 @@ function getTagClass($tag) {
               echo '<div class="card">';
               echo '<div class="content">';
               
-              // Image
+              // Image avec conteneur de taille fixe
+              echo '<div class="image-container">';
               if ($row["image_url"]) {
                   echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
               } else {
                   echo '<img src="/api/placeholder/400/320" alt="placeholder" />';
               }
+              echo '</div>';
               
               echo '<div class="tag">';
               
@@ -390,6 +594,12 @@ function getTagClass($tag) {
                     periode: periode,
                     tags: tags
                 });
+                
+                // Animation du bouton
+                this.classList.add('clicked');
+                setTimeout(() => {
+                    this.classList.remove('clicked');
+                }, 300);
                 
                 // Afficher une notification
                 showNotification('Activité ajoutée au panier !', 'success');
