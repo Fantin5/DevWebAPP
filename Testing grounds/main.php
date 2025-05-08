@@ -536,7 +536,6 @@ function getTagClass($tag) {
           echo '<p class="no-activities">Aucune activité disponible pour le moment.</p>';
       }
       ?>
-    </section>
 
     <!-- 7 footer -->
     <footer class="footer">
