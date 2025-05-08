@@ -481,7 +481,6 @@ function getTagClass($tag) {
           echo '<p class="no-activities">Aucune activité disponible pour le moment.</p>';
       }
       ?>
-    </section>
 
 <!-- Section newsletter -->
 <section class="newsletter-section">
