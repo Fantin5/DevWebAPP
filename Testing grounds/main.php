@@ -87,7 +87,7 @@ function getTagClass($tag) {
       <nav class="nav-links">
         <ul>
           <li><a href="#">Devenez Prestataire</a></li>
-          <li><a href="#">Concept</a></li>
+          <li><a href="../Concept/concept.html">Concept</a></li>
         </ul>
       </nav>
 
@@ -118,59 +118,15 @@ function getTagClass($tag) {
     <h1>Bienvenue sur <span>SYNAPSE</span></h1>
     <p>Un espace où partager des moments uniques et découvrir des activités exceptionnelles</p>
     <div class="welcome-buttons">
-      <a href="#filter-section" class="welcome-btn primary">Découvrir les activités</a>
-      <a href="./jenis.html" class="welcome-btn secondary">Proposer une activité</a>
-    </div>
+  <a href="activites.php" class="welcome-btn primary">Découvrir les activités</a>
+  <a href="./jenis.html" class="welcome-btn secondary">
+    <i class="fa-solid fa-plus"></i> Créer une activité
+  </a>
+</div>
   </div>
 </div>
 
-<!-- Section de filtrage -->
-<div id="filter-section" class="filter-section">
-  <h2>Trouvez l'activité idéale</h2>
-  
-  <div class="filter-container">
-    <div class="search-container">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="search" placeholder="Rechercher une activité..." id="search-input" class="search-input">
-    </div>
-    
-    <div class="filters">
-      <div class="filter-group">
-        <label>Catégorie</label>
-        <select id="category-filter" class="filter-select">
-          <option value="">Toutes les catégories</option>
-          <option value="art">Art</option>
-          <option value="sport">Sport</option>
-          <option value="bien_etre">Bien-être</option>
-          <option value="cuisine">Cuisine</option>
-          <option value="creativite">Créativité</option>
-        </select>
-      </div>
-      
-      <div class="filter-group">
-        <label>Lieu</label>
-        <select id="location-filter" class="filter-select">
-          <option value="">Tous les lieux</option>
-          <option value="exterieur">Extérieur</option>
-          <option value="interieur">Intérieur</option>
-        </select>
-      </div>
-      
-      <div class="filter-group">
-        <label>Prix</label>
-        <select id="price-filter" class="filter-select">
-          <option value="">Tous les prix</option>
-          <option value="gratuit">Gratuit</option>
-          <option value="payant">Payant</option>
-        </select>
-      </div>
-      
-      <button id="reset-filters" class="reset-button">
-        <i class="fa-solid fa-rotate"></i> Réinitialiser
-      </button>
-    </div>
-  </div>
-</div>
+
 
     <!-- 4 Partie carousel -->
     <div class="carrousel">
@@ -208,12 +164,7 @@ function getTagClass($tag) {
   </div>
 </section>
 
-    <!-- Bouton pour créer une activité -->
-    <div class="create-activity-button-container">
-      <a href="./jenis.html" class="create-activity-button">
-        <i class="fa-solid fa-plus"></i> Créer une Activité
-      </a>
-    </div>
+   
   
 <!-- Section activités gratuites -->
 <section class="activities-section free-activities-section">
@@ -235,7 +186,7 @@ function getTagClass($tag) {
               $randomRating = rand(30, 50) / 10;
               $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
               
-              echo '<div class="featured-card">'; // Change slider-card to featured-card
+              echo '<div class="featured-card" data-id="' . $row['id'] . '">'; // Added data-id attribute
               echo '<div class="content">';
               
               echo '<div class="image-container">';
@@ -340,7 +291,7 @@ function getTagClass($tag) {
                 $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
                 $isPaid = $row["prix"] > 0;
                 
-                echo '<div class="featured-card">';
+                echo '<div class="featured-card" data-id="' . $row['id'] . '">'; // Added data-id attribute
                 echo '<div class="content">';
                 
                 echo '<div class="image-container">';
@@ -417,7 +368,7 @@ function getTagClass($tag) {
               // Type de prix
               $isPaid = $row["prix"] > 0;
               
-              echo '<div class="card">';
+              echo '<div class="card" data-id="' . $row['id'] . '">'; // Added data-id attribute
               echo '<div class="content">';
               
               // Image avec conteneur de taille fixe
@@ -549,87 +500,7 @@ function getTagClass($tag) {
       });
     }
     
-    // Système de filtrage
-    const searchInput = document.getElementById('search-input');
-    const categoryFilter = document.getElementById('category-filter');
-    const locationFilter = document.getElementById('location-filter');
-    const priceFilter = document.getElementById('price-filter');
-    const resetButton = document.getElementById('reset-filters');
-    const activitiesContainer = document.getElementById('activities-container');
-    const cards = activitiesContainer ? Array.from(activitiesContainer.querySelectorAll('.card')) : [];
-    
-// Replace the filterActivities function in your main.php script tag
-function filterActivities() {
-  const searchTerm = searchInput.value.toLowerCase();
-  const category = categoryFilter.value.toLowerCase();
-  const location = locationFilter.value.toLowerCase();
-  const price = priceFilter.value.toLowerCase();
-  
-  // Get all cards from all sections
-  const allCards = [
-    ...Array.from(document.querySelectorAll('#activities-container .card')),
-    ...Array.from(document.querySelectorAll('#best-activities-grid .featured-card')),
-    ...Array.from(document.querySelectorAll('#free-activities-slider .slider-card'))
-  ];
-  
-  let hasVisibleCards = false;
-  
-  allCards.forEach(card => {
-    const title = card.querySelector('h3').textContent.toLowerCase();
-    const tags = Array.from(card.querySelectorAll('.tags')).map(tag => tag.textContent.toLowerCase());
-    const isPriceMatch = price === '' || 
-                       (price === 'gratuit' && tags.includes('gratuit')) || 
-                       (price === 'payant' && tags.some(tag => !tag.includes('gratuit')));
-    
-    const isCategoryMatch = category === '' || tags.some(tag => tag === category || tag.includes(category));
-    const isLocationMatch = location === '' || tags.some(tag => tag === location || tag.includes(location));
-    const isSearchMatch = searchTerm === '' || title.includes(searchTerm);
-    
-    const isVisible = isPriceMatch && isCategoryMatch && isLocationMatch && isSearchMatch;
-    card.style.display = isVisible ? 'flex' : 'none';
-    
-    if (isVisible) hasVisibleCards = true;
-  });
-  
-  // Show "no results" message if appropriate
-  const containers = ['activities-container', 'best-activities-grid', 'free-activities-slider'];
-  
-  containers.forEach(containerId => {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    
-    let noResultsMessage = container.querySelector('.no-results');
-    
-    if (!hasVisibleCards) {
-      if (!noResultsMessage) {
-        noResultsMessage = document.createElement('p');
-        noResultsMessage.className = 'no-results';
-        noResultsMessage.textContent = 'Aucune activité ne correspond à votre recherche.';
-        container.appendChild(noResultsMessage);
-      }
-      noResultsMessage.style.display = 'block';
-    } else if (noResultsMessage) {
-      noResultsMessage.style.display = 'none';
-    }
-  });
-}
-    
-    // Événements pour les filtres
-    if (searchInput) searchInput.addEventListener('input', filterActivities);
-    if (categoryFilter) categoryFilter.addEventListener('change', filterActivities);
-    if (locationFilter) locationFilter.addEventListener('change', filterActivities);
-    if (priceFilter) priceFilter.addEventListener('change', filterActivities);
-    
-    // Réinitialiser les filtres
-    if (resetButton) {
-      resetButton.addEventListener('click', function() {
-        if (searchInput) searchInput.value = '';
-        if (categoryFilter) categoryFilter.value = '';
-        if (locationFilter) locationFilter.value = '';
-        if (priceFilter) priceFilter.value = '';
-        filterActivities();
-      });
-    }
+ 
     
     // Formulaire de newsletter
     const newsletterForm = document.querySelector('.newsletter-form');
@@ -716,10 +587,18 @@ function filterActivities() {
             if (cartCount) {
                 cartCount.textContent = cart.length;
             }
+        
+        // Fonction pour mettre à jour le compteur du panier
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+            const cartCount = document.getElementById('panier-count');
+            if (cartCount) {
+                cartCount.textContent = cart.length;
+            }
         }
         
-        // Fonction pour afficher une notification
-        function showNotification(message, type = 'success') {
+         // Fonction pour afficher une notification
+         function showNotification(message, type = 'success') {
             // Supprimer les notifications existantes
             const existingNotifications = document.querySelectorAll('.notification');
             existingNotifications.forEach(notification => {
@@ -753,6 +632,9 @@ function filterActivities() {
         }
     });
   </script>
+  
+  <!-- Ajout du script pour gérer les clics sur les cartes d'activités -->
+  <script src="activity-card-handler.js"></script>
 </html>
 
 <?php

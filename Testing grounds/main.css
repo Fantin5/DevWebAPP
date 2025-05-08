@@ -856,5 +856,55 @@
     color: #111;
   }
 
-  
+  /* Correction des problèmes de taille pour les cartes d'activités */
+.card, .featured-card, .slider-card {
+  height: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.image-container {
+  height: 220px; /* Hauteur fixe pour toutes les images */
+  min-height: 220px; /* Garantit une hauteur minimale */
+  overflow: hidden;
+}
+
+.info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.info h3 {
+  min-height: 50px; /* Hauteur minimale pour le titre */
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Limite à 2 lignes */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actions {
+  margin-top: auto; /* Pousse les actions vers le bas */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-top: 1px solid #eee;
+  background-color: #f9f9f9;
+}
+
+/* S'assurer que les cartes dans le slider ont une largeur fixe */
+.activities-slider .featured-card {
+  min-width: 300px;
+  width: 300px;
+  flex: 0 0 auto;
+}
   
