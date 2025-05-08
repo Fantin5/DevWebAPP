@@ -98,7 +98,7 @@ function getTagClass($tag) {
           <span class="panier-count" id="panier-count">0</span>
         </a>
         <a
-          href="../Connexion-Inscription/Connexion.html"
+          href="../Connexion-Inscription/login_form.php"
           class="connexion-profil"
           aria-label="Connexion"
         >
