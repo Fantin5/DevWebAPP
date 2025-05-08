@@ -7,19 +7,22 @@ session_start();
 // Partie de connexion
 if(isset($_POST['login_submit'])){
    $email = mysqli_real_escape_string($conn, $_POST['email']);
-   $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
+   $password = $_POST['password'];
 
-   $select = " SELECT * FROM user_form WHERE email = '$email' && password = '$pass' ";
-
+   $select = " SELECT * FROM user_form WHERE email = '$email'";
    $result = mysqli_query($conn, $select);
 
    if(mysqli_num_rows($result) > 0){
-
       $row = mysqli_fetch_array($result);
-      header('location:../Page d-accueil/Accueil.html');
-     
-   }else{
-      $error[] = 'incorrect email or password!';
+      if (password_verify($password, $row['password'])) {
+         $_SESSION['user_id'] = $row['id']; // exemple d'ajout de session
+         header('Location: ../Page d-accueil/Accueil.html');
+         exit();
+      } else {
+         $login_error[] = 'Mot de passe incorrect !';
+      }
+   } else {
+      $login_error[] = 'Email non trouvé !';
    }
 
 };
@@ -39,14 +42,14 @@ if(isset($_POST['register_submit'])){
    $result = mysqli_query($conn, $select);
 
    if ($_POST['password'] != $_POST['cpassword']) {
-    $error[] = 'Les mots de passe ne correspondent pas!';
+    $register_error[] = 'Les mots de passe ne correspondent pas!';
  } else {
     // Vérifie si l'email existe déjà
     $select = "SELECT * FROM user_form WHERE email = '$email'";
     $result = mysqli_query($conn, $select);
 
     if (mysqli_num_rows($result) > 0) {
-       $error[] = 'Email déjà utilisé!';
+       $register_error[] = 'Email déjà utilisé!';
     } else {
        // Hachage du mot de passe
        $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -69,219 +72,218 @@ if(isset($_POST['register_submit'])){
    <meta http-equiv="X-UA-Compatible" content="IE=edge">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+   <link rel="stylesheet" href="../TEMPLATE/teteaupied.css">
+
    <style>
-      * {
-  box-sizing: border-box;
-  box-shadow: 0 0 0 0;
-}
-html {
-  font-size: 16px;
+      
+* {
+   box-sizing: border-box;
+   box-shadow: 0 0 0 0;
 }
 
 body {
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: right;
-    background: #E4D8C8;
-    font-family: sans-serif;
-    color: #828977;
-  }
+   margin: 0;
+   padding: 0;
+   min-height: 100vh;
+   display: flex;
+   flex-direction: column;
+   text-align: right;
+   background: #E4D8C8;
+   font-family: sans-serif;
+   color: #828977;
+}
 main {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 100px;
-    gap: 50px;
-    width: 100%;
-    max-width: 1200px;
-  }
-  a {
-    color: #828977;
-    font-size: 0.8em;
-  }
-  .switch {
-    position: relative;
-    display: flex;
-    background-color: #828977;
-    color: #E4D8C8;
-    height : 52.4px;
-    width: 300px;
-    border-radius: 10px;
-    justify-content: center;
-    align-items: stretch;
-    text-align: center;
-    font-size: 1.2em;
-    cursor: default;
-  }
-  .left-curved-container {
-    width: 50%; /* Ajuste la largeur pour éviter le dépassement */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    background-color: #828977;
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
-    border-top-right-radius: 0%;   
-    border-bottom-right-radius: 0%;
-  }
-  .right-curved-container {
-    width: 50%; /* Ajuste la largeur pour éviter le dépassement */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    background-color: #828977;
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
-    border-top-left-radius: 0%;   
-    border-bottom-left-radius: 0%;
-  }
-  /* Conteneur rempli */
-  .filled {
+   margin: auto;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   margin-top: 100px;
+   gap: 50px;
+   width: 100%;
+   max-width: 1200px;
+}
+a {
+   color: #828977;
+   font-size: 0.8em;
+}
+.switch {
+   position: relative;
+   display: flex;
+   background-color: #828977;
+   color: #E4D8C8;
+   height : 52.4px;
+   width: 300px;
+   border-radius: 10px;
+   justify-content: center;
+   align-items: stretch;
+   text-align: center;
+   font-size: 1.2em;
+   cursor: default;
+}
+.left-curved-container {
+   width: 50%; /* Ajuste la largeur pour éviter le dépassement */
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   text-align: center;
+   background-color: #828977;
+   border-top-left-radius: 10px;
+   border-bottom-left-radius: 10px;
+   border-top-right-radius: 0%;   
+   border-bottom-right-radius: 0%;
+}
+.right-curved-container {
+   width: 50%; /* Ajuste la largeur pour éviter le dépassement */
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   text-align: center;
+   background-color: #828977;
+   border-top-right-radius: 10px;
+   border-bottom-right-radius: 10px;
+   border-top-left-radius: 0%;   
+   border-bottom-left-radius: 0%;
+}
+/* Conteneur rempli */
+.filled {
       background-color: transparent;
       color: #E4D8C8;
       border: 3.5px solid #828977;
       cursor: pointer;
-  }
-  /* Conteneur vide avec bord coloré */
-  .empty {
+}
+/* Conteneur vide avec bord coloré */
+.empty {
       background-color: #E4D8C8;
       color: #828977;
       border: 3.5px solid #828977;
       cursor: default;
-  }
-  .box {
-    width: 48%; /* Ajuste la largeur pour éviter le dépassement */
-    padding: 20px;
-    text-align: center;
-  }
+}
+.box {
+   width: 48%; /* Ajuste la largeur pour éviter le dépassement */
+   padding: 20px;
+   text-align: center;
+}
 
-  .wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-  }
-  .formulaire {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-    flex-wrap: wrap;
-    max-width: 1000px;
-    justify-content: center;
-    align-items: center;
-  }
-  .button {
-    position: relative;
-    display: flex;
-    background-color: #828977;
-    color: #E4D8C8;
-    height : 52.4px;
-    width: 300px;
-    border-radius: 10px;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    font-size: 1.2em;
-    cursor: pointer;
-    margin: 0 auto;
-  }
-  .wrapper-row {
-    display: inline-block; /* Adapte sa taille au contenu */
-    border: 2px solid gray;
-    padding: 10px;
-    align-items: stretch;
-  }
-  .wrapper-col {
-    display: flex;
-    gap: 20px;
-    border: 2px solid gray;
-    padding: 10px;
-    width: max-content;
-  }
-  .column {
-    display: flex;
-    flex-direction: column;
-    width: 300px;
-  }
-  .column--gap {
-    gap: 20px;
-  }
-  .row {
+.wrapper {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   gap: 20px;
+}
+.formulaire {
+   display: flex;
+   flex-direction: column;
+   gap: 40px;
+   flex-wrap: wrap;
+   max-width: 1000px;
+   justify-content: center;
+   align-items: center;
+}
+.button {
+   position: relative;
+   display: flex;
+   background-color: #828977;
+   color: #E4D8C8;
+   height : 52.4px;
+   width: 300px;
+   border-radius: 10px;
+   justify-content: center;
+   align-items: center;
+   text-align: center;
+   font-size: 1.2em;
+   cursor: pointer;
+   margin: 0 auto;
+}
+.wrapper-row {
+   display: inline-block; /* Adapte sa taille au contenu */
+   border: 2px solid gray;
+   padding: 10px;
+   align-items: stretch;
+}
+.wrapper-col {
+   display: flex;
+   gap: 20px;
+   border: 2px solid gray;
+   padding: 10px;
+   width: max-content;
+}
+.column {
+   display: flex;
+   flex-direction: column;
+   width: 300px;
+}
+.column--gap {
+   gap: 20px;
+}
+.row {
       display: flex;
       flex-direction: row;
       gap: 20px;
-  }
-  .row--full {
-    /* S'adapte au conteneur (parent) */
-    width: 100%;
-    justify-content: space-between;
-  }
-  .row--auto {
-    /* S'adapte au contenu (enfants) */
-    width: max-content;
-    gap: 20px;
-  }
+}
+.row--full {
+   /* S'adapte au conteneur (parent) */
+   width: 100%;
+   justify-content: space-between;
+}
+.row--auto {
+   /* S'adapte au contenu (enfants) */
+   width: max-content;
+   gap: 20px;
+}
 
-  .curved-container {
+.curved-container {
       flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 52.4px;
-    width: 100%;
-    max-width: 620px;
-    padding: 2px;
-    border: 3.5px solid #828977;
-    border-radius: 10px;
+   display: flex;
+   flex-direction: column;
+   height: 52.4px;
+   width: 100%;
+   max-width: 620px;
+   padding: 2px;
+   border: 3.5px solid #828977;
+   border-radius: 10px;
 
-    background-color: transparent;
-    color: #828977;
-    text-align: left;
-  }
+   background-color: transparent;
+   color: #828977;
+   text-align: left;
+}
 
-  .label {
-    font-size: 0.9em;
-    margin-bottom: 4px;
-  }
-  .input-zone {
-    flex: 1;
-    width: 100%;
-    border: none;
-    outline: none;
-    font-size: 1em;
-    background: transparent;
-    color: #828977;
-  }
-  
+.label {
+   font-size: 0.9em;
+   margin-bottom: 4px;
+}
+.input-zone {
+   flex: 1;
+   width: 100%;
+   border: none;
+   outline: none;
+   font-size: 1em;
+   background: transparent;
+   color: #828977;
+}
 
-  .input-with-icon {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
 
-  .input-with-icon .input-zone {
-    flex: 1;
-  }
+.input-with-icon {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+}
 
-  .fa-eye {
-    font-size: 1.2em;
-    cursor: pointer;
-  }
+.input-with-icon .input-zone {
+   flex: 1;
+}
 
-  .password-rules {
-    font-size: 0.6em;
-    color: #828977;
-  }
-  
+.fa-eye {
+   font-size: 1.2em;
+   cursor: pointer;
+}
+
+.password-rules {
+   font-size: 0.6em;
+   color: #828977;
+}
    </style>
-   <link rel="stylesheet" href="../TEMPLATE/teteaupied.css">
+
    <title>Connexion</title>
 
 </head>

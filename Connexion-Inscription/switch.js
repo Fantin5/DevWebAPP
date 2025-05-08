@@ -13,10 +13,15 @@ function swapStyles() {
     // Vérifier quel bouton est actif et afficher la section correspondante
     if (box1.classList.contains("filled")) {
         loginSection.style.display = "none";
-        registerSection.style.display = "block";
+        registerSection.style.display = "flex";
+        box1.style.pointerEvents = "auto";
+        box2.style.pointerEvents = "none";
+
     } else {
-        loginSection.style.display = "block";
+        loginSection.style.display = "flex";
         registerSection.style.display = "none";
+        box1.style.pointerEvents = "none";
+        box2.style.pointerEvents = "auto";
     }
 }
 
@@ -27,4 +32,6 @@ document.getElementById("box2").addEventListener("click", swapStyles);
 // Masquer la section "Créer un compte" au chargement
 document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("register-section").style.display = "none";
+    // Rendre le premier bouton non cliquable (par défaut actif)
+    document.getElementById("box1").style.pointerEvents = "none";
 });

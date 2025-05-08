@@ -1,137 +1,207 @@
+
+* {
+   box-sizing: border-box;
+   box-shadow: 0 0 0 0;
+}
+
 body {
-    margin: 0;    
-    /* en relative pour pouvoir positionner le footer correctement */
+   margin: 0;
+   padding: 0;
+   min-height: 100vh;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   text-align: right;
+   background: #E4D8C8;
+   font-family: sans-serif;
+   color: #828977;
 }
-/*1 partie header */
-.header{
-    background-color: #828977 ;
-    color: #E4D8C8;
-    display: flex;
-    gap: 40px;
-
+main {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   margin-top: 100px;
+   gap: 50px;
+   width: 100%;
+   max-width: 1200px;
 }
-/* ici la taille du logo adapte la taille du container mais on peut faire differemment en reglant directement la taille du header puis celle du logo */
-.logo{
-    height: 50px;
+a {
+   color: #828977;
+   font-size: 0.8em;
 }
-
-
-.container-icones{
-    display: flex;
-    position: absolute;
-    right:10px;
-    top: 10px;
-    gap: 20px;
-
+.switch {
+   position: relative;
+   display: flex;
+   background-color: #828977;
+   color: #E4D8C8;
+   height : 52.4px;
+   width: 300px;
+   border-radius: 10px;
+   justify-content: center;
+   align-items: stretch;
+   text-align: center;
+   font-size: 1.2em;
+   cursor: default;
 }
-.connexion-profil{
-    color: #E4D8C8
+.left-curved-container {
+   width: 50%; /* Ajuste la largeur pour éviter le dépassement */
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   text-align: center;
+   background-color: #828977;
+   border-top-left-radius: 10px;
+   border-bottom-left-radius: 10px;
+   border-top-right-radius: 0%;   
+   border-bottom-right-radius: 0%;
 }
-
-
-/* 7 footer */
-/* 
-.footer{
-    background-color: #828977;
-    height: 80px;
-    bottom: 0px;
-    right: 0px;
-    left: 0px;
+.right-curved-container {
+   width: 50%; /* Ajuste la largeur pour éviter le dépassement */
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   text-align: center;
+   background-color: #828977;
+   border-top-right-radius: 10px;
+   border-bottom-right-radius: 10px;
+   border-top-left-radius: 0%;   
+   border-bottom-left-radius: 0%;
 }
-
-.footer1{
-    color: #E4D8C8;
-    left: 80px;
-    bottom:45px ;
-    font-weight: bold;
+/* Conteneur rempli */
+.filled {
+      background-color: transparent;
+      color: #E4D8C8;
+      border: 3.5px solid #828977;
+      cursor: pointer;
 }
-.footer2{
-    color: #E4D8C8;
-    left: 150px;
-    bottom:45px ;
-    font-weight: bold;
+/* Conteneur vide avec bord coloré */
+.empty {
+      background-color: #E4D8C8;
+      color: #828977;
+      border: 3.5px solid #828977;
+      cursor: default;
 }
-.footer3{
-    color: #E4D8C8;
-    left: 225px;
-    bottom:45px ;
-    font-weight: bold;
-}
-
-.fa-phone{
-    color: #E4D8C8;
-    font-size: 28px;
-    left: 900px;
-    bottom:45px ;
-}
-.footer4{
-    color: #E4D8C8;
-    left: 935px;
-    bottom:45px ;
-    font-weight: bold;
-}
-.footer5{
-    color: #E4D8C8;
-    left: 935px;
-    bottom:10px ;
-    font-weight: bold;
-}
-.fa-envelope{
-    color: #E4D8C8;
-    font-size: 28px;
-    left: 900px;
-    bottom:10px ;
-
-}
-.footer6{
-    color: #E4D8C8;
-    left: 1130px;
-    bottom:45px ;
-    font-weight: bold;
-}
-.fa-facebook-f{
-    font-size: 28px;
-    color: #E4D8C8;
-    left: 1100px;
-    bottom:45px ;
-
-}
-.footer7{
-    color: #E4D8C8;
-    left: 1130px;
-    bottom:10px ;
-    font-weight: bold;
-}
-.fa-instagram{
-    font-size: 28px;
-    color: #E4D8C8;
-    left: 1100px;
-    bottom:10px ;
-
-}
-.footer8{
-    color: #E4D8C8;
-    left: 1310px;
-    top:10px ;
-    font-weight: bold;
-}
-.footer9{
-    color: #E4D8C8;
-    left: 1310px;
-    top:35px ;
-    font-weight: bold;
+.box {
+   width: 48%; /* Ajuste la largeur pour éviter le dépassement */
+   padding: 20px;
+   text-align: center;
 }
 
-
-
-.conditions{
-    display: inline-block;
+.wrapper {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   gap: 20px;
+}
+.formulaire {
+   display: flex;
+   flex-direction: column;
+   gap: 40px;
+   flex-wrap: wrap;
+   max-width: 1000px;
+   justify-content: center;
+   align-items: center;
+}
+.button {
+   position: relative;
+   display: flex;
+   background-color: #828977;
+   color: #E4D8C8;
+   height : 52.4px;
+   width: 300px;
+   border-radius: 10px;
+   justify-content: center;
+   align-items: center;
+   text-align: center;
+   font-size: 1.2em;
+   cursor: pointer;
+   margin: 0 auto;
+}
+.wrapper-row {
+   display: inline-block; /* Adapte sa taille au contenu */
+   border: 2px solid gray;
+   padding: 10px;
+   align-items: stretch;
+}
+.wrapper-col {
+   display: flex;
+   gap: 20px;
+   border: 2px solid gray;
+   padding: 10px;
+   width: max-content;
+}
+.column {
+   display: flex;
+   flex-direction: column;
+   width: 300px;
+}
+.column--gap {
+   gap: 20px;
+}
+.row {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+}
+.row--full {
+   /* S'adapte au conteneur (parent) */
+   width: 100%;
+   justify-content: space-between;
+}
+.row--auto {
+   /* S'adapte au contenu (enfants) */
+   width: max-content;
+   gap: 20px;
 }
 
-.fa-square-plus{
-    color: #828977;
-    font-size: 70px;
+.curved-container {
+      flex: 1;
+   display: flex;
+   flex-direction: column;
+   height: 52.4px;
+   width: 100%;
+   max-width: 620px;
+   padding: 2px;
+   border: 3.5px solid #828977;
+   border-radius: 10px;
 
-    top:250px ;
-    left: 100px;
-} */
+   background-color: transparent;
+   color: #828977;
+   text-align: left;
+}
+
+.label {
+   font-size: 0.9em;
+   margin-bottom: 4px;
+}
+.input-zone {
+   flex: 1;
+   width: 100%;
+   border: none;
+   outline: none;
+   font-size: 1em;
+   background: transparent;
+   color: #828977;
+}
+
+
+.input-with-icon {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+}
+
+.input-with-icon .input-zone {
+   flex: 1;
+}
+
+.fa-eye {
+   font-size: 1.2em;
+   cursor: pointer;
+}
+
+.password-rules {
+   font-size: 0.6em;
+   color: #828977;
+}
