@@ -471,6 +471,7 @@ $priceText = $isPaid ? number_format($activity["prix"], 2) . " €" : "Gratuit";
             }
         });
     </script>
+    
 </body>
 </html>
 
