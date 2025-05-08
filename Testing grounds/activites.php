@@ -120,7 +120,7 @@ function getTagClass($tag) {
     </style>
   </head>
   <body>
-    <header class="header">
+    <header>
       <a href="./main.php">
         <img
           class="logo"
@@ -294,7 +294,7 @@ function getTagClass($tag) {
 
     
 
-    <footer class="footer">
+    <footer>
       <ul>
         <li><a href="#">FAQ</a></li>
         <li><a href="#">CGU</a></li>
