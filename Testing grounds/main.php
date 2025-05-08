@@ -143,7 +143,7 @@ function getTagClass($tag) {
 </div>
   </div>
 </div>
-
+<!-- hey -->
 
     <!-- 5 partie barre de separation -->
     <div class="barre-de-separation"></div>

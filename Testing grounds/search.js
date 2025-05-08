@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             return;
         }
+        // hey
         
         // Sinon, on filtre les activités
         activityCards.forEach(card => {
