@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
             card.addEventListener('click', function(e) {
                 // Ne pas rediriger si l'utilisateur a cliqué sur le bouton "Ajouter au panier"
                 if (e.target.closest('.add-to-cart-button') || e.target.closest('.panier-item-remove')) {
+                    e.stopPropagation(); // Arrêter la propagation de l'événement
                     return;
                 }
                 
@@ -31,5 +32,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = 'activite.php?id=' + activityId;
             });
         }
+    });
+    
+    // Ajout d'un gestionnaire d'événements spécifique pour les boutons d'ajout au panier
+    document.querySelectorAll('.add-to-cart-button').forEach(button => {
+        button.addEventListener('click', function(e) {
+            // Empêcher la propagation vers la carte parent
+            e.stopPropagation();
+        });
     });
 });

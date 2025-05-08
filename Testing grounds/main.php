@@ -469,54 +469,7 @@ function getTagClass($tag) {
         <li>Samedi : 10h à 16h</li>
       </ul>
 </footer>
-  <script>
-  // Script pour le slider d'activités gratuites
-  document.addEventListener('DOMContentLoaded', function() {
-    const freeActivitiesSlider = document.getElementById('free-activities-slider');
-    const prevButton = document.querySelector('.free-activities-section .slider-button.prev');
-    const nextButton = document.querySelector('.free-activities-section .slider-button.next');
-    
-    if (freeActivitiesSlider && prevButton && nextButton) {
-      let scrollAmount = 0;
-      const cardWidth = 320; // Largeur approximative d'une carte + marge
-      
-      prevButton.addEventListener('click', function() {
-        scrollAmount -= cardWidth;
-        if (scrollAmount < 0) scrollAmount = 0;
-        freeActivitiesSlider.scrollTo({
-          left: scrollAmount,
-          behavior: 'smooth'
-        });
-      });
-      
-      nextButton.addEventListener('click', function() {
-        scrollAmount += cardWidth;
-        const maxScroll = freeActivitiesSlider.scrollWidth - freeActivitiesSlider.clientWidth;
-        if (scrollAmount > maxScroll) scrollAmount = maxScroll;
-        freeActivitiesSlider.scrollTo({
-          left: scrollAmount,
-          behavior: 'smooth'
-        });
-      });
-    }
-    
- 
-    
-    // Formulaire de newsletter
-    const newsletterForm = document.querySelector('.newsletter-form');
-    if (newsletterForm) {
-      newsletterForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const email = this.querySelector('input[type="email"]').value;
-        if (email) {
-          showNotification('Merci pour votre inscription à notre newsletter !', 'success');
-          this.reset();
-        }
-      });
-    }
-  });
-</script>
-  </body>
+
   <script src="Carousel.js"></script>
   <script src="search.js"></script>
   
@@ -530,9 +483,54 @@ function getTagClass($tag) {
         // Mettre à jour le compteur du panier
         updateCartCount();
         
+        // Script pour le slider d'activités gratuites
+        const freeActivitiesSlider = document.getElementById('free-activities-slider');
+        const prevButton = document.querySelector('.free-activities-section .slider-button.prev');
+        const nextButton = document.querySelector('.free-activities-section .slider-button.next');
+        
+        if (freeActivitiesSlider && prevButton && nextButton) {
+            let scrollAmount = 0;
+            const cardWidth = 320; // Largeur approximative d'une carte + marge
+            
+            prevButton.addEventListener('click', function() {
+                scrollAmount -= cardWidth;
+                if (scrollAmount < 0) scrollAmount = 0;
+                freeActivitiesSlider.scrollTo({
+                    left: scrollAmount,
+                    behavior: 'smooth'
+                });
+            });
+            
+            nextButton.addEventListener('click', function() {
+                scrollAmount += cardWidth;
+                const maxScroll = freeActivitiesSlider.scrollWidth - freeActivitiesSlider.clientWidth;
+                if (scrollAmount > maxScroll) scrollAmount = maxScroll;
+                freeActivitiesSlider.scrollTo({
+                    left: scrollAmount,
+                    behavior: 'smooth'
+                });
+            });
+        }
+        
+        // Formulaire de newsletter
+        const newsletterForm = document.querySelector('.newsletter-form');
+        if (newsletterForm) {
+            newsletterForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = this.querySelector('input[type="email"]').value;
+                if (email) {
+                    showNotification('Merci pour votre inscription à notre newsletter !', 'success');
+                    this.reset();
+                }
+            });
+        }
+        
         // Ajouter des événements pour les boutons "Ajouter au panier"
         document.querySelectorAll('.add-to-cart-button').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function(event) {
+                // Empêcher la propagation de l'événement pour éviter de naviguer vers la page détaillée
+                event.stopPropagation();
+                
                 const id = this.getAttribute('data-id');
                 const titre = this.getAttribute('data-title');
                 const prix = parseFloat(this.getAttribute('data-price'));
@@ -556,9 +554,6 @@ function getTagClass($tag) {
                 setTimeout(() => {
                     this.classList.remove('clicked');
                 }, 300);
-                
-                // Afficher une notification
-                showNotification('Activité ajoutée au panier !', 'success');
             });
         });
         
@@ -575,6 +570,7 @@ function getTagClass($tag) {
                 cart.push(item);
                 localStorage.setItem('synapse-cart', JSON.stringify(cart));
                 updateCartCount();
+                showNotification('Activité ajoutée au panier !', 'success');
             } else {
                 showNotification('Cette activité est déjà dans votre panier.', 'info');
             }
@@ -587,18 +583,10 @@ function getTagClass($tag) {
             if (cartCount) {
                 cartCount.textContent = cart.length;
             }
-        
-        // Fonction pour mettre à jour le compteur du panier
-        function updateCartCount() {
-            const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
-            const cartCount = document.getElementById('panier-count');
-            if (cartCount) {
-                cartCount.textContent = cart.length;
-            }
         }
         
-         // Fonction pour afficher une notification
-         function showNotification(message, type = 'success') {
+        // Fonction pour afficher une notification
+        function showNotification(message, type = 'success') {
             // Supprimer les notifications existantes
             const existingNotifications = document.querySelectorAll('.notification');
             existingNotifications.forEach(notification => {
@@ -620,7 +608,7 @@ function getTagClass($tag) {
             notification.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
             
             // Ajouter la notification au document
-            document.body.insertBefore(notification, document.body.firstChild);
+            document.body.appendChild(notification);
             
             // Faire disparaître la notification après 3 secondes
             setTimeout(() => {
