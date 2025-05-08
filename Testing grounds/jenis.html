@@ -45,6 +45,9 @@
 
     <div class="page-wrapper">
       <div class="form-container">
+        <div class="leaf-decoration leaf-top-left"></div>
+        <div class="leaf-decoration leaf-bottom-right"></div>
+
         <h1>Créer une nouvelle activité</h1>
         <p class="subtitle">Partagez votre passion avec la communauté</p>
 
@@ -53,6 +56,7 @@
           method="POST"
           enctype="multipart/form-data"
           id="activity-form"
+          class="nature-form"
         >
           <div class="form-group">
             <label for="titre"
@@ -126,7 +130,13 @@
                   id="date_ou_periode"
                   name="date_ou_periode"
                   placeholder="Ex: Tous les samedis / 15 juin 2025 / etc."
+                  required
                 />
+                <p id="date-validation-message" class="validation-message"></p>
+                <p class="field-hint">
+                  Formats acceptés: date simple (15/06/2025, 15 juin 2025) ou
+                  période (01/06/2025 - 15/06/2025, Tous les lundis)
+                </p>
               </div>
             </div>
 
@@ -198,6 +208,57 @@
                     />
                     <label for="creativite">Créativité</label>
                   </div>
+
+                  <!-- Nouveaux tags -->
+                  <div class="tag-option">
+                    <input
+                      type="checkbox"
+                      id="ecologie"
+                      name="tags[]"
+                      value="ecologie"
+                    />
+                    <label for="ecologie">Écologie</label>
+                  </div>
+
+                  <div class="tag-option">
+                    <input
+                      type="checkbox"
+                      id="randonnee"
+                      name="tags[]"
+                      value="randonnee"
+                    />
+                    <label for="randonnee">Randonnée</label>
+                  </div>
+
+                  <div class="tag-option">
+                    <input
+                      type="checkbox"
+                      id="jardinage"
+                      name="tags[]"
+                      value="jardinage"
+                    />
+                    <label for="jardinage">Jardinage</label>
+                  </div>
+
+                  <div class="tag-option">
+                    <input
+                      type="checkbox"
+                      id="meditation"
+                      name="tags[]"
+                      value="meditation"
+                    />
+                    <label for="meditation">Méditation</label>
+                  </div>
+
+                  <div class="tag-option">
+                    <input
+                      type="checkbox"
+                      id="artisanat"
+                      name="tags[]"
+                      value="artisanat"
+                    />
+                    <label for="artisanat">Artisanat</label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -208,10 +269,11 @@
               >Image de l'activité <span class="required">*</span></label
             >
             <p class="image-hint">
-              Format recommandé: 16:9 (sera utilisé comme vignette)
+              Format recommandé: 4:3 (sera utilisé comme vignette)
             </p>
             <div class="image-upload-container">
               <div class="upload-zone" id="upload-zone">
+                <i class="fa-solid fa-leaf"></i>
                 <i class="fa-solid fa-cloud-arrow-up"></i>
                 <p>Glissez et déposez une image ici<br />ou</p>
                 <button
@@ -309,7 +371,7 @@
         <span class="close-modal">&times;</span>
         <h2>Recadrer l'image</h2>
         <p class="modal-subtitle">
-          Ajustez le cadre pour obtenir une vignette optimale (format 16:9)
+          Ajustez le cadre pour obtenir une vignette optimale (format 4:3)
         </p>
         <div class="cropper-container">
           <img id="cropper-image" src="#" alt="Image à recadrer" />

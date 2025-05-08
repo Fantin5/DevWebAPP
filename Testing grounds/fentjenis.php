@@ -88,12 +88,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
         
-        // Ajouter automatiquement le tag 'gratuit' si l'activité est gratuite
-        if ($prix == 0) {
-            $sql_gratuit = "INSERT INTO tags (activite_id, nom_tag) VALUES ($activity_id, 'gratuit')";
-            $conn->query($sql_gratuit);
-        }
-        
         // Rediriger vers la page d'accueil avec un message de succès
         header("Location: main.php?success=1");
         exit();
