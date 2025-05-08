@@ -106,27 +106,6 @@ function getTagClass($tag) {
       </div>
     </header>
 
-    <!-- 2 partie bandeau -->
-    <img
-      class="bandeau"
-      src="WhatsApp Image 2025-02-04 à 14.55.09_a4664920.jpg"
-    />
-    <!-- Section d'accueil -->
-<div class="welcome-section">
-  <div class="welcome-content">
-    <h1>Bienvenue sur <span>SYNAPSE</span></h1>
-    <p>Un espace où partager des moments uniques et découvrir des activités exceptionnelles</p>
-    <div class="welcome-buttons">
-  <a href="activites.php" class="welcome-btn primary">Découvrir les activités</a>
-  <a href="./jenis.html" class="welcome-btn secondary">
-    <i class="fa-solid fa-plus"></i> Créer une activité
-  </a>
-</div>
-  </div>
-</div>
-
-
-
     <!-- 4 Partie carousel -->
     <div class="carrousel">
       <!-- Conteneur des images -->
@@ -151,6 +130,20 @@ function getTagClass($tag) {
         <div class="carrousel-indicator"></div>
       </div>
     </div>
+    <!-- Section d'accueil -->
+<div class="welcome-section">
+  <div class="welcome-content">
+    <h1>Bienvenue sur <span>SYNAPSE</span></h1>
+    <p>Un espace où partager des moments uniques et découvrir des activités exceptionnelles</p>
+    <div class="welcome-buttons">
+  <a href="activites.php" class="welcome-btn primary">Découvrir les activités</a>
+  <a href="./jenis.html" class="welcome-btn secondary">
+    <i class="fa-solid fa-plus"></i> Créer une activité
+  </a>
+</div>
+  </div>
+</div>
+
 
     <!-- 5 partie barre de separation -->
     <div class="barre-de-separation"></div>
