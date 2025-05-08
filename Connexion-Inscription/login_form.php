@@ -16,7 +16,7 @@ if(isset($_POST['login_submit'])){
       $row = mysqli_fetch_array($result);
       if (password_verify($password, $row['password'])) {
          $_SESSION['user_id'] = $row['id']; // exemple d'ajout de session
-         header('Location: ../Page d-accueil/Accueil.html');
+         header('Location: ../Testing grounds/main.php'); // Redirige vers la page principale après connexion
          exit();
       } else {
          $login_error[] = 'Mot de passe incorrect !';

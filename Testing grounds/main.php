@@ -104,7 +104,7 @@ function getTagClass($tag) {
         <i class="fa-solid fa-user"></i>
       </a>
       <div class="dropdown-content">
-        <a href="../Connexion-Inscription/Connexion.html"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
+        <a href="../Connexion-Inscription/login_form.php"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
         <a href="mes-activites.php"><i class="fa-solid fa-calendar-days"></i> Mes activités</a>
         <a href="#"><i class="fa-solid fa-gear"></i> Paramètres</a>
       </div>
