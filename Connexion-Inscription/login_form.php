@@ -71,8 +71,11 @@ if(isset($_POST['register_submit'])){
    <meta charset="UTF-8">
    <meta http-equiv="X-UA-Compatible" content="IE=edge">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
    <link rel="stylesheet" href="../TEMPLATE/teteaupied.css">
+
+   <!-- Inclure Font Awesome -->
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+   <script src="https://kit.fontawesome.com/8e8b336406.js" crossorigin="anonymous"></script>
 
    <style>
       
@@ -219,12 +222,12 @@ a {
 .row {
       display: flex;
       flex-direction: row;
-      gap: 20px;
+      align-items: center;
 }
 .row--full {
    /* S'adapte au conteneur (parent) */
    width: 100%;
-   justify-content: space-between;
+   gap: 20px;
 }
 .row--auto {
    /* S'adapte au contenu (enfants) */
@@ -274,7 +277,6 @@ a {
 }
 
 .fa-eye {
-   font-size: 1.2em;
    cursor: pointer;
 }
 
@@ -341,9 +343,11 @@ a {
                      <div class="row">
                         <div class="column">
                            <span class="label">Mot de passe</span>
-                           <input type="password" name="password" required class="input-zone">
+                           <input id="login-password" type="password" name="password" required class="input-zone">
                         </div>
-                        <i class="fa-light fa-eye" id="eye-closed"></i>
+                        <div style="display:inline-block">
+                           <i id="toggle-login-password" class="fa-regular fa-eye fa-xl" style="color: #828977"></i>
+                        </div>
                      </div>
                   </div>
                   <a href="">Mot de passe oublié</a>
@@ -366,7 +370,7 @@ a {
             <div id="register-section" class="formulaire">
                <div class="row row--auto">
                   <div class="column column--gap">
-                     <div class="row">
+                     <div class="row row--full">
                         <div class="curved-container">
                               <span class="label">Nom</span>
                               <input type="text" name="name" required class="input-zone">
@@ -376,7 +380,7 @@ a {
                               <input type="text" name="first_name" required class="input-zone">
                         </div>
                      </div>
-                     <div class="row">
+                     <div class="row row--full">
                         <div class="curved-container">
                               <span class="label">Age</span>
                               <input type="number" name="age" min="1" required class="input-zone">
@@ -396,21 +400,25 @@ a {
                   <div class="column column--gap">
                      <div class="curved-container">
                         <div class="row">
-                        <div class="column">
-                           <span class="label">Mot de passe</span>
-                           <input type="password" name="password" required class="input-zone">
-                        </div>
-                        <i class="fa-light fa-eye"></i>
+                           <div class="column">
+                              <span class="label">Mot de passe</span>
+                              <input id="register-password" type="password" name="password" required class="input-zone">
+                           </div>
+                           <div style="display:inline-block">
+                              <i id="toggle-register-password" class="fa-regular fa-eye fa-xl" style="color: #828977"></i>
+                           </div>
                         </div>
                      </div>
                   
                      <div class="curved-container">
                         <div class="row">
-                        <div class="column">
-                           <span class="label">Confirmation du mot de passe</span>
-                           <input type="password" name="cpassword" required class="input-zone">
-                        </div>
-                        <i class="fa-light fa-eye"></i>
+                           <div class="column">
+                              <span class="label">Confirmation du mot de passe</span>
+                              <input id="register-confirm" type="password" name="cpassword" required class="input-zone">
+                           </div>
+                           <div style="display:inline-block">
+                              <i id="toggle-register-confirm" class="fa-regular fa-eye fa-xl" style="color: #828977"></i>
+                           </div>
                         </div>
                      </div>
                   

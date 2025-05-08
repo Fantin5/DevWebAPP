@@ -34,4 +34,28 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("register-section").style.display = "none";
     // Rendre le premier bouton non cliquable (par défaut actif)
     document.getElementById("box1").style.pointerEvents = "none";
+
+    // Gestion des boutons de bascule
+    document.getElementById("box1").addEventListener("click", swapStyles);
+    document.getElementById("box2").addEventListener("click", swapStyles);
+
+    // Affichage / masquage du mot de passe (connexion)
+    const toggleConfigs = [
+        { toggleId: "toggle-login-password", inputId: "login-password" },
+        { toggleId: "toggle-register-password", inputId: "register-password" },
+        { toggleId: "toggle-register-confirm", inputId: "register-confirm" },
+    ];
+
+    toggleConfigs.forEach(({ toggleId, inputId }) => {
+        const toggle = document.getElementById(toggleId);
+        const input = document.getElementById(inputId);
+        if (toggle && input) {
+            toggle.addEventListener("click", function () {
+                const isPassword = input.type === "password";
+                input.type = isPassword ? "text" : "password";
+                this.classList.toggle("fa-eye");
+                this.classList.toggle("fa-eye-slash");
+            });
+        }
+    });
 });
