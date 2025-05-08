@@ -106,30 +106,67 @@ function getTagClass($tag) {
       </div>
     </header>
 
-    <!-- 4 Partie carousel -->
-    <div class="carrousel">
-      <!-- Conteneur des images -->
-      <div class="carrousel-images">
-        <img src="chef.png" alt="Image 1" />
-        <img src="grotte.png" alt="Image 2" />
-        <img src="sports.png" alt="Image 3" />
-        <img src="tableau.png" alt="Image 4" />
-        <img src="yoga.png" alt="Image 5" />
-      </div>
-
-      <!-- Boutons de navigation -->
-      <button class="carrousel-button prev">&#10094;</button>
-      <button class="carrousel-button next">&#10095;</button>
-
-      <!-- Indicateurs de position -->
-      <div class="carrousel-indicators">
-        <div class="carrousel-indicator active"></div>
-        <div class="carrousel-indicator"></div>
-        <div class="carrousel-indicator"></div>
-        <div class="carrousel-indicator"></div>
-        <div class="carrousel-indicator"></div>
+<!-- Carousel Section -->
+<div class="carrousel">
+  <!-- Images container -->
+  <div class="carrousel-images">
+    <div class="carrousel-slide">
+      <img src="Musée-dOrsay-Histoire.jpg" alt="Culinary Experiences" />
+      <div class="carrousel-caption">
+        <h3>Culinary Experiences</h3>
+        <p>Discover the finest cooking classes and food tours in your area</p>
       </div>
     </div>
+    <div class="carrousel-slide">
+      <img src="grotte.png" alt="Cave Exploration" />
+      <div class="carrousel-caption">
+        <h3>Cave Exploration</h3>
+        <p>Embark on a journey through natural wonders and hidden caves</p>
+      </div>
+    </div>
+    <div class="carrousel-slide">
+      <img src="sports.png" alt="Outdoor Sports" />
+      <div class="carrousel-caption">
+        <h3>Outdoor Sports</h3>
+        <p>Push your limits with exciting outdoor activities and adventures</p>
+      </div>
+    </div>
+    <div class="carrousel-slide">
+      <img src="tableau.png" alt="Art Workshops" />
+      <div class="carrousel-caption">
+        <h3>Art Workshops</h3>
+        <p>Express your creativity in our professional art studios</p>
+      </div>
+    </div>
+    <div class="carrousel-slide">
+      <img src="yoga.png" alt="Wellness Retreats" />
+      <div class="carrousel-caption">
+        <h3>Wellness Retreats</h3>
+        <p>Find your inner peace with meditation and yoga sessions</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Navigation buttons -->
+  <button class="carrousel-button prev">
+    <i class="fa fa-chevron-left" aria-hidden="true"></i>
+  </button>
+  <button class="carrousel-button next">
+    <i class="fa fa-chevron-right" aria-hidden="true"></i>
+  </button>
+  
+  <!-- Position indicators -->
+  <div class="carrousel-indicators">
+    <div class="carrousel-indicator active"></div>
+    <div class="carrousel-indicator"></div>
+    <div class="carrousel-indicator"></div>
+    <div class="carrousel-indicator"></div>
+    <div class="carrousel-indicator"></div>
+  </div>
+  
+  <!-- Progress bar for auto-sliding -->
+  <div class="carrousel-progress"></div>
+</div>
     <!-- Section d'accueil -->
 <div class="welcome-section">
   <div class="welcome-content">
@@ -143,7 +180,7 @@ function getTagClass($tag) {
 </div>
   </div>
 </div>
-<!-- hey -->
+
 
     <!-- 5 partie barre de separation -->
     <div class="barre-de-separation"></div>

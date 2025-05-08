@@ -1,114 +1,190 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const carousel = document.querySelector('.carrousel');
     const carouselImages = document.querySelector('.carrousel-images');
-    const images = carouselImages.querySelectorAll('img');
+    const slides = carouselImages.querySelectorAll('.carrousel-slide');
     const indicators = document.querySelectorAll('.carrousel-indicator');
     const prevButton = document.querySelector('.carrousel-button.prev');
     const nextButton = document.querySelector('.carrousel-button.next');
-    
+    const progressBar = document.querySelector('.carrousel-progress');
+
     let currentIndex = 0;
-    const totalImages = images.length;
+    const totalSlides = slides.length;
     let autoplayInterval;
-    
-    // Fonction pour afficher une image
-    function showImage(index) {
-        // Mettre à jour l'index courant
-        currentIndex = index;
-        
-        // Gérer les débordements
-        if (currentIndex < 0) {
-            currentIndex = totalImages - 1;
-        } else if (currentIndex >= totalImages) {
-            currentIndex = 0;
+    const autoplayDuration = 5000; // 5 seconds for each slide
+
+    // Function to update active slide and progress bar
+    function showSlide(index) {
+        if (index < 0) {
+            index = totalSlides - 1;
+        } else if (index >= totalSlides) {
+            index = 0;
         }
-        
-        // Calculer la position de déplacement
+
+        currentIndex = index;
         const translateValue = -currentIndex * 100;
         carouselImages.style.transform = `translateX(${translateValue}%)`;
-        
-        // Mettre à jour les indicateurs
+
+        slides.forEach((slide, i) => {
+            slide.classList.toggle('active', i === currentIndex);
+        });
+
         indicators.forEach((indicator, i) => {
             indicator.classList.toggle('active', i === currentIndex);
         });
+
+        resetProgressBar();
     }
-    
-    // Fonction pour aller à l'image suivante
-    function nextImage() {
-        showImage(currentIndex + 1);
+
+    // Initialize carousel
+    function initCarousel() {
+        slides.forEach((slide, i) => {
+            slide.style.left = `${i * 100}%`;
+            if (i === 0) {
+                slide.classList.add('active');
+            }
+        });
+
+        startAutoplay();
     }
-    
-    // Fonction pour aller à l'image précédente
-    function prevImage() {
-        showImage(currentIndex - 1);
+
+    // Start progress bar animation
+    function startProgressBar() {
+        progressBar.style.width = '0%';
+        progressBar.style.transition = `width ${autoplayDuration}ms linear`;
+        progressBar.style.width = '100%';
     }
-    
-    // Fonction pour démarrer le défilement automatique
+
+    // Reset progress bar
+    function resetProgressBar() {
+        progressBar.style.transition = 'none';
+        progressBar.style.width = '0%';
+        void progressBar.offsetWidth; // Force browser reflow
+        startProgressBar();
+    }
+
+    // Navigate to next slide
+    function nextSlide() {
+        showSlide(currentIndex + 1);
+    }
+
+    // Navigate to previous slide
+    function prevSlide() {
+        showSlide(currentIndex - 1);
+    }
+
+    // Start autoplay
     function startAutoplay() {
-        stopAutoplay(); // Arrêter l'autoplay existant avant d'en créer un nouveau
-        autoplayInterval = setInterval(nextImage, 5000); // Changer d'image toutes les 5 secondes
+        stopAutoplay();
+        autoplayInterval = setInterval(nextSlide, autoplayDuration);
+        startProgressBar();
     }
-    
-    // Fonction pour arrêter le défilement automatique
+
+    // Stop autoplay
     function stopAutoplay() {
         if (autoplayInterval) {
             clearInterval(autoplayInterval);
         }
     }
-    
-    // Écouteurs d'événements pour les boutons
-    nextButton.addEventListener('click', function() {
-        nextImage();
+
+    // Event listeners
+    nextButton.addEventListener('click', function () {
+        nextSlide();
         stopAutoplay();
-        startAutoplay(); // Redémarrer l'autoplay après un clic manuel
+        startAutoplay();
     });
-    
-    prevButton.addEventListener('click', function() {
-        prevImage();
+
+    prevButton.addEventListener('click', function () {
+        prevSlide();
         stopAutoplay();
-        startAutoplay(); // Redémarrer l'autoplay après un clic manuel
+        startAutoplay();
     });
-    
-    // Écouteurs d'événements pour les indicateurs
+
     indicators.forEach((indicator, index) => {
-        indicator.addEventListener('click', function() {
-            showImage(index);
+        indicator.addEventListener('click', function () {
+            showSlide(index);
             stopAutoplay();
-            startAutoplay(); // Redémarrer l'autoplay après un clic manuel
+            startAutoplay();
         });
     });
-    
-    // Arrêter l'autoplay au survol du carrousel
+
     carousel.addEventListener('mouseenter', stopAutoplay);
-    
-    // Redémarrer l'autoplay quand la souris quitte le carrousel
     carousel.addEventListener('mouseleave', startAutoplay);
-    
-    // Démarrer l'autoplay au chargement de la page
-    startAutoplay();
-    
-    // Gérer le swipe sur mobile
+
+    // Handle swipe gestures for mobile
     let touchStartX = 0;
     let touchEndX = 0;
-    
-    carousel.addEventListener('touchstart', function(e) {
+
+    carousel.addEventListener('touchstart', function (e) {
         touchStartX = e.changedTouches[0].screenX;
         stopAutoplay();
-    }, false);
-    
-    carousel.addEventListener('touchend', function(e) {
+    });
+
+    carousel.addEventListener('touchend', function (e) {
         touchEndX = e.changedTouches[0].screenX;
         handleSwipe();
         startAutoplay();
-    }, false);
-    
+    });
+
     function handleSwipe() {
-        if (touchEndX < touchStartX) {
-            // Swipe vers la gauche, on va à la prochaine image
-            nextImage();
-        } else if (touchEndX > touchStartX) {
-            // Swipe vers la droite, on va à l'image précédente
-            prevImage();
+        const swipeThreshold = 50; // Minimum distance required for a swipe
+        const swipeDistance = touchEndX - touchStartX;
+
+        if (Math.abs(swipeDistance) >= swipeThreshold) {
+            if (swipeDistance < 0) {
+                nextSlide();
+            } else {
+                prevSlide();
+            }
         }
     }
+
+    // Add keyboard navigation
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft') {
+            prevSlide();
+            stopAutoplay();
+            startAutoplay();
+        } else if (e.key === 'ArrowRight') {
+            nextSlide();
+            stopAutoplay();
+            startAutoplay();
+        }
+    });
+
+    // Initialize carousel
+    initCarousel();
 });
-// hey
+/* Updated Carousel Caption Styling */
+.carrousel-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 25px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+    color: white;
+    z-index: 5; /* Ensure it's above the image */
+    /* Remove the initial transform and opacity for testing */
+    /* transform: translateY(20px); */
+    /* opacity: 0; */
+    /* transition: transform 0.5s ease, opacity 0.5s ease; */
+  }
+  
+  /* Let's make all captions visible initially and fix active state later */
+  .carrousel-slide .carrousel-caption {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  
+  .carrousel-caption h3 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    font-weight: 700;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5); /* Add text shadow for better visibility */
+  }
+  
+  .carrousel-caption p {
+    font-size: 16px;
+    margin: 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Add text shadow for better visibility */
+  }
