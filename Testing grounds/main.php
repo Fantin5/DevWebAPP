@@ -481,22 +481,23 @@ function getTagClass($tag) {
           echo '<p class="no-activities">Aucune activité disponible pour le moment.</p>';
       }
       ?>
+    </section>
 
 <!-- Section newsletter -->
-<section class="newsletter-section">
-  <div class="newsletter-container">
-    <div class="newsletter-content">
-      <i class="fa-solid fa-envelope-open-text"></i>
-      <h2>Restez informé(e)</h2>
-      <p>Recevez en avant-première nos nouvelles activités et offres exclusives</p>
-      <form class="newsletter-form">
-        <input type="email" placeholder="Votre adresse e-mail" required>
-        <button type="submit">S'abonner</button>
-      </form>
+  <section class="newsletter-section">
+    <div class="newsletter-container">
+      <div class="newsletter-content">
+        <i class="fa-solid fa-envelope-open-text"></i>
+        <h2>Restez informé(e)</h2>
+        <p>Recevez en avant-première nos nouvelles activités et offres exclusives</p>
+        <form class="newsletter-form">
+          <input type="email" placeholder="Votre adresse e-mail" required>
+          <button type="submit">S'abonner</button>
+        </form>
+      </div>
     </div>
-  </div>
-</section>
-    <footer class="footer">
+  </section>
+<footer class="footer">
       <ul>
         <li><a href="#">FAQ</a></li>
         <li><a href="#">CGU</a></li>
@@ -516,8 +517,8 @@ function getTagClass($tag) {
         <li>Lundi - Vendredi : 9h à 20h</li>
         <li>Samedi : 10h à 16h</li>
       </ul>
-    </footer>
-    <script>
+</footer>
+  <script>
   // Script pour le slider d'activités gratuites
   document.addEventListener('DOMContentLoaded', function() {
     const freeActivitiesSlider = document.getElementById('free-activities-slider');
