@@ -75,36 +75,42 @@ function getTagClass($tag) {
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
+    <link rel="stylesheet" href="dropdown-menu.css">
   </head>
   <body>
-    <header class="header">
-      <img
-        class="logo"
-        src="../Connexion-Inscription/logo-transparent-pdf.png"
-        alt="Site logo"
-      />
-      <nav class="nav-links">
-        <ul>
-          <li><a href="#">Devenez Prestataire</a></li>
-          <li><a href="../Concept/concept.html">Concept</a></li>
-        </ul>
-      </nav>
+<header class="header">
+  <a href="./main.php">
+    <img
+      class="logo"
+      src="../Connexion-Inscription/logo-transparent-pdf.png"
+      alt="Logo Synapse"
+    />
+  </a>
+  <nav class="nav-links">
+    <ul>
+      <li><a href="#">Devenez Prestataire</a></li>
+      <li><a href="../Concept/concept.html">Concept</a></li>
+    </ul>
+  </nav>
 
-      <div class="icon">
-        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-        <a href="panier.html" class="panier-link" aria-label="Panier">
-          <i class="fa-solid fa-cart-shopping"></i>
-          <span class="panier-count" id="panier-count">0</span>
-        </a>
-        <a
-          href="Connexion-Inscription/login_form.php"
-          class="connexion-profil"
-          aria-label="Connexion"
-        >
-          <i class="fa-solid fa-user"></i>
-        </a>
+  <div class="icon">
+    <i class="fa-regular fa-heart" aria-label="Favoris"></i>
+    <a href="panier.html" class="panier-link" aria-label="Panier">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <span class="panier-count" id="panier-count">0</span>
+    </a>
+    <div class="profile-dropdown">
+      <a href="#" class="connexion-profil" aria-label="Profil">
+        <i class="fa-solid fa-user"></i>
+      </a>
+      <div class="dropdown-content">
+        <a href="../Connexion-Inscription/Connexion.html"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
+        <a href="mes-activites.php"><i class="fa-solid fa-calendar-days"></i> Mes activités</a>
+        <a href="#"><i class="fa-solid fa-gear"></i> Paramètres</a>
       </div>
-    </header>
+    </div>
+  </div>
+</header>
 
 <!-- Carousel Section -->
 <div class="carrousel">
@@ -501,6 +507,43 @@ function getTagClass($tag) {
 
   <script src="Carousel.js"></script>
   <script src="search.js"></script>
+  <style>
+/* Style pour le menu déroulant du profil */
+.profile-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: white;
+  min-width: 200px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dropdown-content a {
+  color: #333;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.dropdown-content a:hover {
+  background-color: #f5f5f5;
+}
+
+.profile-dropdown:hover .dropdown-content {
+  display: block;
+}
+</style>
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -649,7 +692,7 @@ function getTagClass($tag) {
         }
     });
   </script>
-  
+  <script src="profile-dropdown.js"></script>
   <!-- Ajout du script pour gérer les clics sur les cartes d'activités -->
   <script src="activity-card-handler.js"></script>
 </html>
