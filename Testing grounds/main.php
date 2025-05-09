@@ -507,43 +507,7 @@ function getTagClass($tag) {
 
   <script src="Carousel.js"></script>
   <script src="search.js"></script>
-  <style>
-/* Style pour le menu déroulant du profil */
-.profile-dropdown {
-  position: relative;
-  display: inline-block;
-}
 
-.dropdown-content {
-  display: none;
-  position: absolute;
-  right: 0;
-  background-color: white;
-  min-width: 200px;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-  z-index: 1;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.dropdown-content a {
-  color: #333;
-  padding: 12px 16px;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: all 0.2s;
-}
-
-.dropdown-content a:hover {
-  background-color: #f5f5f5;
-}
-
-.profile-dropdown:hover .dropdown-content {
-  display: block;
-}
-</style>
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
