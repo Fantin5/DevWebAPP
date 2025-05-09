@@ -32,7 +32,7 @@ if(isset($_POST['register_submit'])){
 
    $name = mysqli_real_escape_string($conn, $_POST['name']);
    $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
-   $age = mysqli_real_escape_string($conn, $_POST['age']);
+   $birthday = mysqli_real_escape_string($conn, $_POST['age']);
    $phone_nb = mysqli_real_escape_string($conn, $_POST['phone_nb']);
    $email = mysqli_real_escape_string($conn, $_POST['email']);
    $user_type = $_POST['user_type'];
@@ -54,8 +54,8 @@ if(isset($_POST['register_submit'])){
        // Hachage du mot de passe
        $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
        // Insertion en base
-       $insert = "INSERT INTO user_form(name, first_name, age, phone_nb, email, password)
-                  VALUES('$name', '$first_name', '$age', '$phone_nb', '$email', '$pass')";
+       $insert = "INSERT INTO user_form(name, first_name, birthday, phone_nb, email, password)
+                  VALUES('$name', '$first_name', '$birthday', '$phone_nb', '$email', '$pass')";
        mysqli_query($conn, $insert);
        header('Location: ../Connexion-Inscription/login_form.php');
        exit();
@@ -382,8 +382,8 @@ a {
                      </div>
                      <div class="row row--full">
                         <div class="curved-container">
-                              <span class="label">Age</span>
-                              <input type="number" name="age" min="1" required class="input-zone">
+                              <span class="label">Date de naissance</span>
+                              <input type="date" name="birthday" required class="input-zone">
                         </div>
                         <div class="curved-container">
                               <span class="label">Tel</span>
