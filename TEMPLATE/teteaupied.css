@@ -15,7 +15,6 @@ body {
 }
 header, footer {
   width: 100%;
-  max-width: 1200px; /* Center the header and footer */
 }
 header {
   display: flex;

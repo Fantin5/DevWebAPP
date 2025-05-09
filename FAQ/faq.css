@@ -45,7 +45,7 @@
   
   
 
-/*Couleur fond*/
+/Couleur fond/
 body {
     background-color: #E4D8C8;
     margin: 0;
@@ -98,5 +98,5 @@ body {
   }
   
   .footer a:hover {
-    text-decoration: underline;
-  }
+    text-decoration: underline;
+  }

@@ -71,47 +71,108 @@ function getTagClass($tag) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Accueil</title>
     <link rel="stylesheet" href="main.css" />
-    <link rel="stylesheet" href="../TEMPLATE/teteaupied.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
+    <link rel="stylesheet" href="dropdown-menu.css">
   </head>
   <body>
-    <header class="header">
-      <img
-        class="logo"
-        src="../Connexion-Inscription/logo-transparent-pdf.png"
-        alt="Site logo"
-      />
-      <nav class="nav-links">
-        <ul>
-          <li><a href="#">Devenez Prestataire</a></li>
-          <li><a href="../Concept/concept.html">Concept</a></li>
-        </ul>
-      </nav>
-
-      <div class="icon">
-        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-        <a href="panier.html" class="panier-link" aria-label="Panier">
-          <i class="fa-solid fa-cart-shopping"></i>
-          <span class="panier-count" id="panier-count">0</span>
-        </a>
-        <a
-          href="../Connexion-Inscription/Connexion.html"
-          class="connexion-profil"
-          aria-label="Connexion"
-        >
-          <i class="fa-solid fa-user"></i>
-        </a>
-      </div>
-    </header>
-
-    <!-- 2 partie bandeau -->
+<header class="header">
+  <a href="./main.php">
     <img
-      class="bandeau"
-      src="WhatsApp Image 2025-02-04 à 14.55.09_a4664920.jpg"
+      class="logo"
+      src="../Connexion-Inscription/logo-transparent-pdf.png"
+      alt="Logo Synapse"
     />
+  </a>
+  <nav class="nav-links">
+    <ul>
+      <li><a href="#">Devenez Prestataire</a></li>
+      <li><a href="../Concept/concept.html">Concept</a></li>
+    </ul>
+  </nav>
+
+  <div class="icon">
+    <i class="fa-regular fa-heart" aria-label="Favoris"></i>
+    <a href="panier.html" class="panier-link" aria-label="Panier">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <span class="panier-count" id="panier-count">0</span>
+    </a>
+    <div class="profile-dropdown">
+      <a href="#" class="connexion-profil" aria-label="Profil">
+        <i class="fa-solid fa-user"></i>
+      </a>
+      <div class="dropdown-content">
+        <a href="../Connexion-Inscription/login_form.php"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
+        <a href="mes-activites.php"><i class="fa-solid fa-calendar-days"></i> Mes activités</a>
+        <a href="../Compte/mon-espace.html"><i class="fa-solid fa-gear"></i> Paramètres</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Carousel Section -->
+<div class="carrousel">
+  <!-- Images container -->
+  <div class="carrousel-images">
+    <div class="carrousel-slide">
+      <img src="Musée-dOrsay-Histoire.jpg" alt="Culinary Experiences" />
+      <div class="carrousel-caption">
+        <h3>Culinary Experiences</h3>
+        <p>Discover the finest cooking classes and food tours in your area</p>
+      </div>
+    </div>
+    <div class="carrousel-slide">
+      <img src="grotte.png" alt="Cave Exploration" />
+      <div class="carrousel-caption">
+        <h3>Cave Exploration</h3>
+        <p>Embark on a journey through natural wonders and hidden caves</p>
+      </div>
+    </div>
+    <div class="carrousel-slide">
+      <img src="sports.png" alt="Outdoor Sports" />
+      <div class="carrousel-caption">
+        <h3>Outdoor Sports</h3>
+        <p>Push your limits with exciting outdoor activities and adventures</p>
+      </div>
+    </div>
+    <div class="carrousel-slide">
+      <img src="tableau.png" alt="Art Workshops" />
+      <div class="carrousel-caption">
+        <h3>Art Workshops</h3>
+        <p>Express your creativity in our professional art studios</p>
+      </div>
+    </div>
+    <div class="carrousel-slide">
+      <img src="yoga.png" alt="Wellness Retreats" />
+      <div class="carrousel-caption">
+        <h3>Wellness Retreats</h3>
+        <p>Find your inner peace with meditation and yoga sessions</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Navigation buttons -->
+  <button class="carrousel-button prev">
+    <i class="fa fa-chevron-left" aria-hidden="true"></i>
+  </button>
+  <button class="carrousel-button next">
+    <i class="fa fa-chevron-right" aria-hidden="true"></i>
+  </button>
+  
+  <!-- Position indicators -->
+  <div class="carrousel-indicators">
+    <div class="carrousel-indicator active"></div>
+    <div class="carrousel-indicator"></div>
+    <div class="carrousel-indicator"></div>
+    <div class="carrousel-indicator"></div>
+    <div class="carrousel-indicator"></div>
+  </div>
+  
+  <!-- Progress bar for auto-sliding -->
+  <div class="carrousel-progress"></div>
+</div>
     <!-- Section d'accueil -->
 <div class="welcome-section">
   <div class="welcome-content">
@@ -126,32 +187,6 @@ function getTagClass($tag) {
   </div>
 </div>
 
-
-
-    <!-- 4 Partie carousel -->
-    <div class="carrousel">
-      <!-- Conteneur des images -->
-      <div class="carrousel-images">
-        <img src="chef.png" alt="Image 1" />
-        <img src="grotte.png" alt="Image 2" />
-        <img src="sports.png" alt="Image 3" />
-        <img src="tableau.png" alt="Image 4" />
-        <img src="yoga.png" alt="Image 5" />
-      </div>
-
-      <!-- Boutons de navigation -->
-      <button class="carrousel-button prev">&#10094;</button>
-      <button class="carrousel-button next">&#10095;</button>
-
-      <!-- Indicateurs de position -->
-      <div class="carrousel-indicators">
-        <div class="carrousel-indicator active"></div>
-        <div class="carrousel-indicator"></div>
-        <div class="carrousel-indicator"></div>
-        <div class="carrousel-indicator"></div>
-        <div class="carrousel-indicator"></div>
-      </div>
-    </div>
 
     <!-- 5 partie barre de separation -->
     <div class="barre-de-separation"></div>
@@ -450,7 +485,7 @@ function getTagClass($tag) {
   </section>
 <footer class="footer">
       <ul>
-        <li><a href="#">FAQ</a></li>
+        <li><a href="../FAQ/faq.html">FAQ</a></li>
         <li><a href="#">CGU</a></li>
         <li><a href="#">Mentions Légales</a></li>
       </ul>
@@ -472,6 +507,43 @@ function getTagClass($tag) {
 
   <script src="Carousel.js"></script>
   <script src="search.js"></script>
+  <style>
+/* Style pour le menu déroulant du profil */
+.profile-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: white;
+  min-width: 200px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dropdown-content a {
+  color: #333;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.dropdown-content a:hover {
+  background-color: #f5f5f5;
+}
+
+.profile-dropdown:hover .dropdown-content {
+  display: block;
+}
+</style>
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -620,7 +692,7 @@ function getTagClass($tag) {
         }
     });
   </script>
-  
+  <script src="profile-dropdown.js"></script>
   <!-- Ajout du script pour gérer les clics sur les cartes d'activités -->
   <script src="activity-card-handler.js"></script>
 </html>

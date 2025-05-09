@@ -12,7 +12,6 @@ if(isset($_POST['submit'])){
    $age = mysqli_real_escape_string($conn, $_POST['age']);
    $phone_nb = mysqli_real_escape_string($conn, $_POST['phone_nb']);
    $email = mysqli_real_escape_string($conn, $_POST['email']);
-   $user_type = $_POST['user_type'];
 
    $select = " SELECT * FROM user_form WHERE email = '$email' ";
 
@@ -31,10 +30,10 @@ if(isset($_POST['submit'])){
        // Hachage du mot de passe
        $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
        // Insertion en base
-       $insert = "INSERT INTO user_form(name, first_name, age, phone_nb, email, password, user_type)
-                  VALUES('$name', '$first_name', '$age', '$phone_nb', '$email', '$pass', '$user_type')";
+       $insert = "INSERT INTO user_form(name, first_name, age, phone_nb, email, password)
+                  VALUES('$name', '$first_name', '$age', '$phone_nb', '$email', '$pass')";
        mysqli_query($conn, $insert);
-       header('Location: ../Page d-Accueil/Accueil.html');
+       header('Location: ../Testing grounds/main.php');
        exit();
     }
  }
@@ -59,11 +58,13 @@ if(isset($_POST['submit'])){
 </head>
 <body>
     <header>
-      <img
-        class="logo"
-        src="../Connexion-Inscription/logo-transparent-pdf.png"
-        alt="Site logo"
-      />
+    <a href="./Testing grounds/main.php">
+        <img
+          class="logo"
+          src="../Connexion-Inscription/logo-transparent-pdf.png"
+          alt="Logo Synapse"
+        />
+      </a>
       <!-- hello  -->
       <nav class="nav-links">
         <ul>
@@ -103,10 +104,6 @@ if(isset($_POST['submit'])){
           <input type="email" name="email" required placeholder="Entrez Votre Email">
           <input type="password" name="password" required placeholder="Entrez Votre Mot de Passe">
           <input type="password" name="cpassword" required placeholder="Confirmez Votre Mot de Passe">
-          <select name="user_type">
-            <option value="user">Client</option>
-            <option value="admin">Prestataire</option>
-
           </select>
           <input type="submit" name="submit" value="Créez un Compte" class="form-btn">
           <p>Vous avez déja un Compte? <a href="login_form.php">Connectez-Vous</a></p>
