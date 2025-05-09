@@ -1,0 +1,100 @@
+/* Styles pour le menu déroulant du profil */
+.profile-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: white;
+    min-width: 200px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    z-index: 1000;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 10px;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-content a {
+    color: #333;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+}
+
+.dropdown-content a:hover {
+    background-color: #f5f5f5;
+}
+
+.dropdown-content a.active {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    color: #45a163;
+}
+
+/* Afficher le menu au survol ou lorsque l'élément a la classe 'show' */
+.profile-dropdown:hover .dropdown-content,
+.profile-dropdown.show .dropdown-content {
+    display: block;
+}
+
+/* Classe ajoutée par JavaScript pour garder le menu ouvert après un clic */
+.profile-dropdown.show .connexion-profil {
+    color: white;
+}
+
+/* Ajout d'une petite flèche indicatrice */
+.profile-dropdown .connexion-profil::after {
+    content: '';
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #e4d8c8;
+    margin-left: 5px;
+    vertical-align: middle;
+    transition: transform 0.2s;
+}
+
+.profile-dropdown:hover .connexion-profil::after {
+    transform: rotate(180deg);
+}
+
+/* Transition sur l'icône de profil */
+.connexion-profil {
+    color: #e4d8c8;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.connexion-profil:hover {
+    color: white;
+}
+
+/* Divider entre les éléments du menu */
+.dropdown-divider {
+    height: 1px;
+    background-color: #eee;
+    margin: 5px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dropdown-content {
+        right: -100px;
+    }
+}

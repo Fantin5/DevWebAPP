@@ -4,13 +4,13 @@
     box-sizing: border-box;
   }
   
-  body {
+  /* body {
     display: flex;
     flex-direction: column;
     min-height: 100vh; 
     margin: 0;
     font-family: sans-serif;
-  }
+  } */
   
   .header {
     display: flex;
