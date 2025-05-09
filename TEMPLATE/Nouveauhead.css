@@ -1,3 +1,44 @@
+/* Header & Navigation Styles */
+header {
+    width: 100%; /* Full width */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #828977;
+    color: #E4D8C8;
+    padding: 10px 35px;
+  }
+  
+  .logo {
+    height: 50px;
+  }
+  
+  .connexion-profil {
+    color: #E4D8C8;
+  }
+  
+  .nav-links ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    gap: 90px;
+  }
+  
+  .nav-links a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+
+
+
+
+
+
+
+
 /* Styles pour le menu déroulant du profil */
 .profile-dropdown {
     position: relative;
@@ -98,3 +139,156 @@
         right: -100px;
     }
 }
+/* Styles pour les icônes */
+.icon {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+  }
+  
+  .icon i {
+    color: #E4D8C8;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  
+  .icon i:hover {
+    color: white;
+  }
+  
+  /* Styles pour le panier */
+  .panier-link {
+    position: relative;
+    display: inline-block;
+    color: #E4D8C8;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  
+  .panier-link:hover {
+    color: #fff;
+  }
+  
+  .panier-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #45a163;
+    color: #111;
+    font-size: 12px;
+    font-weight: bold;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+/* Styles de base pour le corps et la mise en page */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Assure que le corps prend toute la hauteur de la fenêtre */
+    font-family: sans-serif;
+    background-color: #E4D8C8;
+  }
+  
+  /* Améliorations spécifiques pour le header */
+  .header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #828977;
+    color: #E4D8C8;
+    padding: 10px 35px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Ajoute une légère ombre */
+  }
+  
+  /* Mise en page des liens de navigation */
+  .nav-links {
+    flex: 1; /* Prend l'espace disponible */
+    display: flex;
+    justify-content: center; /* Centre les liens */
+  }
+  
+  .nav-links ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    gap: 90px;
+  }
+  
+  /* Amélioration des icônes */
+  .icon {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    margin-left: auto; /* Pousse les icônes à droite */
+  }
+  
+  /* Ajustez la taille des icônes si nécessaire */
+  .icon i {
+    font-size: 20px; /* Ajustez la taille selon celle de main.php */
+  }
+
+
+
+
+
+
+
+
+
+
+
+     /* Footer Styles */
+  footer {
+    width: 100%; /* Full width */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    background-color: #828977;
+    color: #e4d8c8;
+    padding: 15px 30px;
+    font-weight: bold;
+    font-size: 16px;
+  }
+  
+  footer ul {
+    list-style: none;
+  }
+  
+  footer ul li {
+    margin-bottom: 10px;
+  }
+  
+  footer a {
+    color: inherit;
+    text-decoration: none;
+  }
+  
+  footer a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Main Content Container */
+  main {
+    flex: 1; /* Takes all available space between header and footer */
+    width: 100%;
+  }
+
+
+  .dropdown-content a i {
+    color: #000000; /* Couleur verte pour les icônes */
+}
+    
