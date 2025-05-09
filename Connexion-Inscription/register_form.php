@@ -33,7 +33,7 @@ if(isset($_POST['submit'])){
        $insert = "INSERT INTO user_form(name, first_name, age, phone_nb, email, password)
                   VALUES('$name', '$first_name', '$age', '$phone_nb', '$email', '$pass')";
        mysqli_query($conn, $insert);
-       header('Location: ../Page d-Accueil/Accueil.html');
+       header('Location: ../Testing grounds/main.php');
        exit();
     }
  }
@@ -58,11 +58,13 @@ if(isset($_POST['submit'])){
 </head>
 <body>
     <header>
-      <img
-        class="logo"
-        src="../Connexion-Inscription/logo-transparent-pdf.png"
-        alt="Site logo"
-      />
+    <a href="./Testing grounds/main.php">
+        <img
+          class="logo"
+          src="../Connexion-Inscription/logo-transparent-pdf.png"
+          alt="Logo Synapse"
+        />
+      </a>
       <!-- hello  -->
       <nav class="nav-links">
         <ul>
