@@ -37,68 +37,7 @@
     line-height: 1.6;
   }
   
-  /* Header & Navigation Styles */
-  header {
-    width: 100%; /* Full width */
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: #828977;
-    color: #E4D8C8;
-    padding: 10px 35px;
-  }
-  
-  .logo {
-    height: 50px;
-  }
-  
-  .connexion-profil {
-    color: #E4D8C8;
-  }
-  
-  .nav-links ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    gap: 90px;
-  }
-  
-  .nav-links a {
-    color: inherit;
-    text-decoration: none;
-    font-weight: bold;
-  }
-  
-  /* Footer Styles */
-  footer {
-    width: 100%; /* Full width */
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    background-color: #828977;
-    color: #e4d8c8;
-    padding: 15px 30px;
-    font-weight: bold;
-    font-size: 16px;
-  }
-  
-  footer ul {
-    list-style: none;
-  }
-  
-  footer ul li {
-    margin-bottom: 10px;
-  }
-  
-  footer a {
-    color: inherit;
-    text-decoration: none;
-  }
-  
-  footer a:hover {
-    text-decoration: underline;
-  }
+ 
   
   /* Main Content Container */
   main {
@@ -1098,3 +1037,36 @@
     animation: fadeIn 0.5s forwards;
   }
   
+  .carrousel-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 25px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+    color: white;
+    z-index: 5; /* Ensure it's above the image */
+    /* Remove the initial transform and opacity for testing */
+    /* transform: translateY(20px); */
+    /* opacity: 0; */
+    /* transition: transform 0.5s ease, opacity 0.5s ease; */
+  }
+  
+  /* Let's make all captions visible initially and fix active state later */
+  .carrousel-slide .carrousel-caption {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  
+  .carrousel-caption h3 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    font-weight: 700;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5); /* Add text shadow for better visibility */
+  }
+  
+  .carrousel-caption p {
+    font-size: 16px;
+    margin: 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Add text shadow for better visibility */
+  }

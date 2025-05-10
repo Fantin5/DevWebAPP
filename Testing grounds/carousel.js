@@ -155,36 +155,3 @@ document.addEventListener('DOMContentLoaded', function () {
     initCarousel();
 });
 /* Updated Carousel Caption Styling */
-.carrousel-caption {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    padding: 25px;
-    background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
-    color: white;
-    z-index: 5; /* Ensure it's above the image */
-    /* Remove the initial transform and opacity for testing */
-    /* transform: translateY(20px); */
-    /* opacity: 0; */
-    /* transition: transform 0.5s ease, opacity 0.5s ease; */
-  }
-  
-  /* Let's make all captions visible initially and fix active state later */
-  .carrousel-slide .carrousel-caption {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  
-  .carrousel-caption h3 {
-    font-size: 24px;
-    margin-bottom: 10px;
-    font-weight: 700;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.5); /* Add text shadow for better visibility */
-  }
-  
-  .carrousel-caption p {
-    font-size: 16px;
-    margin: 0;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Add text shadow for better visibility */
-  }

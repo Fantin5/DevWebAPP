@@ -75,77 +75,87 @@ function getTagClass($tag) {
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
-    <link rel="stylesheet" href="dropdown-menu.css">
+  
+    <link rel="stylesheet" href="../TEMPLATE/Nouveauhead.css" />
   </head>
   <body>
-<header class="header">
-  <a href="./main.php">
-    <img
-      class="logo"
-      src="../Connexion-Inscription/logo-transparent-pdf.png"
-      alt="Logo Synapse"
-    />
-  </a>
-  <nav class="nav-links">
-    <ul>
-      <li><a href="#">Devenez Prestataire</a></li>
-      <li><a href="../Concept/concept.html">Concept</a></li>
-    </ul>
-  </nav>
 
-  <div class="icon">
-    <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-    <a href="panier.html" class="panier-link" aria-label="Panier">
-      <i class="fa-solid fa-cart-shopping"></i>
-      <span class="panier-count" id="panier-count">0</span>
+   
+ 
+
+    <!-- Header -->
+<header class="header">
+    <a href="../Testing grounds/main.php">
+      <img
+        class="logo"
+        src="../Connexion-Inscription/logo-transparent-pdf.png"
+        alt="Logo Synapse"
+      />
     </a>
-    <div class="profile-dropdown">
-      <a href="#" class="connexion-profil" aria-label="Profil">
-        <i class="fa-solid fa-user"></i>
+    <nav class="nav-links">
+      <ul>
+        <li><a href="#">Devenez Prestataire</a></li>
+        <li><a href="../Concept/concept.html">Concept</a></li>
+      </ul>
+    </nav>
+  
+    <div class="icon">
+      <i class="fa-regular fa-heart" aria-label="Favoris"></i>
+      <a href="../Testing grounds/panier.html" class="panier-link" aria-label="Panier">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <span class="panier-count" id="panier-count">0</span>
       </a>
-      <div class="dropdown-content">
-        <a href="../Connexion-Inscription/login_form.php"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
-        <a href="mes-activites.php"><i class="fa-solid fa-calendar-days"></i> Mes activités</a>
-        <a href="../Compte/mon-espace.html"><i class="fa-solid fa-gear"></i> Paramètres</a>
+      <div class="profile-dropdown">
+        <a href="#" class="connexion-profil" aria-label="Profil">
+          <i class="fa-solid fa-user"></i>
+        </a>
+        <div class="dropdown-content">
+          <a href="../Connexion-Inscription/login_form.php"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
+          <a href="../Testing grounds/mes-activites.php"><i class="fa-solid fa-calendar-days"></i> Mes activités</a>
+          <a href="../Compte/mon-espace.html"><i class="fa-solid fa-gear"></i> Paramètres</a>
+        </div>
       </div>
     </div>
-  </div>
-</header>
+  </header>
+
+
+ 
+
 
 <!-- Carousel Section -->
 <div class="carrousel">
   <!-- Images container -->
   <div class="carrousel-images">
     <div class="carrousel-slide">
-      <img src="Musée-dOrsay-Histoire.jpg" alt="Culinary Experiences" />
+      <img src="./images/Musée-dOrsay-Histoire.jpg" alt="Culinary Experiences" />
       <div class="carrousel-caption">
         <h3>Culinary Experiences</h3>
         <p>Discover the finest cooking classes and food tours in your area</p>
       </div>
     </div>
     <div class="carrousel-slide">
-      <img src="grotte.png" alt="Cave Exploration" />
+      <img src="./images/grotte.jpg" alt="Cave Exploration" />
       <div class="carrousel-caption">
         <h3>Cave Exploration</h3>
         <p>Embark on a journey through natural wonders and hidden caves</p>
       </div>
     </div>
     <div class="carrousel-slide">
-      <img src="sports.png" alt="Outdoor Sports" />
+      <img src="./images/sports.jpg" alt="Outdoor Sports" />
       <div class="carrousel-caption">
         <h3>Outdoor Sports</h3>
         <p>Push your limits with exciting outdoor activities and adventures</p>
       </div>
     </div>
     <div class="carrousel-slide">
-      <img src="tableau.png" alt="Art Workshops" />
+      <img src="./images/art.jpg" alt="Art Workshops" />
       <div class="carrousel-caption">
         <h3>Art Workshops</h3>
         <p>Express your creativity in our professional art studios</p>
       </div>
     </div>
     <div class="carrousel-slide">
-      <img src="yoga.png" alt="Wellness Retreats" />
+      <img src="./images/yoga.jpg" alt="Wellness Retreats" />
       <div class="carrousel-caption">
         <h3>Wellness Retreats</h3>
         <p>Find your inner peace with meditation and yoga sessions</p>
@@ -483,32 +493,32 @@ function getTagClass($tag) {
       </div>
     </div>
   </section>
-<footer class="footer">
-      <ul>
-        <li><a href="../FAQ/faq.html">FAQ</a></li>
-        <li><a href="#">CGU</a></li>
-        <li><a href="#">Mentions Légales</a></li>
-      </ul>
+ <footer class="footer">
+    <ul>
+      <li><a href="../FAQ/faq.html">FAQ</a></li>
+      <li><a href="#">CGU</a></li>
+      <li><a href="#">Mentions Légales</a></li>
+    </ul>
 
-      <ul>
-        <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
-        <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
-      </ul>
-      <ul>
-        <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
-        <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
-      </ul>
+    <ul>
+      <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
+      <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
+    </ul>
+    <ul>
+      <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
+      <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
+    </ul>
 
-      <ul>
-        <li>Lundi - Vendredi : 9h à 20h</li>
-        <li>Samedi : 10h à 16h</li>
-      </ul>
+    <ul>
+      <li>Lundi - Vendredi : 9h à 20h</li>
+      <li>Samedi : 10h à 16h</li>
+    </ul>
 </footer>
 
-  <script src="Carousel.js"></script>
-  <script src="search.js"></script>
 
-  
+   
+ 
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Initialiser le panier s'il n'existe pas déjà
@@ -656,9 +666,10 @@ function getTagClass($tag) {
         }
     });
   </script>
-  <script src="profile-dropdown.js"></script>
+  <script src="../TEMPLATE/Nouveauhead.js"></script>
   <!-- Ajout du script pour gérer les clics sur les cartes d'activités -->
   <script src="activity-card-handler.js"></script>
+    <script src="carousel.js"></script>
 </html>
 
 <?php
