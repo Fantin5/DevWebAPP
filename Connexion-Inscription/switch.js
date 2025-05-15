@@ -25,9 +25,7 @@ function swapStyles() {
     }
 }
 
-// Initialisation : ajouter le clic uniquement sur le premier conteneur rempli
-document.getElementById("box1").addEventListener("click", swapStyles);
-document.getElementById("box2").addEventListener("click", swapStyles);
+
 
 // Masquer la section "Créer un compte" au chargement
 document.addEventListener("DOMContentLoaded", function () {
@@ -58,4 +56,79 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
     });
+
+
+
+    // Variables globales pour la validation du mot de passe
+        // Variables pour les champs de mot de passe
+    const passwordInput = document.getElementById("register-password");
+    const confirmInput = document.getElementById("register-confirm");
+        // Variables pour les messages de validation
+    const passwordValidationMessage = document.getElementById("password-validation-message");
+    const confirmValidationMessage = document.getElementById("confirm-validation-message");
+    
+    // Ajout d'écouteurs d'événements pour la validation du mot de passe
+    passwordInput.addEventListener('input', validatePasswordFormat);
+    passwordInput.addEventListener('blur', validatePasswordFormat);
+    confirmInput.addEventListener('input', validateForm);
+    confirmInput.addEventListener('blur', validateForm);
+
+    // Validation du formulaire d'inscription
+    function validateForm() {
+        console.log("confirmValidationMessage:", confirmValidationMessage);
+        const password = passwordInput.value.trim();
+        const confirmPassword = confirmInput.value.trim();
+    
+        if (password && confirmPassword && password !== confirmPassword) {
+            confirmValidationMessage.textContent = "Les mots de passe ne correspondent pas.";
+            confirmValidationMessage.style.color = "#e74c3c";
+            confirmInput.style.borderColor = "#e74c3c";
+            return false;
+        } else if (confirmPassword && password === confirmPassword) {
+            confirmValidationMessage.textContent = "✓ Les mots de passe correspondent";
+            confirmValidationMessage.style.color = "#2ecc71";
+            confirmInput.style.borderColor = "#2ecc71";
+            return true;
+        } else {
+            confirmValidationMessage.textContent = "";
+            confirmInput.style.borderColor = ""; // ou un style neutre
+            return false;
+        }
+    }
+
+
+    function validatePasswordFormat() {
+        const passwordValue = passwordInput.value.trim();
+        let isValid = false;
+    
+        const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+    
+        if (!passwordValue) {
+            passwordValidationMessage.textContent = "Ce champ est requis.";
+            passwordValidationMessage.style.color = "#e74c3c";
+            passwordInput.style.borderColor = "#e74c3c";
+            isValid = false;
+        } else if (passwordRegex.test(passwordValue)) {
+            passwordValidationMessage.textContent = "✓ Mot de passe valide";
+            passwordValidationMessage.style.color = "#2ecc71";
+            passwordInput.style.borderColor = "#2ecc71";
+            isValid = true;
+        } else {
+            passwordValidationMessage.textContent = "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.";
+            passwordValidationMessage.style.color = "#e74c3c";
+            passwordInput.style.borderColor = "#e74c3c";
+            isValid = false;
+        }
+    
+        // Toujours revalider la correspondance après le format
+        validateForm();
+    
+        return isValid;
+    }
+
+
+
 });
+
+
+

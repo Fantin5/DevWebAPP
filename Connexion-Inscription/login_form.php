@@ -9,8 +9,12 @@ if(isset($_POST['login_submit'])){
    $email = mysqli_real_escape_string($conn, $_POST['email']);
    $password = $_POST['password'];
 
-   $select = " SELECT * FROM user_form WHERE email = '$email'";
-   $result = mysqli_query($conn, $select);
+   $email = $_POST['email'];
+   // Sécuriser l'email contre injections SQL
+   $stmt = $conn->prepare("SELECT * FROM user_form WHERE email = ?");
+   $stmt->bind_param("s", $email);
+   $stmt->execute();
+   $result = $stmt->get_result();
 
    if(mysqli_num_rows($result) > 0){
       $row = mysqli_fetch_array($result);
@@ -32,18 +36,19 @@ if(isset($_POST['register_submit'])){
 
    $name = mysqli_real_escape_string($conn, $_POST['name']);
    $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
-   $birthday = mysqli_real_escape_string($conn, $_POST['age']);
+   $birthday = mysqli_real_escape_string($conn, $_POST['birthday']);
    $phone_nb = mysqli_real_escape_string($conn, $_POST['phone_nb']);
    $email = mysqli_real_escape_string($conn, $_POST['email']);
-   $user_type = $_POST['user_type'];
 
    $select = " SELECT * FROM user_form WHERE email = '$email' ";
-
    $result = mysqli_query($conn, $select);
 
+   if (!preg_match('/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[#?!@$%^&*-]).{8,}$/', $_POST['password'])) {
+      $register_error[] = 'Le mot de passe doit contenir une majuscule, une minuscule, un chiffre, un caractère spécial et au moins 8 caractères.';
+   }
    if ($_POST['password'] != $_POST['cpassword']) {
     $register_error[] = 'Les mots de passe ne correspondent pas!';
- } else {
+   } else {
     // Vérifie si l'email existe déjà
     $select = "SELECT * FROM user_form WHERE email = '$email'";
     $result = mysqli_query($conn, $select);
@@ -222,7 +227,7 @@ a {
 .row {
       display: flex;
       flex-direction: row;
-      align-items: center;
+      align-items: start;
 }
 .row--full {
    /* S'adapte au conteneur (parent) */
@@ -232,7 +237,10 @@ a {
 .row--auto {
    /* S'adapte au contenu (enfants) */
    width: max-content;
-   gap: 20px;
+   gap: 40px;
+}
+.centered {
+   align-items: center;
 }
 
 .curved-container {
@@ -281,8 +289,14 @@ a {
 }
 
 .password-rules {
-   font-size: 0.6em;
-   color: #828977;
+   font-size: 0.62em;
+   text-align: left;
+}
+
+.error-msg {
+   color: #e74c3c;
+   font-size: 0.9em;
+   margin-top: 5px;
 }
    </style>
 
@@ -324,23 +338,23 @@ a {
       </div>
 
       <!-- Affichage "Se connecter" -->
-      <div class="form-container">
+      <div id="login-section" class="form-container">
          <form action="" method="post">
             <?php
-            if(isset($error)){
-               foreach($error as $error){
+            if(isset($login_error)){
+               foreach($login_error as $error){
                   echo '<span class="error-msg">'.$error.'</span>';
-               };
-            };
+               }
+            }
             ?>
-            <div id="login-section" class="formulaire">
+            <div class="formulaire" >
                <div class="column column--gap">
                   <div class="curved-container">
                      <span class="label">E-mail</span>
                      <input type="email" name="email" required class="input-zone">
                   </div>
                   <div class="curved-container">
-                     <div class="row">
+                     <div class="row centered">
                         <div class="column">
                            <span class="label">Mot de passe</span>
                            <input id="login-password" type="password" name="password" required class="input-zone">
@@ -358,16 +372,16 @@ a {
       </div>
 
       <!-- Affichage "Créer un compte" -->
-      <div class="form-container">
-         <form action="" method="post">
+      <div  id="register-section" class="form-container">
+         <form action="" method="post" onsubmit="return validateForm()">
             <?php
-            if(isset($error)){
-               foreach($error as $error){
-                  echo '<span class="error-msg">'.$error.'</span>';
-               };
-            };
+            if(isset($register_error)){
+               foreach($register_error as $error){
+                   echo '<span class="error-msg">'.$error.'</span>';
+               }
+            }
             ?>
-            <div id="register-section" class="formulaire">
+            <div class="formulaire">
                <div class="row row--auto">
                   <div class="column column--gap">
                      <div class="row row--full">
@@ -387,7 +401,7 @@ a {
                         </div>
                         <div class="curved-container">
                               <span class="label">Tel</span>
-                              <input type="tel" name="phone_nb" pattern="[0-9]{10}" required class="input-zone">
+                              <input type="tel" name="phone_nb" pattern="[0-9]{10}" title="Entrez un numéro à 10 chiffres." required class="input-zone">
                         </div>
                      </div>
                      
@@ -399,7 +413,7 @@ a {
                
                   <div class="column column--gap">
                      <div class="curved-container">
-                        <div class="row">
+                        <div class="row centered">
                            <div class="column">
                               <span class="label">Mot de passe</span>
                               <input id="register-password" type="password" name="password" required class="input-zone">
@@ -411,7 +425,7 @@ a {
                      </div>
                   
                      <div class="curved-container">
-                        <div class="row">
+                        <div class="row centered">
                            <div class="column">
                               <span class="label">Confirmation du mot de passe</span>
                               <input id="register-confirm" type="password" name="cpassword" required class="input-zone">
@@ -421,16 +435,10 @@ a {
                            </div>
                         </div>
                      </div>
-                  
-                     <div class="password-rules" style="text-align: left;">
-                        <p>Caractéristiques du mot de passe :</p>
-                        <ul>
-                        <li>8 caractères minimum</li>
-                        <li>Au moins une majuscule</li>
-                        <li>Au moins un chiffre</li>
-                        <li>Au moins un caractère spécial (@#%$&*)</li>
-                        </ul>
-                     </div>
+                     <p id="password-validation-message" class="password-rules">
+                     </p>
+                     <p id="confirm-validation-message" class="password-rules">
+                     </p>
                   </div>
                </div>
                <input type="submit" name="register_submit" value="Créer un compte" class="button">
@@ -462,6 +470,135 @@ a {
       </ul>
    </footer>
 
-   <script src="switch.js"></script>
+   <script>
+      function swapStyles() {
+    let box1 = document.getElementById("box1");
+    let box2 = document.getElementById("box2");
+    let loginSection = document.getElementById("login-section");
+    let registerSection = document.getElementById("register-section");
+
+    // Échanger les classes pour changer la couleur
+    box1.classList.toggle("filled");
+    box1.classList.toggle("empty");
+    box2.classList.toggle("filled");
+    box2.classList.toggle("empty");
+
+    // Vérifier quel bouton est actif et afficher la section correspondante
+    if (box1.classList.contains("filled")) {
+        loginSection.style.display = "none";
+        registerSection.style.display = "flex";
+        box1.style.pointerEvents = "auto";
+        box2.style.pointerEvents = "none";
+
+    } else {
+        loginSection.style.display = "flex";
+        registerSection.style.display = "none";
+        box1.style.pointerEvents = "none";
+        box2.style.pointerEvents = "auto";
+    }
+}
+
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+   // Masquer la section "Créer un compte" au chargement
+    document.getElementById("register-section").style.display = "none";
+    // Rendre le premier bouton non cliquable (par défaut actif)
+    document.getElementById("box1").style.pointerEvents = "none";
+
+    // Gestion des boutons de bascule
+    document.getElementById("box1").addEventListener("click", swapStyles);
+    document.getElementById("box2").addEventListener("click", swapStyles);
+
+    // Affichage / masquage du mot de passe (connexion)
+    const toggleConfigs = [
+        { toggleId: "toggle-login-password", inputId: "login-password" },
+        { toggleId: "toggle-register-password", inputId: "register-password" },
+        { toggleId: "toggle-register-confirm", inputId: "register-confirm" },
+    ];
+
+    toggleConfigs.forEach(({ toggleId, inputId }) => {
+        const toggle = document.getElementById(toggleId);
+        const input = document.getElementById(inputId);
+        if (toggle && input) {
+            toggle.addEventListener("click", function () {
+                const isPassword = input.type === "password";
+                input.type = isPassword ? "text" : "password";
+                this.classList.toggle("fa-eye");
+                this.classList.toggle("fa-eye-slash");
+            });
+        }
+    });
+
+
+
+    // Variables globales pour la validation du mot de passe
+        // Variables pour les champs de mot de passe
+    const passwordInput = document.getElementById("register-password");
+    const confirmInput = document.getElementById("register-confirm");
+        // Variables pour les messages de validation
+    const passwordValidationMessage = document.getElementById("password-validation-message");
+    const confirmValidationMessage = document.getElementById("confirm-validation-message");
+    
+    // Ajout d'écouteurs d'événements pour la validation du mot de passe
+    passwordInput.addEventListener('input', validatePasswordFormat);
+    passwordInput.addEventListener('blur', validatePasswordFormat);
+    confirmInput.addEventListener('input', validateForm);
+    confirmInput.addEventListener('blur', validateForm);
+
+    // Validation du formulaire d'inscription
+    function validateForm() {
+        const password = passwordInput.value.trim();
+        const confirmPassword = confirmInput.value.trim();
+    
+        if (password && confirmPassword && password !== confirmPassword) {
+            confirmValidationMessage.textContent = "Les mots de passe ne correspondent pas.";
+            confirmValidationMessage.style.color = "#e74c3c";
+            confirmInput.style.borderColor = "#e74c3c";
+            return false;
+        } else if (confirmPassword && password === confirmPassword) {
+            confirmValidationMessage.textContent = "✓ Les mots de passe correspondent";
+            confirmValidationMessage.style.color = "#2ecc71";
+            confirmInput.style.borderColor = "#2ecc71";
+            return true;
+        } else {
+            confirmValidationMessage.textContent = "";
+            confirmInput.style.borderColor = ""; // ou un style neutre
+            return false;
+        }
+    }
+
+
+    function validatePasswordFormat() {
+        const passwordValue = passwordInput.value.trim();
+        let isValid = false;
+    
+        const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+    
+        if (!passwordValue) {
+            passwordValidationMessage.textContent = "Ce champ est requis.";
+            passwordValidationMessage.style.color = "#e74c3c";
+            passwordInput.style.borderColor = "#e74c3c";
+            isValid = false;
+        } else if (passwordRegex.test(passwordValue)) {
+            passwordValidationMessage.textContent = "✓ Mot de passe valide";
+            passwordValidationMessage.style.color = "#2ecc71";
+            passwordInput.style.borderColor = "#2ecc71";
+            isValid = true;
+        } else {
+            passwordValidationMessage.textContent = "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.";
+            passwordValidationMessage.style.color = "#e74c3c";
+            passwordInput.style.borderColor = "#e74c3c";
+            isValid = false;
+        }
+    
+        // Toujours revalider la correspondance après le format
+        validateForm();
+    
+        return isValid;
+    }
+});
+   </script>
 </body>
 </html>
