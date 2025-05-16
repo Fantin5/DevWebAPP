@@ -9,7 +9,6 @@ if(isset($_POST['login_submit'])){
    $email = mysqli_real_escape_string($conn, $_POST['email']);
    $password = $_POST['password'];
 
-   $email = $_POST['email'];
    // Sécuriser l'email contre injections SQL
    $stmt = $conn->prepare("SELECT * FROM user_form WHERE email = ?");
    $stmt->bind_param("s", $email);
@@ -19,8 +18,14 @@ if(isset($_POST['login_submit'])){
    if(mysqli_num_rows($result) > 0){
       $row = mysqli_fetch_array($result);
       if (password_verify($password, $row['password'])) {
-         $_SESSION['user_id'] = $row['id']; // exemple d'ajout de session
-         header('Location: ../Testing grounds/main.php'); // Redirige vers la page principale après connexion
+         // Stocker les informations utilisateur en session
+         $_SESSION['user_id'] = $row['id'];
+         $_SESSION['user_name'] = $row['name'];
+         $_SESSION['user_first_name'] = $row['first_name']; 
+         $_SESSION['user_email'] = $row['email'];
+         $_SESSION['logged_in'] = true;
+         
+         header('Location: ../Testing grounds/main.php');
          exit();
       } else {
          $login_error[] = 'Mot de passe incorrect !';
@@ -28,7 +33,6 @@ if(isset($_POST['login_submit'])){
    } else {
       $login_error[] = 'Email non trouvé !';
    }
-
 };
 
 // Partie d'inscription
@@ -62,7 +66,15 @@ if(isset($_POST['register_submit'])){
        $insert = "INSERT INTO user_form(name, first_name, birthday, phone_nb, email, password)
                   VALUES('$name', '$first_name', '$birthday', '$phone_nb', '$email', '$pass')";
        mysqli_query($conn, $insert);
-       header('Location: ../Connexion-Inscription/login_form.php');
+       
+       // Auto-login après inscription réussie
+       $_SESSION['user_id'] = mysqli_insert_id($conn);
+       $_SESSION['user_name'] = $name;
+       $_SESSION['user_first_name'] = $first_name;
+       $_SESSION['user_email'] = $email;
+       $_SESSION['logged_in'] = true;
+       
+       header('Location: ../Testing grounds/main.php');
        exit();
     }
  }

@@ -1,4 +1,7 @@
 <?php
+// Démarrer la session
+session_start();
+
 // Configuration de la base de données
 $servername = "localhost";
 $username = "root";
@@ -12,6 +15,9 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("Échec de la connexion à la base de données: " . $conn->connect_error);
 }
+
+// Définir le titre de la page
+$page_title = "Accueil - Synapse";
 
 // Récupérer les activités depuis la base de données
 $sql = "SELECT a.*, 
@@ -69,65 +75,27 @@ function getTagClass($tag) {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Accueil</title>
+    <title><?= $page_title ?></title>
     <link rel="stylesheet" href="main.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
-  
     <link rel="stylesheet" href="../TEMPLATE/Nouveauhead.css" />
   </head>
   <body>
 
-   
- 
-
-    <!-- Header -->
-<header class="header">
-    <a href="../Testing grounds/main.php">
-      <img
-        class="logo"
-        src="../Connexion-Inscription/logo-transparent-pdf.png"
-        alt="Logo Synapse"
-      />
-    </a>
-    <nav class="nav-links">
-      <ul>
-        <li><a href="#">Devenez Prestataire</a></li>
-        <li><a href="../Concept/concept.html">Concept</a></li>
-      </ul>
-    </nav>
-  
-    <div class="icon">
-      <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-      <a href="../Testing grounds/panier.html" class="panier-link" aria-label="Panier">
-        <i class="fa-solid fa-cart-shopping"></i>
-        <span class="panier-count" id="panier-count">0</span>
-      </a>
-      <div class="profile-dropdown">
-        <a href="#" class="connexion-profil" aria-label="Profil">
-          <i class="fa-solid fa-user"></i>
-        </a>
-        <div class="dropdown-content">
-          <a href="../Connexion-Inscription/login_form.php"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
-          <a href="../Testing grounds/mes-activites.php"><i class="fa-solid fa-calendar-days"></i> Mes activités</a>
-          <a href="../Compte/mon-espace.html"><i class="fa-solid fa-gear"></i> Paramètres</a>
-        </div>
-      </div>
-    </div>
-  </header>
-
-
- 
-
+<?php
+// Inclure le header
+include '../TEMPLATE/Nouveauhead.php';
+?>
 
 <!-- Carousel Section -->
 <div class="carrousel">
   <!-- Images container -->
   <div class="carrousel-images">
     <div class="carrousel-slide">
-      <img src="./images/Musée-dOrsay-Histoire.jpg" alt="Culinary Experiences" />
+      <img src="./images/Musée-dOrsay-Histoire.jpg" alt="Culinary Experiences" />
       <div class="carrousel-caption">
         <h3>Culinary Experiences</h3>
         <p>Discover the finest cooking classes and food tours in your area</p>
@@ -196,7 +164,6 @@ function getTagClass($tag) {
 </div>
   </div>
 </div>
-
 
     <!-- 5 partie barre de separation -->
     <div class="barre-de-separation"></div>
@@ -398,128 +365,30 @@ function getTagClass($tag) {
     ?>
   </div>
 </section>
-    <!-- Activities Section -->
-    <section class="activities" id="activities-container">
-      <?php 
-      if ($result->num_rows > 0) {
-          // Afficher chaque activité
-          while($row = $result->fetch_assoc()) {
-              // Générer une note aléatoire pour la démonstration (à remplacer par un système réel de notation)
-              $randomRating = rand(30, 50) / 10; // Note entre 3.0 et 5.0 
-              
-              // Liste des tags
-              $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
-              
-              // Type de prix
-              $isPaid = $row["prix"] > 0;
-              
-              echo '<div class="card" data-id="' . $row['id'] . '">'; // Added data-id attribute
-              echo '<div class="content">';
-              
-              // Image avec conteneur de taille fixe
-              echo '<div class="image-container">';
-              if ($row["image_url"]) {
-                  echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
-              } else {
-                  echo '<img src="/api/placeholder/400/320" alt="placeholder" />';
-              }
-              echo '</div>';
-              
-              echo '<div class="tag">';
-              
-              // Affichage des tags
-              $displayedTags = 0;
-              foreach ($tagList as $tag) {
-                  if ($displayedTags < 2) { // Limiter à 2 tags visibles
-                      $tagClass = getTagClass($tag);
-                      echo '<span class="tags ' . $tagClass . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
-                      $displayedTags++;
-                  }
-              }
-              
-              // Afficher le statut gratuit/payant
-              if ($isPaid) {
-                  echo '<span class="tags">Payant</span>';
-              } else {
-                  echo '<span class="tags accent">Gratuit</span>';
-              }
-              
-              echo '</div></div>';
-              
-              echo '<div class="info">';
-              echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
-              
-              // Date ou période
-              if ($row["date_ou_periode"]) {
-                  echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
-              }
-              
-              echo '</div>';
-              
-              echo '<div class="actions">';
-              echo '<div class="rating">' . getStars($randomRating) . '</div>';
-              
-              // Bouton "Ajouter au panier" à la place de "Rejoindre"
-              echo '<button class="add-to-cart-button" data-id="' . $row['id'] . '" 
-                    data-title="' . htmlspecialchars($row['titre']) . '" 
-                    data-price="' . $row['prix'] . '" 
-                    data-image="' . htmlspecialchars($row['image_url'] ? $row['image_url'] : '/api/placeholder/400/320') . '" 
-                    data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
-                    data-tags="' . htmlspecialchars($row['tags']) . '">
-                    <i class="fa-solid fa-cart-shopping"></i> Ajouter au panier
-                    </button>';
-              
-              echo '</div>';
-              
-              echo '</div>';
-          }
-      } else {
-          echo '<p class="no-activities">Aucune activité disponible pour le moment.</p>';
-      }
-      ?>
-    </section>
 
 <!-- Section newsletter -->
-  <section class="newsletter-section">
-    <div class="newsletter-container">
-      <div class="newsletter-content">
-        <i class="fa-solid fa-envelope-open-text"></i>
-        <h2>Restez informé(e)</h2>
-        <p>Recevez en avant-première nos nouvelles activités et offres exclusives</p>
-        <form class="newsletter-form">
-          <input type="email" placeholder="Votre adresse e-mail" required>
-          <button type="submit">S'abonner</button>
-        </form>
-      </div>
+<section class="newsletter-section">
+  <div class="newsletter-container">
+    <div class="newsletter-content">
+      <i class="fa-solid fa-envelope-open-text"></i>
+      <h2>Restez informé(e)</h2>
+      <p>Recevez en avant-première nos nouvelles activités et offres exclusives</p>
+      <form class="newsletter-form">
+        <input type="email" placeholder="Votre adresse e-mail" required>
+        <button type="submit">S'abonner</button>
+      </form>
     </div>
-  </section>
- <footer class="footer">
-    <ul>
-      <li><a href="../FAQ/faq.html">FAQ</a></li>
-      <li><a href="#">CGU</a></li>
-      <li><a href="#">Mentions Légales</a></li>
-    </ul>
+  </div>
+</section>
 
-    <ul>
-      <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
-      <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
-    </ul>
-    <ul>
-      <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
-      <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
-    </ul>
+<?php
+// Inclure le footer
+include '../TEMPLATE/footer.php';
+?>
 
-    <ul>
-      <li>Lundi - Vendredi : 9h à 20h</li>
-      <li>Samedi : 10h à 16h</li>
-    </ul>
-</footer>
-
-
-   
- 
-
-  <script>
+<script src="carousel.js"></script>
+<script src="activity-card-handler.js"></script>
+<script>
     document.addEventListener('DOMContentLoaded', function() {
         // Initialiser le panier s'il n'existe pas déjà
         if (!localStorage.getItem('synapse-cart')) {
@@ -665,13 +534,7 @@ function getTagClass($tag) {
             }, 3000);
         }
     });
-  </script>
-  <script src="../TEMPLATE/Nouveauhead.js"></script>
-  <!-- Ajout du script pour gérer les clics sur les cartes d'activités -->
-  <script src="activity-card-handler.js"></script>
-    <script src="carousel.js"></script>
-</html>
-
+</script>
 <?php
 $conn->close();
 ?>

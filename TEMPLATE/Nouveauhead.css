@@ -292,3 +292,77 @@ header {
     color: #000000; /* Couleur verte pour les icônes */
 }
     
+/* Ajoutez ces styles à la fin de votre fichier Nouveauhead.css */
+
+/* Style pour afficher le nom d'utilisateur dans le menu */
+.profile-name {
+    margin-left: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #E4D8C8;
+    display: inline-block;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* Style pour les éléments du menu déroulant actifs */
+.dropdown-content a.active {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    color: #45a163;
+}
+
+/* Animation améliorée pour le menu déroulant */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: white;
+    min-width: 200px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    z-index: 1000;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 10px;
+    animation: fadeIn 0.2s ease-in-out;
+    transform-origin: top right;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Séparateur dans le menu déroulant */
+.dropdown-divider {
+    height: 1px;
+    background-color: #eee;
+    margin: 5px 0;
+}
+
+/* Animation de l'icône utilisateur lors du survol */
+.connexion-profil:hover i {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+/* Style pour les boutons de déconnexion */
+.dropdown-content a:last-child {
+    color: #e74c3c;
+}
+
+.dropdown-content a:last-child:hover {
+    background-color: #fef5f5;
+}
+
+/* Animation lorsque le menu est affiché */
+.profile-dropdown.show .connexion-profil {
+    color: white;
+}
+
+.profile-dropdown.show .connexion-profil i {
+    transform: scale(1.1);
+}
