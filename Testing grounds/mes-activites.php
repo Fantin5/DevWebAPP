@@ -571,7 +571,7 @@ function getTagClass($tag) {
       <?php endif; ?>
       
       <div class="action-buttons">
-        <a href="./jenis.html" class="create-button">
+        <a href="./jenis.php" class="create-button">
           <i class="fa-solid fa-plus"></i> Créer une nouvelle activité
         </a>
       </div>

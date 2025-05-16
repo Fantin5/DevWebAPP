@@ -156,11 +156,17 @@ include '../TEMPLATE/Nouveauhead.php';
   <div class="welcome-content">
     <h1>Bienvenue sur <span>SYNAPSE</span></h1>
     <p>Un espace où partager des moments uniques et découvrir des activités exceptionnelles</p>
-    <div class="welcome-buttons">
+<div class="welcome-buttons">
   <a href="activites.php" class="welcome-btn primary">Découvrir les activités</a>
-  <a href="./jenis.html" class="welcome-btn secondary">
+  <?php if(isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+  <a href="./jenis.php" class="welcome-btn secondary">
     <i class="fa-solid fa-plus"></i> Créer une activité
   </a>
+  <?php else: ?>
+  <a href="../Connexion-Inscription/login_form.php" class="welcome-btn secondary">
+    <i class="fa-solid fa-user"></i> Se connecter
+  </a>
+  <?php endif; ?>
 </div>
   </div>
 </div>

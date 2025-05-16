@@ -32,12 +32,14 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
           alt="Logo Synapse"
         />
       </a>
-      <nav class="nav-links">
-        <ul>
-          <li><a href="#">Devenez Prestataire</a></li>
-          <li><a href="../Concept/concept.html">Concept</a></li>
-        </ul>
-      </nav>
+<nav class="nav-links">
+  <ul>
+    <?php if($logged_in): ?>
+    <li><a href="../Testing grounds/jenis.html"><i class="fa-solid fa-plus"></i> Créer une activité</a></li>
+    <?php endif; ?>
+    <li><a href="../Concept/concept.html">Concept</a></li>
+  </ul>
+</nav>
     
       <div class="icon">
         <i class="fa-regular fa-heart" aria-label="Favoris"></i>
