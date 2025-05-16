@@ -86,7 +86,6 @@ if(isset($_POST['register_submit'])){
       
 * {
    box-sizing: border-box;
-   box-shadow: 0 0 0 0;
 }
 
 body {

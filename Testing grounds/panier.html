@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Panier | Synapse</title>
     <link rel="stylesheet" href="Accueil.css" />
-    <link rel="stylesheet" href="../TEMPLATE/teteaupied.css" />
+    <link rel="stylesheet" href="../TEMPLATE/Nouveauhead.css"" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
@@ -239,7 +239,7 @@
   </head>
   <body>
     <header class="header">
-      <a href="./main.php">
+      <a href="../Testing grounds/main.php">
         <img
           class="logo"
           src="../Connexion-Inscription/logo-transparent-pdf.png"
@@ -255,17 +255,30 @@
 
       <div class="icon">
         <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-        <a href="panier.html" class="panier-link" aria-label="Panier">
+        <a
+          href="../Testing grounds/panier.html"
+          class="panier-link"
+          aria-label="Panier"
+        >
           <i class="fa-solid fa-cart-shopping"></i>
           <span class="panier-count" id="panier-count">0</span>
         </a>
-        <a
-          href="../Connexion-Inscription/Connexion.html"
-          class="connexion-profil"
-          aria-label="Connexion"
-        >
-          <i class="fa-solid fa-user"></i>
-        </a>
+        <div class="profile-dropdown">
+          <a href="#" class="connexion-profil" aria-label="Profil">
+            <i class="fa-solid fa-user"></i>
+          </a>
+          <div class="dropdown-content">
+            <a href="../Connexion-Inscription/login_form.php"
+              ><i class="fa-solid fa-right-to-bracket"></i> Connexion</a
+            >
+            <a href="../Testing grounds/mes-activites.php"
+              ><i class="fa-solid fa-calendar-days"></i> Mes activités</a
+            >
+            <a href="../Compte/mon-espace.html"
+              ><i class="fa-solid fa-gear"></i> Paramètres</a
+            >
+          </div>
+        </div>
       </div>
     </header>
 
@@ -280,7 +293,7 @@
 
     <footer class="footer">
       <ul>
-        <li><a href="#">FAQ</a></li>
+        <li><a href="../FAQ/faq.html">FAQ</a></li>
         <li><a href="#">CGU</a></li>
         <li><a href="#">Mentions Légales</a></li>
       </ul>
@@ -299,129 +312,142 @@
         <li>Samedi : 10h à 16h</li>
       </ul>
     </footer>
+
+    <!-- lien -->
+    <script src="../TEMPLATE/Nouveauhead.js"></script>
     <style>
-        /* Styles pour l'icône du panier et le compteur */
-.panier-link {
-    position: relative;
-    display: inline-block;
-    color: #E4D8C8;
-    text-decoration: none;
-    transition: color 0.2s;
-}
+      /* Styles pour l'icône du panier et le compteur */
+      .panier-link {
+        position: relative;
+        display: inline-block;
+        color: #e4d8c8;
+        text-decoration: none;
+        transition: color 0.2s;
+      }
 
-.panier-link:hover {
-    color: #fff;
-}
+      .panier-link:hover {
+        color: #fff;
+      }
 
-.panier-count {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background-color: #45cf91;
-    color: #111;
-    font-size: 12px;
-    font-weight: bold;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* Styles pour le bouton d'ajout au panier */
-.add-to-cart-button {
-    background-color: #45cf91 !important;
-    color: #111 !important;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 15px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s;
-    border: none;
-}
-
-.add-to-cart-button:hover {
-    background-color: #3abd7a !important;
-    transform: translateY(-2px);
-}
-
-/* Notification pour l'ajout au panier */
-.notification {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 15px 25px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    opacity: 1;
-    transition: opacity 0.5s;
-}
-
-.notification.success {
-    background-color: #45cf91;
-    color: #111;
-}
-
-.notification.info {
-    background-color: #3498db;
-    color: white;
-}
-
-.notification.error {
-    background-color: #e74c3c;
-    color: white;
-}
-
-.notification i {
-    font-size: 18px;
-}
-
-/* Animation pour les boutons d'ajout au panier */
-@keyframes shake {
-    0% { transform: rotate(0deg); }
-    25% { transform: rotate(-5deg); }
-    50% { transform: rotate(0deg); }
-    75% { transform: rotate(5deg); }
-    100% { transform: rotate(0deg); }
-}
-
-.add-to-cart-button:active i {
-    animation: shake 0.3s ease-in-out;
-}
-
-/* Styles spécifiques aux boutons d'ajout au panier dans les cartes */
-.card .actions {
-    justify-content: space-between;
-}
-
-.card .add-to-cart-button {
-    padding: 8px 15px;
-    font-size: 14px;
-}
-
-/* Media queries pour le responsive */
-@media (max-width: 768px) {
-    .card .actions {
-        flex-direction: column;
-        gap: 10px;
-        align-items: stretch;
-    }
-    
-    .card .add-to-cart-button {
-        width: 100%;
+      .panier-count {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background-color: #45cf91;
+        color: #111;
+        font-size: 12px;
+        font-weight: bold;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
         justify-content: center;
-    }
-}
+        align-items: center;
+      }
+
+      /* Styles pour le bouton d'ajout au panier */
+      .add-to-cart-button {
+        background-color: #45cf91 !important;
+        color: #111 !important;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 15px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+        border: none;
+      }
+
+      .add-to-cart-button:hover {
+        background-color: #3abd7a !important;
+        transform: translateY(-2px);
+      }
+
+      /* Notification pour l'ajout au panier */
+      .notification {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 15px 25px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        opacity: 1;
+        transition: opacity 0.5s;
+      }
+
+      .notification.success {
+        background-color: #45cf91;
+        color: #111;
+      }
+
+      .notification.info {
+        background-color: #3498db;
+        color: white;
+      }
+
+      .notification.error {
+        background-color: #e74c3c;
+        color: white;
+      }
+
+      .notification i {
+        font-size: 18px;
+      }
+
+      /* Animation pour les boutons d'ajout au panier */
+      @keyframes shake {
+        0% {
+          transform: rotate(0deg);
+        }
+        25% {
+          transform: rotate(-5deg);
+        }
+        50% {
+          transform: rotate(0deg);
+        }
+        75% {
+          transform: rotate(5deg);
+        }
+        100% {
+          transform: rotate(0deg);
+        }
+      }
+
+      .add-to-cart-button:active i {
+        animation: shake 0.3s ease-in-out;
+      }
+
+      /* Styles spécifiques aux boutons d'ajout au panier dans les cartes */
+      .card .actions {
+        justify-content: space-between;
+      }
+
+      .card .add-to-cart-button {
+        padding: 8px 15px;
+        font-size: 14px;
+      }
+
+      /* Media queries pour le responsive */
+      @media (max-width: 768px) {
+        .card .actions {
+          flex-direction: column;
+          gap: 10px;
+          align-items: stretch;
+        }
+
+        .card .add-to-cart-button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
     </style>
 
     <script src="panier.js"></script>
