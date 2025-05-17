@@ -21,30 +21,15 @@
     <link rel="stylesheet" href="./teteaupied.css" />
   </head>
   <body>
-    <header class="header">
-        <a href="../Testing grounds/main.php">
-          <img class="logo" src="../Connexion-Inscription/logo-transparent-pdf.png" alt="Site logo" />
-        </a>    
-        <nav class="nav-links">
-          <ul>
-            <li><a href="#">Devenez Prestataire</a></li>
-            <li><a href="#">Concept</a></li>
-          </ul>
-        </nav>
-        <div class="icon">
-          <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-          <a href="../Connexion-Inscription/Connexion.html" class="connexion-profil" aria-label="Connexion">
-            <i class="fa-solid fa-user"></i>
-          </a>
-        </div>
-      </header>
-
+    <?php
+    // Inclure le header
+    include '../TEMPLATE/Nouveauhead.php';
+    ?>
     <!-- Titre principal -->
     <header>
         <div class="faq-titre">
         <h1>Synapse FAQ</h1>
     </header>
-
     <!-- Contenu FAQ -->
     <section class="faq">
         <div class="faq-item">
@@ -89,27 +74,10 @@
         
     </section>
 
-    <footer class="footer">
-        <ul>
-          <li><a href="#">FAQ</a></li>
-          <li><a href="#">CGU</a></li>
-          <li><a href="#">Mentions Légales</a></li>
-        </ul>
-  
-        <ul>
-          <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
-          <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
-        </ul>
-        <ul>
-          <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
-          <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
-        </ul>
-  
-        <ul>
-          <li>Lundi - Vendredi : 9h à 20h</li>
-          <li>Samedi : 10h à 16h</li>
-        </ul>
-      </footer>
+      <?php
+      // Inclure le footer
+      include '../TEMPLATE/footer.php';
+      ?>
     </body>
   </html>
 <!DOCTYPE html>

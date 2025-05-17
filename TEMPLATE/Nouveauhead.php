@@ -34,16 +34,14 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
       </a>
 <nav class="nav-links">
   <ul>
-    <?php if($logged_in): ?>
-    <li><a href="../Testing grounds/jenis.html"><i class="fa-solid fa-plus"></i> Créer une activité</a></li>
-    <?php endif; ?>
-    <li><a href="../Concept/concept.html">Concept</a></li>
+    <li><a href="../Concept/concept.php">Concept</a></li>
+    <li><a href="../Testing grounds/jenis.php"><i class="fa-solid fa-plus"></i> Créer une activité</a></li>
   </ul>
 </nav>
     
       <div class="icon">
         <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-        <a href="../Testing grounds/panier.html" class="panier-link" aria-label="Panier">
+        <a href="../Testing grounds/panier.php" class="panier-link" aria-label="Panier">
           <i class="fa-solid fa-cart-shopping"></i>
           <span class="panier-count" id="panier-count">0</span>
         </a>
@@ -57,7 +55,6 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
           <div class="dropdown-content">
             <a href="../Compte/mon-espace.php"><i class="fa-solid fa-gear"></i> Mon profil</a>
             <a href="../Testing grounds/mes-activites.php"><i class="fa-solid fa-calendar-days"></i> Mes activités</a>
-            <a href="../Compte/mon-espace.html"><i class="fa-solid fa-gear"></i> Paramètres</a>
             <div class="dropdown-divider"></div>
             <a href="../Connexion-Inscription/logout.php"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
           </div>

@@ -17,12 +17,18 @@ header {
     color: #E4D8C8;
   }
   
+  .nav-links {
+    flex: 1; /* Prend l'espace disponible */
+  }
   .nav-links ul {
     margin: 0;
     padding: 0;
     list-style: none;
     display: flex;
     gap: 90px;
+  }
+  .nav-links li {
+    font-size: 1em;
   }
   
   .nav-links a {

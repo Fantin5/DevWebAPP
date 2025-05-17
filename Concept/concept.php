@@ -12,34 +12,10 @@
     />
   </head>
   <body>
-    <!-- HEADER -->
-    <header>
-      <a href="../Testing grounds/main.php">
-        <img
-          class="logo"
-          src="../Connexion-Inscription/logo-transparent-pdf.png"
-          alt="Site logo"
-        />
-      </a>
-
-      <nav class="nav-links">
-        <ul>
-          <li><a href="#">Devenez Prestataire</a></li>
-          <li><a href="#">Concept</a></li>
-        </ul>
-      </nav>
-
-      <div class="icon">
-        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-        <a
-          href="../Connexion-Inscription/Connexion.html"
-          class="connexion-profil"
-          aria-label="Connexion"
-        >
-          <i class="fa-solid fa-user"></i>
-        </a>
-      </div>
-    </header>
+    <?php
+    // Inclure le header
+    include '../TEMPLATE/Nouveauhead.php';
+    ?>
 
     <!-- CONTENU PRINCIPAL -->
     <main style="padding: 40px; padding-bottom: 120px">

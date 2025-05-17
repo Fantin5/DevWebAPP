@@ -315,32 +315,10 @@ a {
 
 </head>
 <body>
-   <!-- 1 partie header -->
-   <header>
-      <img
-        class="logo"
-        src="../Connexion-Inscription/logo-transparent-pdf.png"
-        alt="Site logo"
-      />
-      <!-- hello  -->
-      <nav class="nav-links">
-        <ul>
-          <li><a href="#">Devenez Prestataire</a></li>
-          <li><a href="#">Concept</a></li>
-        </ul>
-      </nav>
-
-      <div class="icon">
-        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-        <a
-          href="../Connexion-Inscription/Connexion.html"
-          class="connexion-profil"
-          aria-label="Connexion"
-        >
-          <i class="fa-solid fa-user"></i>
-        </a>
-      </div>
-   </header>
+   <?php
+   // Inclure le header
+   include '../TEMPLATE/Nouveauhead.php';
+   ?>
     
    <main>
       <div class ="switch">
@@ -458,28 +436,10 @@ a {
       </div>
    </main>
 
-   <!-- 7 footer --> 
-   <footer>
-      <ul>
-      <li><a href="#">FAQ</a></li>
-      <li><a href="#">CGU</a></li>
-      <li><a href="#">Mentions Légales</a></li>
-      </ul>
-
-      <ul>
-      <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
-      <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
-      </ul>
-      <ul>
-      <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
-      <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
-      </ul>
-
-      <ul>
-      <li>Lundi - Vendredi : 9h à 20h</li>
-      <li>Samedi : 10h à 16h</li>
-      </ul>
-   </footer>
+   <?php
+   // Inclure le footer
+   include '../TEMPLATE/footer.php';
+   ?>
 
    <script>
       function swapStyles() {
