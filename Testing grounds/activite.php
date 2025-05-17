@@ -1,4 +1,7 @@
 <?php
+// Démarrer la session
+session_start();
+
 // Configuration de la base de données
 $servername = "localhost";
 $username = "root";
@@ -7,6 +10,9 @@ $dbname = "activity";
 
 // Créer une connexion
 $conn = new mysqli($servername, $username, $password, $dbname);
+
+// Connect to user database
+$user_conn = new mysqli($servername, $username, $password, "user_db");
 
 // Vérifier la connexion
 if ($conn->connect_error) {
@@ -41,6 +47,40 @@ if ($result->num_rows === 0) {
 }
 
 $activity = $result->fetch_assoc();
+
+// Extract creator information from description if it exists
+$creator_data = null;
+if (preg_match('/<!--CREATOR:([^-]+)-->/', $activity["description"], $matches)) {
+    try {
+        $encoded_data = $matches[1];
+        $json_data = base64_decode($encoded_data);
+        $creator_data = json_decode($json_data, true);
+        
+        // Remove the creator info from the description for display
+        $activity["description"] = preg_replace('/<!--CREATOR:[^-]+-->/', '', $activity["description"]);
+        
+        // If we have user_id, try to get the latest information from database
+        if (isset($creator_data['user_id'])) {
+            $user_id = $creator_data['user_id'];
+            $user_sql = "SELECT name, first_name, email, phone_nb FROM user_form WHERE id = ?";
+            $user_stmt = $user_conn->prepare($user_sql);
+            $user_stmt->bind_param("i", $user_id);
+            $user_stmt->execute();
+            $user_result = $user_stmt->get_result();
+            
+            if ($user_result->num_rows > 0) {
+                $user_data = $user_result->fetch_assoc();
+                $creator_data['name'] = $user_data['name'];
+                $creator_data['first_name'] = $user_data['first_name'];
+                $creator_data['email'] = $user_data['email'];
+                $creator_data['phone_nb'] = $user_data['phone_nb'];
+            }
+        }
+    } catch (Exception $e) {
+        // If there's an error parsing, just continue without creator data
+        $creator_data = null;
+    }
+}
 
 // Formater les tags
 $tags = $activity["tags"] ? explode(',', $activity["tags"]) : [];
@@ -99,6 +139,22 @@ function getTagClass($tag) {
 $isPaid = $activity["prix"] > 0;
 $priceText = $isPaid ? number_format($activity["prix"], 2) . " €" : "Gratuit";
 
+// Formater le numéro de téléphone
+function formatPhoneNumber($phone) {
+    // Si le numéro commence par 0, on l'ajoute
+    if (strlen($phone) == 9 && substr($phone, 0, 1) != '0') {
+        $phone = '0' . $phone;
+    }
+    
+    // Format XX XX XX XX XX
+    if (strlen($phone) == 10) {
+        return chunk_split($phone, 2, ' ');
+    }
+    
+    // Si le format ne correspond pas, renvoyer tel quel
+    return $phone;
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -108,7 +164,7 @@ $priceText = $isPaid ? number_format($activity["prix"], 2) . " €" : "Gratuit";
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($activity["titre"]); ?> | Synapse</title>
     <link rel="stylesheet" href="main.css">
-    <link rel="stylesheet" href="../TEMPLATE/teteaupied.css">
+    <link rel="stylesheet" href="../TEMPLATE/Nouveauhead.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         /* Styles spécifiques à la page d'activité */
@@ -304,6 +360,50 @@ $priceText = $isPaid ? number_format($activity["prix"], 2) . " €" : "Gratuit";
             font-style: italic;
         }
         
+        /* Styles pour les informations du créateur */
+        .creator-info {
+            background-color: #f9f9f9;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .creator-info h3 {
+            color: #555;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .creator-info h3 i {
+            color: var(--primary-color);
+        }
+        
+        .creator-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .creator-detail {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .creator-detail i {
+            width: 20px;
+            color: #828977;
+        }
+        
+        .creator-detail span {
+            color: #444;
+            font-size: 15px;
+        }
+        
         @media (max-width: 768px) {
             .activity-header {
                 height: 250px;
@@ -324,32 +424,15 @@ $priceText = $isPaid ? number_format($activity["prix"], 2) . " €" : "Gratuit";
                 gap: 20px;
                 text-align: center;
             }
+            
+            .creator-details {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <header class="header">
-        <a href="./main.php">
-            <img class="logo" src="../Connexion-Inscription/logo-transparent-pdf.png" alt="Logo Synapse">
-        </a>
-        <nav class="nav-links">
-            <ul>
-                <li><a href="#">Devenez Prestataire</a></li>
-                <li><a href="#">Concept</a></li>
-            </ul>
-        </nav>
-
-        <div class="icon">
-            <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-            <a href="panier.html" class="panier-link" aria-label="Panier">
-                <i class="fa-solid fa-cart-shopping"></i>
-                <span class="panier-count" id="panier-count">0</span>
-            </a>
-            <a href="../Connexion-Inscription/Connexion.html" class="connexion-profil" aria-label="Connexion">
-                <i class="fa-solid fa-user"></i>
-            </a>
-        </div>
-    </header>
+    <?php include '../TEMPLATE/Nouveauhead.php'; ?>
 
     <div class="activity-container">
         <a href="main.php" class="back-button">
@@ -403,6 +486,34 @@ $priceText = $isPaid ? number_format($activity["prix"], 2) . " €" : "Gratuit";
                 </div>
             </div>
             
+            <?php if ($creator_data): ?>
+            <div class="creator-info">
+                <h3><i class="fa-solid fa-user-circle"></i> Créé par</h3>
+                <div class="creator-details">
+                    <?php if (!empty($creator_data['first_name']) || !empty($creator_data['name'])): ?>
+                    <div class="creator-detail">
+                        <i class="fa-solid fa-user"></i>
+                        <span><?php echo htmlspecialchars($creator_data['first_name'] . ' ' . $creator_data['name']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($creator_data['email'])): ?>
+                    <div class="creator-detail">
+                        <i class="fa-solid fa-envelope"></i>
+                        <span><?php echo htmlspecialchars($creator_data['email']); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($creator_data['phone_nb'])): ?>
+                    <div class="creator-detail">
+                        <i class="fa-solid fa-phone"></i>
+                        <span><?php echo htmlspecialchars(formatPhoneNumber($creator_data['phone_nb'])); ?></span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+            
             <?php if (isset($activity["date_creation"])): ?>
                 <p class="activity-created">
                     Activité créée le <?php echo date("d/m/Y", strtotime($activity["date_creation"])); ?>
@@ -421,27 +532,7 @@ $priceText = $isPaid ? number_format($activity["prix"], 2) . " €" : "Gratuit";
         </div>
     </div>
 
-    <footer class="footer">
-        <ul>
-            <li><a href="#">FAQ</a></li>
-            <li><a href="#">CGU</a></li>
-            <li><a href="#">Mentions Légales</a></li>
-        </ul>
-
-        <ul>
-            <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
-            <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
-        </ul>
-        <ul>
-            <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
-            <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
-        </ul>
-
-        <ul>
-            <li>Lundi - Vendredi : 9h à 20h</li>
-            <li>Samedi : 10h à 16h</li>
-        </ul>
-    </footer>
+    <?php include '../TEMPLATE/footer.php'; ?>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -479,4 +570,8 @@ $priceText = $isPaid ? number_format($activity["prix"], 2) . " €" : "Gratuit";
 // Fermer la connexion à la base de données
 $stmt->close();
 $conn->close();
+if (isset($user_stmt)) {
+    $user_stmt->close();
+}
+$user_conn->close();
 ?>

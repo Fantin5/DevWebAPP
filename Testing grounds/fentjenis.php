@@ -1,4 +1,7 @@
 <?php
+// Add session_start() at the top if not already present
+session_start();
+
 // Configuration de la base de données
 $servername = "localhost";
 $username = "root";
@@ -20,17 +23,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $description = $conn->real_escape_string($_POST['description']);
     $date_ou_periode = isset($_POST['date_ou_periode']) ? $conn->real_escape_string($_POST['date_ou_periode']) : '';
     
+    // Get creator information from session
+    $creator_info = "";
+    if(isset($_SESSION['user_id'])) {
+        // Create a hidden JSON with creator info at the beginning of the description
+        $creator_data = [
+            'user_id' => $_SESSION['user_id'],
+            'name' => isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '',
+            'first_name' => isset($_SESSION['user_first_name']) ? $_SESSION['user_first_name'] : '',
+            'email' => isset($_SESSION['user_email']) ? $_SESSION['user_email'] : ''
+        ];
+        
+        // Convert to JSON and encode to hide it
+        $creator_info = "<!--CREATOR:" . base64_encode(json_encode($creator_data)) . "-->";
+    }
+    
+    // Add creator info to the beginning of the description (hidden in HTML comment)
+    $description = $creator_info . $description;
+    
     // Gestion du prix
     $prix = 0;
     if (isset($_POST['type_prix']) && $_POST['type_prix'] == 'payant' && isset($_POST['prix'])) {
         $prix = floatval($_POST['prix']);
     }
     
-    // Gestion de l'image
+    // Rest of your code for image handling
     $image_url = '';
     
     // Si une image recadrée a été fournie
     if (isset($_POST['cropped_image']) && !empty($_POST['cropped_image'])) {
+        // Existing image cropping code
         $cropped_image = $_POST['cropped_image'];
         
         // Extraire les données binaires de l'image base64
@@ -54,6 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } 
     // Si un fichier a été uploadé directement sans recadrage
     elseif (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+        // Existing direct upload code
         $allowed = ['jpg', 'jpeg', 'png', 'gif'];
         $filename = $_FILES['image']['name'];
         $filetype = pathinfo($filename, PATHINFO_EXTENSION);
@@ -98,4 +121,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 $conn->close();
 ?>
-<!-- hey -->
