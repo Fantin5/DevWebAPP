@@ -1168,3 +1168,4 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 $conn->close();
 ?>
+<!-- le code est horrible pardon mdrr -->
