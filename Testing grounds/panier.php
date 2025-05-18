@@ -1,3 +1,7 @@
+<?php
+  session_start();
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
   <head>
@@ -238,49 +242,10 @@
     </style>
   </head>
   <body>
-    <header class="header">
-      <a href="../Testing grounds/main.php">
-        <img
-          class="logo"
-          src="../Connexion-Inscription/logo-transparent-pdf.png"
-          alt="Logo Synapse"
-        />
-      </a>
-      <nav class="nav-links">
-        <ul>
-          <li><a href="#">Devenez Prestataire</a></li>
-          <li><a href="../Concept/concept.html">Concept</a></li>
-        </ul>
-      </nav>
-
-      <div class="icon">
-        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-        <a
-          href="../Testing grounds/panier.html"
-          class="panier-link"
-          aria-label="Panier"
-        >
-          <i class="fa-solid fa-cart-shopping"></i>
-          <span class="panier-count" id="panier-count">0</span>
-        </a>
-        <div class="profile-dropdown">
-          <a href="#" class="connexion-profil" aria-label="Profil">
-            <i class="fa-solid fa-user"></i>
-          </a>
-          <div class="dropdown-content">
-            <a href="../Connexion-Inscription/login_form.php"
-              ><i class="fa-solid fa-right-to-bracket"></i> Connexion</a
-            >
-            <a href="../Testing grounds/mes-activites.php"
-              ><i class="fa-solid fa-calendar-days"></i> Mes activités</a
-            >
-            <a href="../Compte/mon-espace.html"
-              ><i class="fa-solid fa-gear"></i> Paramètres</a
-            >
-          </div>
-        </div>
-      </div>
-    </header>
+    <?php
+    // Inclure le header
+    include '../TEMPLATE/Nouveauhead.php';
+    ?>
 
     <div class="panier-container">
       <h1 class="panier-title">Votre Panier</h1>
@@ -291,27 +256,10 @@
       </div>
     </div>
 
-    <footer class="footer">
-      <ul>
-        <li><a href="../FAQ/faq.html">FAQ</a></li>
-        <li><a href="#">CGU</a></li>
-        <li><a href="#">Mentions Légales</a></li>
-      </ul>
-
-      <ul>
-        <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
-        <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
-      </ul>
-      <ul>
-        <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
-        <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
-      </ul>
-
-      <ul>
-        <li>Lundi - Vendredi : 9h à 20h</li>
-        <li>Samedi : 10h à 16h</li>
-      </ul>
-    </footer>
+    <?php
+    // Inclure le footer
+    include '../TEMPLATE/footer.php';
+    ?>
 
     <!-- lien -->
     <script src="../TEMPLATE/Nouveauhead.js"></script>

@@ -27,43 +27,10 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     />
   </head>
   <body>
-    <header class="header">
-      <a href="./main.php">
-        <img
-          class="logo"
-          src="../Connexion-Inscription/logo-transparent-pdf.png"
-          alt="Logo Synapse"
-      /></a>
-      <nav class="nav-links">
-        <ul>
-          <li><a href="./jenis.php"><i class="fa-solid fa-plus"></i> Créer une activité</a></li>
-          <li><a href="#">Concept</a></li>
-        </ul>
-      </nav>
-
-      <div class="icon">
-        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-        <a href="panier.html" class="panier-link" aria-label="Panier">
-          <i class="fa-solid fa-cart-shopping"></i>
-          <span class="panier-count" id="panier-count">0</span>
-        </a>
-        <div class="profile-dropdown">
-          <a href="#" class="connexion-profil" aria-label="Profil">
-            <i class="fa-solid fa-user"></i>
-            <?php if(isset($_SESSION['user_first_name'])): ?>
-            <span class="profile-name"><?= htmlspecialchars($_SESSION['user_first_name']) ?></span>
-            <?php endif; ?>
-          </a>
-          <div class="dropdown-content">
-            <a href="../Compte/mon-espace.php"><i class="fa-solid fa-gear"></i> Mon profil</a>
-            <a href="../Testing grounds/mes-activites.php"><i class="fa-solid fa-calendar-days"></i> Mes activités</a>
-            <a href="../Compte/mon-espace.html"><i class="fa-solid fa-gear"></i> Paramètres</a>
-            <div class="dropdown-divider"></div>
-            <a href="../Connexion-Inscription/logout.php"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
-          </div>
-        </div>
-      </div>
-    </header>
+    <?php
+    // Inclure le header
+    include '../TEMPLATE/Nouveauhead.php';
+    ?>
 
     <div class="page-wrapper">
       <div class="form-container">
@@ -365,27 +332,10 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
       </div>
     </div>
 
-    <footer class="footer">
-      <ul>
-        <li><a href="#">FAQ</a></li>
-        <li><a href="#">CGU</a></li>
-        <li><a href="#">Mentions Légales</a></li>
-      </ul>
-
-      <ul>
-        <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
-        <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
-      </ul>
-      <ul>
-        <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
-        <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
-      </ul>
-
-      <ul>
-        <li>Lundi - Vendredi : 9h à 20h</li>
-        <li>Samedi : 10h à 16h</li>
-      </ul>
-    </footer>
+    <?php
+    // Inclure le footer
+    include '../TEMPLATE/footer.php';
+    ?>
 
     <!-- Modal pour le recadrage -->
     <div id="crop-modal" class="modal hidden">
