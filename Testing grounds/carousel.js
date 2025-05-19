@@ -138,6 +138,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+
+    .
+
+
+
+
+
+    
     // Add keyboard navigation
     document.addEventListener('keydown', function (e) {
         if (e.key === 'ArrowLeft') {

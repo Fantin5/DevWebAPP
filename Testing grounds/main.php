@@ -390,6 +390,7 @@ include '../TEMPLATE/Nouveauhead.php';
 // Inclure le footer
 include '../TEMPLATE/footer.php';
 ?>
+
 <script src="carousel.js"></script>
 <script src="activity-card-handler.js"></script>
 <script>
