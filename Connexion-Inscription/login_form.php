@@ -83,245 +83,27 @@ if(isset($_POST['register_submit'])){
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
    <meta charset="UTF-8">
    <meta http-equiv="X-UA-Compatible" content="IE=edge">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-
+   <title>Connexion | Synapse</title>
+   
+   <!-- Inclure les styles globaux -->
+   <link rel="stylesheet" href="../TEMPLATE/Nouveauhead.css">
+   
    <!-- Inclure Font Awesome -->
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-   <script src="https://kit.fontawesome.com/8e8b336406.js" crossorigin="anonymous"></script>
-
-   <style>
-      
-* {
-   box-sizing: border-box;
-}
-
-body {
-   margin: 0;
-   padding: 0;
-   min-height: 100vh;
-   display: flex;
-   flex-direction: column;
-   text-align: right;
-   background: #E4D8C8;
-   font-family: sans-serif;
-   color: #828977;
-}
-main {
-   margin: auto;
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   margin-top: 7%;
-   gap: 50px;
-   width: 100%;
-   max-width: 1200px;
-}
-a {
-   color: #828977;
-   font-size: 0.8em;
-}
-.switch {
-   position: relative;
-   display: flex;
-   background-color: #828977;
-   color: #E4D8C8;
-   height : 52.4px;
-   width: 300px;
-   border-radius: 10px;
-   justify-content: center;
-   align-items: stretch;
-   text-align: center;
-   font-size: 1.2em;
-   cursor: default;
-}
-.left-curved-container {
-   width: 50%; /* Ajuste la largeur pour éviter le dépassement */
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   text-align: center;
-   background-color: #828977;
-   border-top-left-radius: 10px;
-   border-bottom-left-radius: 10px;
-   border-top-right-radius: 0%;   
-   border-bottom-right-radius: 0%;
-}
-.right-curved-container {
-   width: 50%; /* Ajuste la largeur pour éviter le dépassement */
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   text-align: center;
-   background-color: #828977;
-   border-top-right-radius: 10px;
-   border-bottom-right-radius: 10px;
-   border-top-left-radius: 0%;   
-   border-bottom-left-radius: 0%;
-}
-/* Conteneur rempli */
-.filled {
-      background-color: transparent;
-      color: #E4D8C8;
-      border: 3.5px solid #828977;
-      cursor: pointer;
-}
-/* Conteneur vide avec bord coloré */
-.empty {
-      background-color: #E4D8C8;
-      color: #828977;
-      border: 3.5px solid #828977;
-      cursor: default;
-}
-.box {
-   width: 48%; /* Ajuste la largeur pour éviter le dépassement */
-   padding: 20px;
-   text-align: center;
-}
-
-.wrapper {
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   justify-content: center;
-   gap: 20px;
-}
-.formulaire {
-   display: flex;
-   flex-direction: column;
-   gap: 40px;
-   flex-wrap: wrap;
-   max-width: 1000px;
-   justify-content: center;
-   align-items: center;
-}
-.button {
-   position: relative;
-   display: flex;
-   background-color: #828977;
-   color: #E4D8C8;
-   height : 52.4px;
-   width: 300px;
-   border-radius: 10px;
-   justify-content: center;
-   align-items: center;
-   text-align: center;
-   font-size: 1.2em;
-   cursor: pointer;
-   margin: 0 auto;
-}
-.wrapper-row {
-   display: inline-block; /* Adapte sa taille au contenu */
-   border: 2px solid gray;
-   padding: 10px;
-   align-items: stretch;
-}
-.wrapper-col {
-   display: flex;
-   gap: 20px;
-   border: 2px solid gray;
-   padding: 10px;
-   width: max-content;
-}
-.column {
-   display: flex;
-   flex-direction: column;
-   width: 300px;
-}
-.column--gap {
-   gap: 20px;
-}
-.row {
-      display: flex;
-      flex-direction: row;
-      align-items: start;
-}
-.row--full {
-   /* S'adapte au conteneur (parent) */
-   width: 100%;
-   gap: 20px;
-}
-.row--auto {
-   /* S'adapte au contenu (enfants) */
-   width: max-content;
-   gap: 40px;
-}
-.centered {
-   align-items: center;
-}
-
-.curved-container {
-      flex: 1;
-   display: flex;
-   flex-direction: column;
-   height: 52.4px;
-   width: 100%;
-   max-width: 620px;
-   padding: 2px;
-   border: 3.5px solid #828977;
-   border-radius: 10px;
-
-   background-color: transparent;
-   color: #828977;
-   text-align: left;
-}
-
-.label {
-   font-size: 0.9em;
-   margin-bottom: 4px;
-}
-.input-zone {
-   flex: 1;
-   width: 100%;
-   border: none;
-   outline: none;
-   font-size: 1em;
-   background: transparent;
-   color: #828977;
-}
-
-
-.input-with-icon {
-   display: flex;
-   align-items: center;
-   gap: 10px;
-}
-
-.input-with-icon .input-zone {
-   flex: 1;
-}
-
-.fa-eye {
-   cursor: pointer;
-}
-
-.password-rules {
-   font-size: 0.62em;
-   text-align: left;
-}
-
-.error-msg {
-   color: #e74c3c;
-   font-size: 0.9em;
-   margin-top: 5px;
-}
-   </style>
-
-   <title>Connexion</title>
-
+   
+   <!-- Styles spécifiques à la page de connexion -->
+   <link rel="stylesheet" href="Connexion.css">
 </head>
 <body>
-   <?php
-   // Inclure le header
-   include '../TEMPLATE/Nouveauhead.php';
-   ?>
+   <?php include '../TEMPLATE/Nouveauhead.php'; ?>
     
-   <main>
-      <div class ="switch">
+   <main class="login-page-main">
+      <div class="switch">
          <div class="left-curved-container empty" id="box1">Se connecter</div>
          <div class="right-curved-container filled" id="box2">Créer un compte</div>
       </div>
@@ -353,7 +135,7 @@ a {
                         </div>
                      </div>
                   </div>
-                  <a href="">Mot de passe oublié</a>
+                  <a href="" class="forgot-password">Mot de passe oublié</a>
                </div>
                <input type="submit" name="login_submit" value="Se connecter" class="button">
             </div>
@@ -361,7 +143,7 @@ a {
       </div>
 
       <!-- Affichage "Créer un compte" -->
-      <div  id="register-section" class="form-container">
+      <div id="register-section" class="form-container">
          <form action="" method="post" onsubmit="return validateForm()">
             <?php
             if(isset($register_error)){
@@ -436,140 +218,8 @@ a {
       </div>
    </main>
 
-   <?php
-   // Inclure le footer
-   include '../TEMPLATE/footer.php';
-   ?>
+   <?php include '../TEMPLATE/footer.php'; ?>
 
-   <script>
-      function swapStyles() {
-    let box1 = document.getElementById("box1");
-    let box2 = document.getElementById("box2");
-    let loginSection = document.getElementById("login-section");
-    let registerSection = document.getElementById("register-section");
-
-    // Échanger les classes pour changer la couleur
-    box1.classList.toggle("filled");
-    box1.classList.toggle("empty");
-    box2.classList.toggle("filled");
-    box2.classList.toggle("empty");
-
-    // Vérifier quel bouton est actif et afficher la section correspondante
-    if (box1.classList.contains("filled")) {
-        loginSection.style.display = "none";
-        registerSection.style.display = "flex";
-        box1.style.pointerEvents = "auto";
-        box2.style.pointerEvents = "none";
-
-    } else {
-        loginSection.style.display = "flex";
-        registerSection.style.display = "none";
-        box1.style.pointerEvents = "none";
-        box2.style.pointerEvents = "auto";
-    }
-}
-
-
-
-
-document.addEventListener("DOMContentLoaded", function () {
-   // Masquer la section "Créer un compte" au chargement
-    document.getElementById("register-section").style.display = "none";
-    // Rendre le premier bouton non cliquable (par défaut actif)
-    document.getElementById("box1").style.pointerEvents = "none";
-
-    // Gestion des boutons de bascule
-    document.getElementById("box1").addEventListener("click", swapStyles);
-    document.getElementById("box2").addEventListener("click", swapStyles);
-
-    // Affichage / masquage du mot de passe (connexion)
-    const toggleConfigs = [
-        { toggleId: "toggle-login-password", inputId: "login-password" },
-        { toggleId: "toggle-register-password", inputId: "register-password" },
-        { toggleId: "toggle-register-confirm", inputId: "register-confirm" },
-    ];
-
-    toggleConfigs.forEach(({ toggleId, inputId }) => {
-        const toggle = document.getElementById(toggleId);
-        const input = document.getElementById(inputId);
-        if (toggle && input) {
-            toggle.addEventListener("click", function () {
-                const isPassword = input.type === "password";
-                input.type = isPassword ? "text" : "password";
-                this.classList.toggle("fa-eye");
-                this.classList.toggle("fa-eye-slash");
-            });
-        }
-    });
-
-
-
-    // Variables globales pour la validation du mot de passe
-        // Variables pour les champs de mot de passe
-    const passwordInput = document.getElementById("register-password");
-    const confirmInput = document.getElementById("register-confirm");
-        // Variables pour les messages de validation
-    const passwordValidationMessage = document.getElementById("password-validation-message");
-    const confirmValidationMessage = document.getElementById("confirm-validation-message");
-    
-    // Ajout d'écouteurs d'événements pour la validation du mot de passe
-    passwordInput.addEventListener('input', validatePasswordFormat);
-    passwordInput.addEventListener('blur', validatePasswordFormat);
-    confirmInput.addEventListener('input', validateForm);
-    confirmInput.addEventListener('blur', validateForm);
-
-    // Validation du formulaire d'inscription
-    function validateForm() {
-        const password = passwordInput.value.trim();
-        const confirmPassword = confirmInput.value.trim();
-    
-        if (password && confirmPassword && password !== confirmPassword) {
-            confirmValidationMessage.textContent = "Les mots de passe ne correspondent pas.";
-            confirmValidationMessage.style.color = "#e74c3c";
-            confirmInput.style.borderColor = "#e74c3c";
-            return false;
-        } else if (confirmPassword && password === confirmPassword) {
-            confirmValidationMessage.textContent = "✓ Les mots de passe correspondent";
-            confirmValidationMessage.style.color = "#2ecc71";
-            confirmInput.style.borderColor = "#2ecc71";
-            return true;
-        } else {
-            confirmValidationMessage.textContent = "";
-            confirmInput.style.borderColor = ""; // ou un style neutre
-            return false;
-        }
-    }
-
-
-    function validatePasswordFormat() {
-        const passwordValue = passwordInput.value.trim();
-        let isValid = false;
-    
-        const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
-    
-        if (!passwordValue) {
-            passwordValidationMessage.textContent = "Ce champ est requis.";
-            passwordValidationMessage.style.color = "#e74c3c";
-            passwordInput.style.borderColor = "#e74c3c";
-            isValid = false;
-        } else if (passwordRegex.test(passwordValue)) {
-            passwordValidationMessage.textContent = "✓ Mot de passe valide";
-            passwordValidationMessage.style.color = "#2ecc71";
-            passwordInput.style.borderColor = "#2ecc71";
-            isValid = true;
-        } else {
-            passwordValidationMessage.textContent = "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.";
-            passwordValidationMessage.style.color = "#e74c3c";
-            passwordInput.style.borderColor = "#e74c3c";
-            isValid = false;
-        }
-    
-        // Toujours revalider la correspondance après le format
-        validateForm();
-    
-        return isValid;
-    }
-});
-   </script>
+   <script src="switch.js"></script>
 </body>
 </html>
