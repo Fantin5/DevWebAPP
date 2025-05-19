@@ -52,4 +52,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
+    
+    // Change le style du header lors du défilement
+    window.addEventListener('scroll', function() {
+        const header = document.querySelector('header');
+        if (window.scrollY > 50) {
+            header.style.padding = "10px 35px"; // Légèrement plus compact
+            header.style.boxShadow = "0 2px 10px rgba(0, 0, 0, 0.3)"; // Ombre plus prononcée
+        } else {
+            header.style.padding = "15px 35px"; // Revient à la normale
+            header.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.2)"; // Ombre normale
+        }
+    });
 });

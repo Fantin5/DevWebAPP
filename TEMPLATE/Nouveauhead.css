@@ -6,44 +6,63 @@ header {
     justify-content: space-between;
     background-color: #828977;
     color: #E4D8C8;
-    padding: 10px 35px;
-  }
+    padding: 15px 35px; /* Padding vertical augmenté */
+    position: fixed; /* Fixe le header en haut */
+    top: 0;
+    left: 0;
+    z-index: 100; /* Assure que le header est au-dessus des autres éléments */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* Ombre pour mieux le distinguer */
+}
   
-  .logo {
+.logo {
     height: 50px;
-  }
+}
   
-  .connexion-profil {
+.connexion-profil {
     color: #E4D8C8;
-  }
+}
   
-  .nav-links {
+.nav-links {
     flex: 1; /* Prend l'espace disponible */
-  }
-  .nav-links ul {
+    display: flex;
+    justify-content: center;
+}
+
+.nav-links ul {
     margin: 0;
     padding: 0;
     list-style: none;
     display: flex;
-    gap: 90px;
-  }
-  .nav-links li {
-    font-size: 1em;
-  }
-  
-  .nav-links a {
+    gap: 120px; /* Augmentation de l'espacement entre les éléments */
+}
+
+.nav-links li {
+    font-size: 1.1em; /* Taille de police légèrement plus grande */
+    transition: transform 0.2s ease; /* Animation au survol */
+}
+
+.nav-links li:hover {
+    transform: translateY(-2px); /* Léger effet de soulèvement au survol */
+}
+
+.nav-links a {
     color: inherit;
     text-decoration: none;
     font-weight: bold;
-  }
+    padding: 8px 15px; /* Ajoute du padding pour agrandir la zone cliquable */
+    border-radius: 4px; /* Coins arrondis */
+    transition: background-color 0.2s ease, color 0.2s ease; /* Animation */
+}
 
+.nav-links a:hover {
+    background-color: rgba(228, 216, 200, 0.2); /* Fond légèrement visible au survol */
+    color: white; /* Texte blanc au survol */
+}
 
-
-
-
-
-
-
+/* Style spécial pour "Créer une activité" */
+.nav-links a i.fa-plus {
+    margin-right: 5px; /* Espace entre l'icône et le texte */
+}
 
 /* Styles pour le menu déroulant du profil */
 .profile-dropdown {
@@ -63,11 +82,12 @@ header {
     overflow: hidden;
     margin-top: 10px;
     animation: fadeIn 0.2s ease-in-out;
+    transform-origin: top right;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .dropdown-content a {
@@ -132,6 +152,11 @@ header {
     color: white;
 }
 
+.connexion-profil:hover i {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
 /* Divider entre les éléments du menu */
 .dropdown-divider {
     height: 1px;
@@ -150,32 +175,32 @@ header {
     display: flex;
     align-items: center;
     gap: 25px;
-  }
+}
   
-  .icon i {
+.icon i {
     color: #E4D8C8;
     cursor: pointer;
     transition: color 0.2s;
-  }
+}
   
-  .icon i:hover {
+.icon i:hover {
     color: white;
-  }
+}
   
-  /* Styles pour le panier */
-  .panier-link {
+/* Styles pour le panier */
+.panier-link {
     position: relative;
     display: inline-block;
     color: #E4D8C8;
     text-decoration: none;
     transition: color 0.2s;
-  }
+}
   
-  .panier-link:hover {
+.panier-link:hover {
     color: #fff;
-  }
+}
   
-  .panier-count {
+.panier-count {
     position: absolute;
     top: -8px;
     right: -8px;
@@ -189,15 +214,16 @@ header {
     display: flex;
     justify-content: center;
     align-items: center;
-  }
+}
+
 /* Styles de base pour le corps et la mise en page */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-  }
+}
   
-  body {
+body {
     margin: 0;
     padding: 0;
     display: flex;
@@ -205,10 +231,18 @@ header {
     min-height: 100vh; /* Assure que le corps prend toute la hauteur de la fenêtre */
     font-family: sans-serif;
     background-color: #E4D8C8;
-  }
-  
-  /* Améliorations spécifiques pour le header */
-  .header {
+}
+
+/* Main Content Container - ajout d'une marge pour éviter que le contenu soit sous le header */
+main {
+    flex: 1; /* Takes all available space between header and footer */
+    width: 100%;
+    margin-top: 80px; /* Valeur correspondant à la hauteur du header plus un peu d'espace */
+    padding: 20px;
+}
+
+/* Amélioration spécifiques pour le header */
+.header {
     width: 100%;
     display: flex;
     align-items: center;
@@ -217,48 +251,25 @@ header {
     color: #E4D8C8;
     padding: 10px 35px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Ajoute une légère ombre */
-  }
-  
-  /* Mise en page des liens de navigation */
-  .nav-links {
+}
+
+/* Mise en page des liens de navigation */
+.nav-links {
     flex: 1; /* Prend l'espace disponible */
     display: flex;
     justify-content: center; /* Centre les liens */
-  }
-  
-  .nav-links ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    gap: 90px;
-  }
-  
-  /* Amélioration des icônes */
-  .icon {
+}
+
+/* Amélioration des icônes */
+.icon {
     display: flex;
     align-items: center;
     gap: 25px;
     margin-left: auto; /* Pousse les icônes à droite */
-  }
-  
-  /* Ajustez la taille des icônes si nécessaire */
-  .icon i {
-    font-size: 20px; /* Ajustez la taille selon celle de main.php */
-  }
+}
 
-
-
-
-
-
-
-
-
-
-
-     /* Footer Styles */
-  footer {
+/* Footer Styles */
+footer {
     width: 100%; /* Full width */
     display: flex;
     flex-wrap: wrap;
@@ -268,38 +279,29 @@ header {
     padding: 15px 30px;
     font-weight: bold;
     font-size: 16px;
-  }
+}
   
-  footer ul {
+footer ul {
     list-style: none;
-  }
+}
   
-  footer ul li {
+footer ul li {
     margin-bottom: 10px;
-  }
+}
   
-  footer a {
+footer a {
     color: inherit;
     text-decoration: none;
-  }
+}
   
-  footer a:hover {
+footer a:hover {
     text-decoration: underline;
-  }
-  
-  /* Main Content Container */
-  main {
-    flex: 1; /* Takes all available space between header and footer */
-    width: 100%;
-  }
+}
 
-
-  .dropdown-content a i {
-    color: #000000; /* Couleur verte pour les icônes */
+.dropdown-content a i {
+    color: #000000; /* Couleur pour les icônes */
 }
     
-/* Ajoutez ces styles à la fin de votre fichier Nouveauhead.css */
-
 /* Style pour afficher le nom d'utilisateur dans le menu */
 .profile-name {
     margin-left: 5px;
@@ -314,47 +316,6 @@ header {
     vertical-align: middle;
 }
 
-/* Style pour les éléments du menu déroulant actifs */
-.dropdown-content a.active {
-    background-color: #f0f0f0;
-    font-weight: bold;
-    color: #45a163;
-}
-
-/* Animation améliorée pour le menu déroulant */
-.dropdown-content {
-    display: none;
-    position: absolute;
-    right: 0;
-    background-color: white;
-    min-width: 200px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-    z-index: 1000;
-    border-radius: 8px;
-    overflow: hidden;
-    margin-top: 10px;
-    animation: fadeIn 0.2s ease-in-out;
-    transform-origin: top right;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* Séparateur dans le menu déroulant */
-.dropdown-divider {
-    height: 1px;
-    background-color: #eee;
-    margin: 5px 0;
-}
-
-/* Animation de l'icône utilisateur lors du survol */
-.connexion-profil:hover i {
-    transform: scale(1.1);
-    transition: transform 0.2s ease;
-}
-
 /* Style pour les boutons de déconnexion */
 .dropdown-content a:last-child {
     color: #e74c3c;
@@ -365,10 +326,6 @@ header {
 }
 
 /* Animation lorsque le menu est affiché */
-.profile-dropdown.show .connexion-profil {
-    color: white;
-}
-
 .profile-dropdown.show .connexion-profil i {
     transform: scale(1.1);
 }

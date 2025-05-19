@@ -34,13 +34,13 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
       </a>
 <nav class="nav-links">
   <ul>
+      <li><a href="../Testing grounds/main.php">Accueil</a></li>
     <li><a href="../Concept/concept.php">Concept</a></li>
     <li><a href="../Testing grounds/jenis.php"><i class="fa-solid fa-plus"></i> Créer une activité</a></li>
   </ul>
 </nav>
     
       <div class="icon">
-        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
         <a href="../Testing grounds/panier.php" class="panier-link" aria-label="Panier">
           <i class="fa-solid fa-cart-shopping"></i>
           <span class="panier-count" id="panier-count">0</span>
@@ -67,3 +67,4 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
         <?php endif; ?>
       </div>
     </header>
+      <script src="../TEMPLATE/Nouveauhead.js"></script>
