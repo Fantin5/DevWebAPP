@@ -231,6 +231,7 @@ body {
     min-height: 100vh; /* Assure que le corps prend toute la hauteur de la fenêtre */
     font-family: sans-serif;
     background-color: #E4D8C8;
+    padding-top: 80px;
 }
 
 /* Main Content Container - ajout d'une marge pour éviter que le contenu soit sous le header */
@@ -239,6 +240,13 @@ main {
     width: 100%;
     margin-top: 80px; /* Valeur correspondant à la hauteur du header plus un peu d'espace */
     padding: 20px;
+}
+main, .page-container, .form-container, .panier-container, .activities-container {
+    margin-top: 20px;
+}
+
+main, .page-container, .activities-container, .panier-container, .form-container {
+    flex: 1 0 auto;
 }
 
 /* Amélioration spécifiques pour le header */
@@ -279,6 +287,8 @@ footer {
     padding: 15px 30px;
     font-weight: bold;
     font-size: 16px;
+     flex-shrink: 0; /* Empêche le footer de rétrécir */
+    margin-top: auto;
 }
   
 footer ul {
