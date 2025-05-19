@@ -18,6 +18,21 @@ if ($conn->connect_error) {
 
 // Vérifier si le formulaire a été soumis
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Check if an image was provided (either cropped or direct upload)
+    $has_image = false;
+    
+    if (isset($_POST['cropped_image']) && !empty($_POST['cropped_image'])) {
+        $has_image = true;
+    } elseif (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+        $has_image = true;
+    }
+    
+    if (!$has_image) {
+        // Redirect back to the form with an error message
+        header("Location: jenis.php?error=image_required");
+        exit();
+    }
+    
     // Récupérer les données du formulaire
     $titre = $conn->real_escape_string($_POST['titre']);
     $description = $conn->real_escape_string($_POST['description']);
