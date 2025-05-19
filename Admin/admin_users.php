@@ -7,6 +7,35 @@
 </head>
 <body>
     <h1>Salle de contrôle</h1>
+    <?php
+    session_start();
+    // Configuration de la base de données
+    $servername = "localhost";
+    $username = "root";
+    $password = "";
+    $dbname = "activity";
+
+    if (!(isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1)) {
+        header("Location: login.php");
+        exit();
+    }
+    // Créer une connexion
+    $conn = new mysqli($servername, $username, $password, $dbname);
+
+    // Connect to user database
+    $user_conn = new mysqli($servername, $username, $password, "user_db");
+
+    // Connect to user database
+    $user_conn = new mysqli($servername, $username, $password, "user_db");
+    $admin = "SELECT * FROM user_form WHERE user_type = 1";
+    $result = $user_conn->query($admin);
+    $users = "SELECT * FROM user_form WHERE user_type = 0";
+    $result_users = $user_conn->query($users);
+    $user = $result->fetch_assoc();
+    
+
+    ?>
+
     <table>
         <tbody>
             <tr>
