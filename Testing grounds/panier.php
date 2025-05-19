@@ -150,6 +150,25 @@
         align-items: center;
         padding: 20px;
         border-left: 1px solid #eee;
+        gap: 10px; /* Add gap between buttons */
+      }
+
+      .panier-item-buy {
+        background-color: #45cf91; /* Same as "Procéder au paiement" */
+        color: #111;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .panier-item-buy:hover {
+        background-color: #3abd7a;
       }
 
       .panier-item-remove {

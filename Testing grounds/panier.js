@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fonction pour afficher le contenu du panier
     function displayCart() {
         const panierContent = document.getElementById('panier-content');
-        
+
         // Si le panier est vide
         if (cartItems.length === 0) {
             panierContent.innerHTML = `
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             return;
         }
-        
+
         // Calculer le total
         let total = 0;
         cartItems.forEach(item => {
@@ -41,12 +41,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 total += parseFloat(item.prix);
             }
         });
-        
+
         // Afficher les éléments du panier
         let cartHTML = `
             <div class="panier-items">
         `;
-        
+
         cartItems.forEach((item, index) => {
             // Formater les tags
             const tagsHTML = item.tags.map(tag => {
@@ -58,10 +58,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 return `<span class="panier-item-tag ${tagClass}">${formatTagName(tag)}</span>`;
             }).join('');
-            
+
             // Formater le prix
             const priceText = item.prix > 0 ? `${item.prix.toFixed(2)} €` : 'Gratuit';
-            
+
             cartHTML += `
                 <div class="panier-item" data-id="${item.id}">
                     <img src="${item.image}" alt="${item.titre}" class="panier-item-image">
@@ -74,14 +74,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p class="panier-item-price">${priceText}</p>
                     </div>
                     <div class="panier-item-actions">
+                        <button class="panier-item-buy" data-index="${index}">
+                            <i class="fa-solid fa-credit-card"></i> Acheter individuellement
+                        </button>
                         <button class="panier-item-remove" data-index="${index}">
                             <i class="fa-solid fa-trash"></i> Supprimer
                         </button>
                     </div>
-                </div>
+                </div> 
             `;
         });
-        
+
         cartHTML += `
             </div>
             <div class="panier-summary">
@@ -104,10 +107,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <button class="checkout-button">Procéder au paiement</button>
             </div>
-        `
-        
+        `;
+
         panierContent.innerHTML = cartHTML;
-        
+
         // Ajouter les événements pour supprimer des éléments du panier
         document.querySelectorAll('.panier-item-remove').forEach(button => {
             button.addEventListener('click', function () {
@@ -115,20 +118,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 removeFromCart(index);
             });
         });
-        
-        // Événement pour le bouton de paiement
-        const checkoutButton = document.querySelector('.checkout-button');
-        if (checkoutButton) {
-            checkoutButton.addEventListener('click', function () {
-                // Check if the user is logged in
+
+        // Ajouter les événements pour les boutons "Acheter individuellement"
+        document.querySelectorAll('.panier-item-buy').forEach(button => {
+            button.addEventListener('click', function () {
+                // Vérifier si l'utilisateur est connecté
                 fetch('../Connexion-Inscription/auth_check.php')
                     .then(response => response.json())
                     .then(data => {
                         if (data.logged_in) {
-                            // Show the popup if the user is logged in
+                            // Afficher le popup si l'utilisateur est connecté
                             alert('Fonctionnalité de paiement à venir.');
                         } else {
-                            // Redirect to the login page if the user is not logged in
+                            // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
+                            window.location.href = '../Connexion-Inscription/login_form.php';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking login status:', error);
+                    });
+            });
+        });
+
+        // Événement pour le bouton de paiement
+        const checkoutButton = document.querySelector('.checkout-button');
+        if (checkoutButton) {
+            checkoutButton.addEventListener('click', function () {
+                // Vérifier si l'utilisateur est connecté
+                fetch('../Connexion-Inscription/auth_check.php')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.logged_in) {
+                            // Afficher le popup si l'utilisateur est connecté
+                            alert('Fonctionnalité de paiement à venir.');
+                        } else {
+                            // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
                             window.location.href = '../Connexion-Inscription/login_form.php';
                         }
                     })
