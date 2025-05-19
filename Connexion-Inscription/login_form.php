@@ -116,7 +116,7 @@ main {
    display: flex;
    flex-direction: column;
    align-items: center;
-   margin-top: 100px;
+   margin-top: 7%;
    gap: 50px;
    width: 100%;
    max-width: 1200px;
