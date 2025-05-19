@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Panier | Synapse</title>
     <link rel="stylesheet" href="Accueil.css" />
-    <link rel="stylesheet" href="../TEMPLATE/Nouveauhead.css"" />
+  
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
@@ -261,8 +261,7 @@
     include '../TEMPLATE/footer.php';
     ?>
 
-    <!-- lien -->
-    <script src="../TEMPLATE/Nouveauhead.js"></script>
+
     <style>
       /* Styles pour l'icône du panier et le compteur */
       .panier-link {
