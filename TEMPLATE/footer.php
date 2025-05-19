@@ -20,6 +20,6 @@
     </ul>
 </footer>
 
-<script src="../TEMPLATE/Nouveauhead.js"></script>
+<script src="Nouveauhead.js"></script>
 </body>
 </html>
