@@ -67,4 +67,3 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
         <?php endif; ?>
       </div>
     </header>
-     <script src="../TEMPLATE/Nouveauhead.js"></script>
