@@ -24,3 +24,20 @@ function redirect_if_logged_in() {
         exit();
     }
 }
+
+// filepath: /c:/xampp/htdocs/p1/DevWebAPP/Connexion-Inscription/auth_check.php
+header('Content-Type: application/json');
+
+// Start the session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Check if the user is logged in
+$response = [
+    'logged_in' => isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
+];
+
+// Return the response as JSON
+echo json_encode($response);
+exit();

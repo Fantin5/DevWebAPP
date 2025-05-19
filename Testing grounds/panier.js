@@ -104,23 +104,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <button class="checkout-button">Procéder au paiement</button>
             </div>
-        `;
+        `
         
         panierContent.innerHTML = cartHTML;
         
         // Ajouter les événements pour supprimer des éléments du panier
         document.querySelectorAll('.panier-item-remove').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 const index = parseInt(this.getAttribute('data-index'));
                 removeFromCart(index);
             });
         });
         
-        // Événement pour le bouton de paiement (pour l'instant, juste une alerte)
+        // Événement pour le bouton de paiement
         const checkoutButton = document.querySelector('.checkout-button');
         if (checkoutButton) {
-            checkoutButton.addEventListener('click', function() {
-                alert('Fonctionnalité de paiement à venir.');
+            checkoutButton.addEventListener('click', function () {
+                // Check if the user is logged in
+                fetch('../Connexion-Inscription/auth_check.php')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.logged_in) {
+                            // Show the popup if the user is logged in
+                            alert('Fonctionnalité de paiement à venir.');
+                        } else {
+                            // Redirect to the login page if the user is not logged in
+                            window.location.href = '../Connexion-Inscription/login_form.php';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking login status:', error);
+                    });
             });
         }
     }
