@@ -1,56 +1,61 @@
+<?php
+// Recherche de l'utilisateur connecté (id de session)
+include 'adminVerify.php';
+
+// Requête pour les admins
+$admin = "SELECT * FROM user_form WHERE u_type = 1";
+$result_admin = $conn->query($admin);
+
+// Requête pour les utilisateurs lambdas
+$users = "SELECT * FROM user_form WHERE u_type = 0";
+$result_users = $conn->query($users);
+
+?>
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Control Panel</title>
-</head>
-<body>
-    <h1>Salle de contrôle</h1>
-    <?php
-    session_start();
-    // Configuration de la base de données
-    $servername = "localhost";
-    $username = "root";
-    $password = "";
-    $dbname = "activity";
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+    </head>
+    <body>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Affichage des admins -->
+                <tr>
+                    <th colspan="4">Admins</th>
+                </tr>
+                <?php while ($admin = $result_admin->fetch_assoc()) { ?>
+                    <tr>
+                        <td><?php echo $admin['id']; ?></td>
+                        <td><?php echo $admin['name']; ?></td>
+                        <td><?php echo $admin['email']; ?></td>
+                        <td>Admin</td>
+                    </tr>
+                <?php } ?>
 
-    if (!(isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1)) {
-        header("Location: login.php");
-        exit();
-    }
-    // Créer une connexion
-    $conn = new mysqli($servername, $username, $password, $dbname);
-
-    // Connect to user database
-    $user_conn = new mysqli($servername, $username, $password, "user_db");
-
-    // Connect to user database
-    $user_conn = new mysqli($servername, $username, $password, "user_db");
-    $admin = "SELECT * FROM user_form WHERE user_type = 1";
-    $result = $user_conn->query($admin);
-    $users = "SELECT * FROM user_form WHERE user_type = 0";
-    $result_users = $user_conn->query($users);
-    $user = $result->fetch_assoc();
-    
-
-    ?>
-
-    <table>
-        <tbody>
-            <tr>
-                <td><a href="admin.php">Gestion des utilisateurs</a></td>
-            </tr>
-            <tr>
-                <td><a href="admin_activites.php">Gestion des activités</a></td>
-            </tr>
-            <tr>
-                <td><a href="admin_avis.php">Gestion des avis</a></td>
-            </tr>
-            <tr>
-                <td><a href="admin_messages.php">Gestion des messages</a></td>
-            </tr>
-        </tbody>
-    </table>
-</body>
-</html>
+                <!-- Affichage des utilisateurs lambdas -->
+                <tr>
+                    <th colspan="4">Utilisateurs Lambdas</th>
+                </tr>
+                <?php while ($user = $result_users->fetch_assoc()) { ?>
+                    <tr>
+                        <td><?php echo $user['id']; ?></td>
+                        <td><?php echo $user['name']; ?></td>
+                        <td><?php echo $user['email']; ?></td>
+                        <td>Utilisateur</td>
+                    </tr>
+                <?php } ?>
+            </tbody>
+        </table>
+    </body>
+    </html>

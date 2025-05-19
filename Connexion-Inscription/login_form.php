@@ -23,6 +23,7 @@ if(isset($_POST['login_submit'])){
          $_SESSION['user_name'] = $row['name'];
          $_SESSION['user_first_name'] = $row['first_name']; 
          $_SESSION['user_email'] = $row['email'];
+         $_SESSION['user_type'] = $row['user_type'];
          $_SESSION['logged_in'] = true;
          
          header('Location: ../Testing grounds/main.php');

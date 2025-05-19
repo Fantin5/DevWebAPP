@@ -1,3 +1,10 @@
+<?php
+    // Vérification de la session (rejeter si non admin)
+    include 'adminVerify.php';
+    
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,7 +17,7 @@
     <table>
         <tbody>
             <tr>
-                <td><a href="admin.php">Gestion des utilisateurs</a></td>
+                <td><a href="admin_users.php">Gestion des utilisateurs</a></td>
             </tr>
             <tr>
                 <td><a href="admin_activites.php">Gestion des activités</a></td>
