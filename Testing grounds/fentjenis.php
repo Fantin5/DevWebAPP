@@ -2,6 +2,9 @@
 // Add session_start() at the top if not already present
 session_start();
 
+// Include the newsletter functions
+require_once '../includes/newsletter_functions.php';
+
 // Configuration de la base de données
 $servername = "localhost";
 $username = "root";
@@ -125,6 +128,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $conn->query($sql_tag);
             }
         }
+        
+        // Send notification to subscribed users about the new activity
+        sendActivityNotification($titre, $activity_id);
         
         // Rediriger vers la page d'accueil avec un message de succès
         header("Location: main.php?success=1");
