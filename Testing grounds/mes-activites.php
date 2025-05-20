@@ -1,5 +1,11 @@
 <?php
 session_start();
+// Check if user is logged in, redirect if not
+if(!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header('Location: ../Connexion-Inscription/login_form.php');
+    exit();
+}
+
 // Configuration de la base de données
 $servername = "localhost";
 $username = "root";
@@ -18,36 +24,69 @@ if ($conn->connect_error) {
 $successMessage = '';
 $errorMessage = '';
 
+// Get current user ID
+$user_id = $_SESSION['user_id'];
+
 // Traitement de la suppression d'activité
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $id = $_GET['delete'];
     
-    // Supprimer d'abord les tags associés
-    $sql_delete_tags = "DELETE FROM tags WHERE activite_id = ?";
-    $stmt_tags = $conn->prepare($sql_delete_tags);
-    $stmt_tags->bind_param("i", $id);
-    $stmt_tags->execute();
-    $stmt_tags->close();
+    // Vérifier que l'activité appartient bien à l'utilisateur actuel
+    $check_sql = "SELECT description FROM activites WHERE id = ?";
+    $stmt_check = $conn->prepare($check_sql);
+    $stmt_check->bind_param("i", $id);
+    $stmt_check->execute();
+    $result_check = $stmt_check->get_result();
     
-    // Puis supprimer l'activité
-    $sql_delete = "DELETE FROM activites WHERE id = ?";
-    $stmt = $conn->prepare($sql_delete);
-    $stmt->bind_param("i", $id);
-    
-    if ($stmt->execute()) {
-        $successMessage = "L'activité a été supprimée avec succès.";
+    if($result_check->num_rows > 0) {
+        $activity = $result_check->fetch_assoc();
+        $isOwner = false;
+        
+        // Vérifier si l'utilisateur est le créateur
+        if (isset($activity['description']) && preg_match('/<!--CREATOR:(.*?)-->/', $activity['description'], $matches)) {
+            $creatorInfo = json_decode(base64_decode($matches[1]), true);
+            if (isset($creatorInfo['user_id']) && $creatorInfo['user_id'] == $user_id) {
+                $isOwner = true;
+            }
+        }
+        
+        if ($isOwner) {
+            // Supprimer d'abord les tags associés
+            $sql_delete_tags = "DELETE FROM tags WHERE activite_id = ?";
+            $stmt_tags = $conn->prepare($sql_delete_tags);
+            $stmt_tags->bind_param("i", $id);
+            $stmt_tags->execute();
+            $stmt_tags->close();
+            
+            // Puis supprimer l'activité
+            $sql_delete = "DELETE FROM activites WHERE id = ?";
+            $stmt = $conn->prepare($sql_delete);
+            $stmt->bind_param("i", $id);
+            
+            if ($stmt->execute()) {
+                $successMessage = "L'activité a été supprimée avec succès.";
+            } else {
+                $errorMessage = "Erreur lors de la suppression de l'activité: " . $conn->error;
+            }
+            $stmt->close();
+        } else {
+            $errorMessage = "Vous n'avez pas le droit de supprimer cette activité.";
+        }
     } else {
-        $errorMessage = "Erreur lors de la suppression de l'activité: " . $conn->error;
+        $errorMessage = "Activité introuvable.";
     }
-    $stmt->close();
+    $stmt_check->close();
 }
 
 // Récupérer les activités depuis la base de données
+// Cette requête facilite le filtrage au niveau de la base de données mais nous gardons quand même 
+// la vérification par user_id pour plus de sécurité
 $sql = "SELECT a.*, 
         (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags
         FROM activites a 
+        WHERE a.description LIKE '%<!--CREATOR:%' 
         ORDER BY date_creation DESC";
-        
+
 $result = $conn->query($sql);
 
 // Fonction pour obtenir les étoiles formatées basées sur la note
@@ -214,6 +253,7 @@ function getTagClass($tag) {
         transform: scale(1.1);
       }
       
+      /* Fixed tag container */
       .tag-container {
         position: absolute;
         bottom: 15px;
@@ -222,8 +262,10 @@ function getTagClass($tag) {
         gap: 8px;
         flex-wrap: wrap;
         max-width: 90%;
+        z-index: 1;
       }
       
+      /* Fixed tag styling */
       .tag {
         background-color: #828977;
         color: white;
@@ -232,6 +274,9 @@ function getTagClass($tag) {
         font-size: 12px;
         font-weight: 600;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        margin-bottom: 5px;
+        white-space: nowrap;
+        display: inline-block;
       }
       
       .tag.primary {
@@ -249,11 +294,13 @@ function getTagClass($tag) {
         color: #111;
       }
       
+      /* Improved card info section */
       .card-info {
         flex-grow: 1;
         padding: 20px;
         display: flex;
         flex-direction: column;
+        min-height: 120px; /* Ensure consistent height */
       }
       
       .card-title {
@@ -287,12 +334,22 @@ function getTagClass($tag) {
         color: var(--primary-color);
       }
       
+      /* Fixed card actions */
       .card-actions {
         padding: 15px 20px;
         border-top: 1px solid #eee;
         display: flex;
         justify-content: space-between;
         background-color: #f9f9f9;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      
+      /* Fixed action links */
+      .action-links {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
       }
       
       .card-button {
@@ -326,11 +383,6 @@ function getTagClass($tag) {
       .delete-button:hover {
         background-color: #c0392b;
         transform: translateY(-2px);
-      }
-      
-      .action-links {
-        display: flex;
-        gap: 10px;
       }
       
       .rating {
@@ -505,7 +557,6 @@ function getTagClass($tag) {
         
         .card-actions {
           flex-direction: column;
-          gap: 10px;
         }
         
         .action-links {
@@ -550,77 +601,94 @@ function getTagClass($tag) {
 
       <div class="activities-grid">
         <?php 
+        $userActivityCount = 0;
+        
         if ($result->num_rows > 0) {
-            // Afficher chaque activité
+            // Parcourir toutes les activités
             while($row = $result->fetch_assoc()) {
-                // Générer une note aléatoire pour la démonstration
-                $randomRating = rand(30, 50) / 10; // Note entre 3.0 et 5.0 
+                $isUserActivity = false;
                 
-                // Liste des tags
-                $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
-                
-                // Type de prix
-                $isPaid = $row["prix"] > 0;
-                $priceText = $isPaid ? number_format($row["prix"], 2) . " €" : "Gratuit";
-                
-                echo '<div class="activity-card" data-id="' . $row['id'] . '">';
-                echo '<div class="card-content">';
-                
-                // Image avec conteneur de taille fixe
-                echo '<div class="image-container">';
-                if ($row["image_url"]) {
-                    echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
-                } else {
-                    echo '<img src="nature-placeholder.jpg" alt="placeholder" />';
-                }
-                echo '</div>';
-                
-                echo '<div class="tag-container">';
-                
-                // Affichage des tags (limité à 2)
-                $displayedTags = 0;
-                foreach ($tagList as $tag) {
-                    if ($displayedTags < 2) {
-                        $tagClass = getTagClass($tag);
-                        echo '<span class="tag ' . $tagClass . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
-                        $displayedTags++;
+                // Vérifier si c'est une activité de l'utilisateur actuel
+                if (isset($row["description"]) && preg_match('/<!--CREATOR:(.*?)-->/', $row["description"], $matches)) {
+                    // Extraire et décoder les données du créateur
+                    $creatorInfo = json_decode(base64_decode($matches[1]), true);
+                    if (isset($creatorInfo['user_id']) && $creatorInfo['user_id'] == $user_id) {
+                        $isUserActivity = true;
+                        $userActivityCount++;
+                        
+                        // Générer une note aléatoire pour la démonstration
+                        $randomRating = rand(30, 50) / 10; // Note entre 3.0 et 5.0 
+                        
+                        // Liste des tags
+                        $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
+                        
+                        // Type de prix
+                        $isPaid = $row["prix"] > 0;
+                        $priceText = $isPaid ? number_format($row["prix"], 2) . " €" : "Gratuit";
+                        
+                        echo '<div class="activity-card" data-id="' . $row['id'] . '">';
+                        echo '<div class="card-content">';
+                    
+                        // Image avec conteneur de taille fixe
+                        echo '<div class="image-container">';
+                        if ($row["image_url"]) {
+                            echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
+                        } else {
+                            echo '<img src="nature-placeholder.jpg" alt="placeholder" />';
+                        }
+                        echo '</div>';
+                        
+                        echo '<div class="tag-container">';
+                        
+                        // Affichage des tags (limité à 2)
+                        $displayedTags = 0;
+                        foreach ($tagList as $tag) {
+                            if ($displayedTags < 2) {
+                                $tagClass = getTagClass($tag);
+                                echo '<span class="tag ' . $tagClass . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
+                                $displayedTags++;
+                            }
+                        }
+                        
+                        // Afficher le statut gratuit/payant
+                        if ($isPaid) {
+                            echo '<span class="tag">Payant</span>';
+                        } else {
+                            echo '<span class="tag accent">Gratuit</span>';
+                        }
+                        
+                        echo '</div></div>';
+                        
+                        echo '<div class="card-info">';
+                        echo '<h3 class="card-title">' . htmlspecialchars($row["titre"]) . '</h3>';
+                        
+                        // Date ou période
+                        if ($row["date_ou_periode"]) {
+                            echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
+                        }
+                        
+                        echo '<p class="price ' . ($isPaid ? '' : 'free') . '">' . $priceText . '</p>';
+                        
+                        echo '</div>';
+                        
+                        echo '<div class="card-actions">';
+                        echo '<div class="rating">' . getStars($randomRating) . '</div>';
+                        
+                        echo '<div class="action-links">';
+                        echo '<a href="modifier-activite.php?id=' . $row['id'] . '" class="card-button edit-button"><i class="fa-solid fa-pen"></i> Modifier</a>';
+                        echo '<button class="card-button delete-button" data-id="' . $row['id'] . '"><i class="fa-solid fa-trash"></i> Supprimer</button>';
+                        echo '</div>';
+                        
+                        echo '</div>';
+                        
+                        echo '</div>';
                     }
                 }
-                
-                // Afficher le statut gratuit/payant
-                if ($isPaid) {
-                    echo '<span class="tag">Payant</span>';
-                } else {
-                    echo '<span class="tag accent">Gratuit</span>';
-                }
-                
-                echo '</div></div>';
-                
-                echo '<div class="card-info">';
-                echo '<h3 class="card-title">' . htmlspecialchars($row["titre"]) . '</h3>';
-                
-                // Date ou période
-                if ($row["date_ou_periode"]) {
-                    echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
-                }
-                
-                echo '<p class="price ' . ($isPaid ? '' : 'free') . '">' . $priceText . '</p>';
-                
-                echo '</div>';
-                
-                echo '<div class="card-actions">';
-                echo '<div class="rating">' . getStars($randomRating) . '</div>';
-                
-                echo '<div class="action-links">';
-                echo '<a href="modifier-activite.php?id=' . $row['id'] . '" class="card-button edit-button"><i class="fa-solid fa-pen"></i> Modifier</a>';
-                echo '<button class="card-button delete-button" data-id="' . $row['id'] . '"><i class="fa-solid fa-trash"></i> Supprimer</button>';
-                echo '</div>';
-                
-                echo '</div>';
-                
-                echo '</div>';
             }
-        } else {
+        }
+        
+        // Afficher un message si aucune activité n'a été trouvée
+        if ($userActivityCount == 0) {
             echo '<div class="no-activities">';
             echo '<i class="fa-solid fa-calendar-xmark"></i>';
             echo '<p>Vous n\'avez pas encore créé d\'activités.</p>';
@@ -676,7 +744,8 @@ function getTagClass($tag) {
         
         // Afficher la boîte de dialogue de confirmation lors du clic sur le bouton de suppression
         document.querySelectorAll('.delete-button').forEach(button => {
-          button.addEventListener('click', function() {
+          button.addEventListener('click', function(e) {
+            e.stopPropagation(); // Empêcher la propagation du clic vers la carte
             activityToDelete = this.getAttribute('data-id');
             confirmDialog.classList.add('show');
           });

@@ -20,6 +20,5 @@
     </ul>
 </footer>
 
-<script src="Nouveauhead.js"></script>
 </body>
 </html>

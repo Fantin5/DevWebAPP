@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Date input
     const dateOuPeriodeInput = document.getElementById('date_ou_periode');
     const dateValidationMessage = document.getElementById('date-validation-message');
+    const dateSuggestionMessage = document.getElementById('date-suggestion-message');
     
     // Options de prix
     const gratuitRadio = document.getElementById('gratuit');
@@ -73,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
         reader.onload = function(e) {
             imagePreview.src = e.target.result;
             uploadZone.classList.add('hidden');
+            uploadZone.classList.remove('required-field'); // Remove required field highlighting
             previewContainer.classList.remove('hidden');
             croppedContainer.classList.add('hidden');
             
@@ -175,12 +177,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const value = dateOuPeriodeInput.value.trim();
         let isValid = false;
         let message = '';
-
+        
         // Si le champ est vide
         if (!value) {
             dateValidationMessage.textContent = 'Ce champ est requis';
             dateValidationMessage.style.color = '#e74c3c';
             dateOuPeriodeInput.style.borderColor = '#e74c3c';
+            dateSuggestionMessage.classList.add('hidden');
             return false;
         }
 
@@ -197,6 +200,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Vérifie "Tous les..." (ex: Tous les lundis)
         const recurringRegex = /^tous les (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s?$/i;
         
+        // Vérifie le début d'un pattern récurrent (pour afficher le message de suggestion)
+        const recurringStartRegex = /^tous les (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s?/i;
+        
+        // Vérifie "Tous les... jusqu'au..." (ex: Tous les lundis jusqu'au 15 septembre 2025)
+        const recurringWithEndRegex = /^tous les (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s? jusqu'au (0?[1-9]|[12][0-9]|3[01])(\/|\s+)(0?[1-9]|1[0-2]|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)(\/|\s+)\d{4}$/i;
+        
+        // Vérifie "Tous les... (date non spécifiée)" (ex: Tous les lundis (date non spécifiée))
+        const recurringUnknownEndRegex = /^tous les (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s? \(date non spécifiée\)$/i;
+        
         // Vérifie la validité
         if (dateRegex.test(value)) {
             // Validation supplémentaire pour la date JJ/MM/AAAA
@@ -206,6 +218,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!isValid) {
                 message = 'Date invalide. Veuillez vérifier jour/mois/année';
             }
+            dateSuggestionMessage.classList.add('hidden');
+            
         } else if (textDateRegex.test(value)) {
             // Date avec texte (ex: 15 juin 2025)
             const parts = value.split(' ');
@@ -219,6 +233,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!isValid) {
                 message = 'Date invalide. Veuillez vérifier jour/mois/année';
             }
+            dateSuggestionMessage.classList.add('hidden');
+            
         } else if (periodRegex.test(value)) {
             // Période (ex: 01/06/2025 - 15/06/2025)
             const dates = value.split('-').map(d => d.trim());
@@ -242,11 +258,42 @@ document.addEventListener('DOMContentLoaded', function() {
                     message = 'La date de fin doit être après la date de début';
                 }
             }
-        } else if (recurringRegex.test(value)) {
-            // Format récurrent valide (ex: Tous les lundis)
+            dateSuggestionMessage.classList.add('hidden');
+            
+        } else if (recurringWithEndRegex.test(value)) {
+            // Format récurrent avec date de fin (ex: Tous les lundis jusqu'au 15 septembre 2025)
             isValid = true;
+            dateSuggestionMessage.classList.add('hidden');
+            
+        } else if (recurringUnknownEndRegex.test(value)) {
+            // Format récurrent avec mention "date non spécifiée"
+            isValid = true;
+            dateSuggestionMessage.classList.add('hidden');
+            
+        } else if (recurringRegex.test(value)) {
+            // Format récurrent valide sans date de fin (ex: Tous les lundis)
+            // C'est valide techniquement, mais on encourage à ajouter une date de fin
+            isValid = false;
+            message = 'Veuillez préciser une date de fin pour l\'événement récurrent';
+            
+            // Afficher une suggestion d'ajout de date de fin
+            showRecurringSuggestion(value.match(/tous les ([a-zéèê]+)s?/i)[1]);
+            
+        } else if (recurringStartRegex.test(value)) {
+            // L'utilisateur est en train d'écrire un pattern récurrent, mais il n'est pas encore complet
+            // On considère que c'est en cours de saisie, donc valide temporairement
+            isValid = false;
+            message = 'Veuillez préciser une date de fin pour l\'événement récurrent';
+            
+            // Récupérer le jour de la semaine mentionné
+            const weekdayMatch = value.match(/tous les ([a-zéèê]+)s?/i);
+            if (weekdayMatch && weekdayMatch[1]) {
+                showRecurringSuggestion(weekdayMatch[1]);
+            }
+            
         } else {
             message = 'Format non reconnu. Utilisez DD/MM/YYYY, "JJ mois AAAA", "DD/MM/YYYY - DD/MM/YYYY" ou "Tous les..."';
+            dateSuggestionMessage.classList.add('hidden');
         }
 
         // Afficher le résultat de validation
@@ -261,6 +308,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         return isValid;
+    }
+
+    // Fonction pour afficher la suggestion pour les événements récurrents
+    function showRecurringSuggestion(weekday) {
+        const today = new Date();
+        const oneYearLater = new Date(today);
+        oneYearLater.setFullYear(today.getFullYear() + 1);
+        
+        const day = oneYearLater.getDate();
+        const monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+        const month = monthNames[oneYearLater.getMonth()];
+        const year = oneYearLater.getFullYear();
+        
+        const suggestion = `${weekday}s jusqu'au ${day} ${month} ${year}`;
+        
+        dateSuggestionMessage.innerHTML = `
+            Pour les événements récurrents, précisez une date de fin :<br>
+            - "Tous les ${suggestion}"<br>
+            - ou "Tous les ${weekday}s (date non spécifiée)" si vous ne connaissez pas la date de fin
+        `;
+        dateSuggestionMessage.classList.remove('hidden');
     }
 
     // Fonction pour vérifier si une date est valide
@@ -295,6 +363,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!imageUploaded) {
             isValid = false;
             errorMessage += 'Une image est requise.\n';
+            // Highlight the upload zone with a red border
+            uploadZone.classList.add('required-field');
+            // Scroll to the image upload section
+            uploadZone.scrollIntoView({ behavior: 'smooth' });
         }
         
         if (payantRadio.checked && (!document.getElementById('prix').value || document.getElementById('prix').value <= 0)) {
@@ -320,5 +392,16 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Erreur de validation:\n' + errorMessage);
         }
         
+    });
+
+    // Suggestion pour compléter "Date non spécifiée"
+    dateOuPeriodeInput.addEventListener('keydown', function(e) {
+        // Si l'utilisateur appuie sur "(" après avoir écrit "Tous les [jour]"
+        if (e.key === '(' && /^Tous les (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s?\s*$/i.test(this.value)) {
+            // Compléter automatiquement avec "(date non spécifiée)"
+            this.value += "(date non spécifiée)";
+            e.preventDefault();
+            validateDateFormat();
+        }
     });
 });

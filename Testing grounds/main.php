@@ -21,7 +21,8 @@ $page_title = "Accueil - Synapse";
 
 // Récupérer les activités depuis la base de données
 $sql = "SELECT a.*, 
-        (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags
+        (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags,
+        DATEDIFF(STR_TO_DATE(SUBSTRING_INDEX(date_ou_periode, ' - ', -1), '%d/%m/%Y'), NOW()) as days_remaining
         FROM activites a 
         ORDER BY date_creation DESC";
         
@@ -63,10 +64,64 @@ function getTagClass($tag) {
         'sport' => 'secondary',
         'exterieur' => 'accent',
         'interieur' => 'secondary',
-        'gratuit' => 'accent'
+        'gratuit' => 'accent',
+        'ecologie' => 'primary',
+        'randonnee' => 'accent',
+        'jardinage' => 'primary',
+        'meditation' => 'secondary',
+        'artisanat' => 'accent'
     ];
     
     return isset($tagClasses[$tag]) ? $tagClasses[$tag] : '';
+}
+
+// Function to check if an activity is ending soon (7 days or less)
+function isEndingSoon($activity) {
+    // If days_remaining is numerical and between 0 and 7
+    if (isset($activity['days_remaining']) && is_numeric($activity['days_remaining']) && $activity['days_remaining'] >= 0 && $activity['days_remaining'] <= 7) {
+        return true;
+    }
+    
+    // For activities with date format "DD/MM/YYYY - DD/MM/YYYY"
+    if (preg_match('/(\d{1,2})\/(\d{1,2})\/(\d{4})\s*-\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/', $activity['date_ou_periode'], $matches)) {
+        $endDay = $matches[4];
+        $endMonth = $matches[5];
+        $endYear = $matches[6];
+        
+        $endDate = new DateTime("$endYear-$endMonth-$endDay");
+        $now = new DateTime();
+        $diff = $now->diff($endDate);
+        
+        // If end date is in the future and within 7 days
+        if (!$diff->invert && $diff->days <= 7) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Function to get days remaining for display
+function getDaysRemaining($activity) {
+    if (isset($activity['days_remaining']) && is_numeric($activity['days_remaining'])) {
+        return $activity['days_remaining'];
+    }
+    
+    if (preg_match('/(\d{1,2})\/(\d{1,2})\/(\d{4})\s*-\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/', $activity['date_ou_periode'], $matches)) {
+        $endDay = $matches[4];
+        $endMonth = $matches[5];
+        $endYear = $matches[6];
+        
+        $endDate = new DateTime("$endYear-$endMonth-$endDay");
+        $now = new DateTime();
+        $diff = $now->diff($endDate);
+        
+        if (!$diff->invert) {
+            return $diff->days;
+        }
+    }
+    
+    return null;
 }
 ?>
 
@@ -81,7 +136,6 @@ function getTagClass($tag) {
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
-    <link rel="stylesheet" href="../TEMPLATE/Nouveauhead.css" />
   </head>
   <body>
 
@@ -90,311 +144,485 @@ function getTagClass($tag) {
 include '../TEMPLATE/Nouveauhead.php';
 ?>
 
-<!-- Carousel Section -->
-<div class="carrousel">
-  <!-- Images container -->
-  <div class="carrousel-images">
-    <div class="carrousel-slide">
-      <img src="./images/Musée-dOrsay-Histoire.jpg" alt="Culinary Experiences" />
-      <div class="carrousel-caption">
-        <h3>Culinary Experiences</h3>
-        <p>Discover the finest cooking classes and food tours in your area</p>
-      </div>
+<!-- Main Content -->
+<main>
+    <!-- Floating leaf animation elements (reduced quantity) -->
+    <div class="leaf-animation-container">
+        <div class="floating-leaf leaf-1"></div>
+        <div class="floating-leaf leaf-3"></div>
+        <div class="floating-leaf leaf-5"></div>
+        <div class="floating-leaf leaf-7"></div>
+        <div class="floating-leaf leaf-9"></div>
+        <div class="floating-leaf leaf-11"></div>
+        <div class="floating-leaf leaf-13"></div>
+        <div class="floating-leaf leaf-15"></div>
+        <div class="floating-leaf leaf-17"></div>
     </div>
-    <div class="carrousel-slide">
-      <img src="./images/grotte.jpg" alt="Cave Exploration" />
-      <div class="carrousel-caption">
-        <h3>Cave Exploration</h3>
-        <p>Embark on a journey through natural wonders and hidden caves</p>
-      </div>
-    </div>
-    <div class="carrousel-slide">
-      <img src="./images/sports.jpg" alt="Outdoor Sports" />
-      <div class="carrousel-caption">
-        <h3>Outdoor Sports</h3>
-        <p>Push your limits with exciting outdoor activities and adventures</p>
-      </div>
-    </div>
-    <div class="carrousel-slide">
-      <img src="./images/art.jpg" alt="Art Workshops" />
-      <div class="carrousel-caption">
-        <h3>Art Workshops</h3>
-        <p>Express your creativity in our professional art studios</p>
-      </div>
-    </div>
-    <div class="carrousel-slide">
-      <img src="./images/yoga.jpg" alt="Wellness Retreats" />
-      <div class="carrousel-caption">
-        <h3>Wellness Retreats</h3>
-        <p>Find your inner peace with meditation and yoga sessions</p>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Navigation buttons -->
-  <button class="carrousel-button prev">
-    <i class="fa fa-chevron-left" aria-hidden="true"></i>
-  </button>
-  <button class="carrousel-button next">
-    <i class="fa fa-chevron-right" aria-hidden="true"></i>
-  </button>
-  
-  <!-- Position indicators -->
-  <div class="carrousel-indicators">
-    <div class="carrousel-indicator active"></div>
-    <div class="carrousel-indicator"></div>
-    <div class="carrousel-indicator"></div>
-    <div class="carrousel-indicator"></div>
-    <div class="carrousel-indicator"></div>
-  </div>
-  
-  <!-- Progress bar for auto-sliding -->
-  <div class="carrousel-progress"></div>
-</div>
-    <!-- Section d'accueil -->
-<div class="welcome-section">
-  <div class="welcome-content">
-    <h1>Bienvenue sur <span>SYNAPSE</span></h1>
-    <p>Un espace où partager des moments uniques et découvrir des activités exceptionnelles</p>
-<div class="welcome-buttons">
-  <a href="activites.php" class="welcome-btn primary">Découvrir les activités</a>
-  <?php if(isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
-  <a href="./jenis.php" class="welcome-btn secondary">
-    <i class="fa-solid fa-plus"></i> Créer une activité
-  </a>
-  <?php else: ?>
-  <a href="../Connexion-Inscription/login_form.php" class="welcome-btn secondary">
-    <i class="fa-solid fa-user"></i> Se connecter
-  </a>
-  <?php endif; ?>
-</div>
-  </div>
-</div>
 
-    <!-- 5 partie barre de separation -->
-    <div class="barre-de-separation"></div>
+    <!-- Background nature elements -->
+    <div class="nature-element nature-element-1"></div>
+    <div class="nature-element nature-element-2"></div>
 
-<!-- Section dernière chance -->
-<section class="activities-section last-chance-section">
-  <div class="section-header with-accent">
-    <h2>Dernière Chance !</h2>
-    <p>Ne manquez pas ces activités qui se terminent bientôt</p>
-  </div>
-</section>
+    <!-- Enhanced Carousel with Fancy Wrapper -->
+    <div class="carrousel-wrapper fade-in-section">
+        <div class="carrousel">
+            <!-- Images container -->
+            <div class="carrousel-images">
+                <div class="carrousel-slide">
+                    <img src="./images/359834.jpg" alt="Louvre" />
+                    <div class="carrousel-caption">
+                        <h3>Musée du Louvre</h3>
+                        <p>Plus grand musée du monde, abritant la Joconde, la Vénus de Milo et des milliers d'œuvres d'art de l'Antiquité au XIXᵉ siècle.</p>
+                    </div>
+                </div>
+                <div class="carrousel-slide">
+                    <img src="./images/notre-dame-de-paris-cathedral-paris-france.webp" alt="Notre-Dame" />
+                    <div class="carrousel-caption">
+                        <h3>Cathédrale Notre-Dame</h3>
+                        <p>Chef-d'œuvre de l'architecture gothique, admirez ses vitraux, ses gargouilles et montez dans les tours pour approcher les fameux clochers.</p>
+                    </div>
+                </div>
+                <div class="carrousel-slide">
+                    <img src="./images/initial-lac-buttes-chaumont.jpg" alt="Buttes-Chaumont" />
+                    <div class="carrousel-caption">
+                        <h3>Marathon dans les Buttes-Chaumont</h3>
+                        <p>Parcours de 10 km à travers sentiers boisés, ponts suspendus et belvédères, animé par l'énergie du quartier.</p>
+                    </div>
+                </div>
+                <div class="carrousel-slide">
+                    <img src="./images/paris-canal-saint-martin-hd.jpg" alt="saint martin" />
+                    <div class="carrousel-caption">
+                        <h3>Kayak sur le Canal Saint-Martin</h3>
+                        <p>Descente en solo ou en duo, pagaie à la main sous les lampadaires, entre écluses et péniches</p>
+                    </div>
+                </div>
+                <div class="carrousel-slide">
+                    <img src="./images/1600px-RueDenoyez.jpeg" alt="Grafiti" />
+                    <div class="carrousel-caption">
+                        <h3>Atelier de graffiti à Belleville</h3>
+                        <p>Initiez-vous aux techniques du street art avec un crew local, bombe en main, sur un mur d'expression libre.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation buttons -->
+            <button class="carrousel-button prev">
+                <i class="fa fa-chevron-left" aria-hidden="true"></i>
+            </button>
+            <button class="carrousel-button next">
+                <i class="fa fa-chevron-right" aria-hidden="true"></i>
+            </button>
+            
+            <!-- Position indicators -->
+            <div class="carrousel-indicators">
+                <div class="carrousel-indicator active"></div>
+                <div class="carrousel-indicator"></div>
+                <div class="carrousel-indicator"></div>
+                <div class="carrousel-indicator"></div>
+                <div class="carrousel-indicator"></div>
+            </div>
+            
+            <!-- Progress bar for auto-sliding -->
+            <div class="carrousel-progress"></div>
+        </div>
+    </div>
 
-   
-  
-<!-- Section activités gratuites -->
-<section class="activities-section free-activities-section">
-  <div class="section-header">
-    <h2>Activités Gratuites</h2>
-    <p>Découvrez notre sélection d'activités sans débourser un centime</p>
-  </div>
-  
- <!-- Update the free activities slider section in main.php -->
-<div class="activities-slider" id="free-activities-slider">
-  <?php
-  // Reset the result pointer
-  if ($result->num_rows > 0) {
-      $result->data_seek(0);
-      $freeCount = 0;
-      
-      while($row = $result->fetch_assoc()) {
-          if ($row["prix"] == 0 && $freeCount < 5) {
-              $randomRating = rand(30, 50) / 10;
-              $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
-              
-              echo '<div class="featured-card" data-id="' . $row['id'] . '">'; // Added data-id attribute
-              echo '<div class="content">';
-              
-              echo '<div class="image-container">';
-              if ($row["image_url"]) {
-                  echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
-              } else {
-                  echo '<img src="nature-placeholder.jpg" alt="placeholder" />';
-              }
-              echo '</div>';
-              
-              echo '<div class="tag">';
-              $displayedTags = 0;
-              foreach ($tagList as $tag) {
-                  if ($displayedTags < 2) {
-                      $tagClass = getTagClass($tag);
-                      echo '<span class="tags ' . $tagClass . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
-                      $displayedTags++;
-                  }
-              }
-              echo '<span class="tags accent">Gratuit</span>';
-              echo '</div></div>';
-              
-              echo '<div class="info">';
-              echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
-              
-              if ($row["date_ou_periode"]) {
-                  echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
-              }
-              
-              // Add rating to info section
-              echo '<div class="featured-rating">' . getStars($randomRating) . '</div>';
-              
-              echo '</div>';
-              
-              echo '<div class="actions">';
-              
-              // Full width button
-              echo '<button class="add-to-cart-button full-width" data-id="' . $row['id'] . '" 
-                  data-title="' . htmlspecialchars($row['titre']) . '" 
-                  data-price="' . $row['prix'] . '" 
-                  data-image="' . htmlspecialchars($row['image_url'] ? $row['image_url'] : 'nature-placeholder.jpg') . '" 
-                  data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
-                  data-tags="' . htmlspecialchars($row['tags']) . '">
-                  <i class="fa-solid fa-cart-shopping"></i> Ajouter au panier
-                  </button>';
-              
-              echo '</div>';
-              
-              echo '</div>';
-              
-              $freeCount++;
-          }
-      }
-      
-      if ($freeCount == 0) {
-          echo '<p class="no-activities">Aucune activité gratuite disponible pour le moment.</p>';
-      }
-  }
-  ?>
-</div>
-  
-  <div class="slider-controls">
-    <button class="slider-button prev"><i class="fa-solid fa-chevron-left"></i></button>
-    <button class="slider-button next"><i class="fa-solid fa-chevron-right"></i></button>
-  </div>
-</section>
-<!-- Section meilleures activités -->
-<section class="activities-section best-rated-section">
-  <div class="section-header">
-    <h2>Meilleures Activités</h2>
-    <p>Les activités les plus appréciées par notre communauté</p>
-  </div>
-  
-  <div class="activities-grid" id="best-activities-grid">
-    <?php
-    // Réinitialiser le pointeur du résultat
-    if ($result->num_rows > 0) {
-        $result->data_seek(0);
+    <!-- Enhanced Welcome Section -->
+    <div class="welcome-section fade-in-section">
+        <div class="welcome-content">
+            <h1>Bienvenue sur <span>SYNAPSE</span></h1>
+            <p>Un espace où partager des moments uniques et découvrir des activités exceptionnelles au cœur de la nature</p>
+            <div class="welcome-buttons">
+                <a href="activites.php" class="welcome-btn primary">Découvrir les activités</a>
+                <?php if(isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+                <a href="./jenis.php" class="welcome-btn secondary">
+                    <i class="fa-solid fa-plus"></i> Créer une activité
+                </a>
+                <?php else: ?>
+                <a href="../Connexion-Inscription/login_form.php" class="welcome-btn secondary">
+                    <i class="fa-solid fa-user"></i> Se connecter
+                </a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section divider -->
+    <div class="section-divider">
+        <div class="section-divider-icon">
+            <i class="fa-solid fa-leaf"></i>
+        </div>
+    </div>
+
+    <!-- Section dernière chance - Completely redesigned -->
+    <section class="content-section last-chance-section fade-in-section">
+        <div class="section-header with-accent">
+            <h2>Dernière Chance</h2>
+            <p>Ne manquez pas ces activités qui se terminent bientôt</p>
+        </div>
         
-        // Créer un tableau pour stocker les activités et leurs notes
-        $ratedActivities = [];
-        
-        while($row = $result->fetch_assoc()) {
-            $randomRating = rand(30, 50) / 10;
-            $ratedActivities[] = [
-                'rating' => $randomRating,
-                'data' => $row
-            ];
-        }
-        
-        // Trier les activités par note (décroissante)
-        usort($ratedActivities, function($a, $b) {
-            return $b['rating'] <=> $a['rating'];
-        });
-        
-        // Afficher les 4 meilleures activités
-        $count = 0;
-        foreach ($ratedActivities as $activity) {
-            if ($count < 4) {
-                $row = $activity['data'];
-                $randomRating = $activity['rating'];
-                $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
-                $isPaid = $row["prix"] > 0;
+        <div class="activities-grid" id="last-chance-grid">
+            <?php
+            // Réinitialiser le pointeur du résultat
+            if ($result->num_rows > 0) {
+                $result->data_seek(0);
+                $lastChanceCount = 0;
                 
-                echo '<div class="featured-card" data-id="' . $row['id'] . '">'; // Added data-id attribute
-                echo '<div class="content">';
-                
-                echo '<div class="image-container">';
-                if ($row["image_url"]) {
-                    echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
-                } else {
-                    echo '<img src="nature-placeholder.jpg" alt="placeholder" />';
-                }
-                echo '</div>';
-                
-                echo '<div class="featured-badge"><i class="fa-solid fa-medal"></i> Top Rated</div>';
-                
-                echo '<div class="tag">';
-                $displayedTags = 0;
-                foreach ($tagList as $tag) {
-                    if ($displayedTags < 2) {
-                        $tagClass = getTagClass($tag);
-                        echo '<span class="tags ' . $tagClass . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
-                        $displayedTags++;
+                while($row = $result->fetch_assoc()) {
+                    // Vérifier si l'activité se termine bientôt
+                    if (isEndingSoon($row) && $lastChanceCount < 4) {
+                        $lastChanceCount++;
+                        $randomRating = rand(35, 50) / 10;
+                        $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
+                        $isPaid = $row["prix"] > 0;
+                        $daysRemaining = getDaysRemaining($row);
+                        
+                        echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; // Added data-id attribute and activity-card class
+                        echo '<div class="content">';
+                        
+                        echo '<div class="image-container">';
+                        if ($row["image_url"]) {
+                            echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
+                        } else {
+                            echo '<img src="nature-placeholder.jpg" alt="placeholder" />';
+                        }
+                        echo '</div>';
+                        
+                        // Show days remaining
+                        echo '<div class="last-chance-badge"><i class="fa-solid fa-clock"></i> ';
+                        if ($daysRemaining == 0) {
+                            echo 'Dernier jour !';
+                        } else if ($daysRemaining == 1) {
+                            echo 'Termine demain !';
+                        } else {
+                            echo 'Plus que ' . $daysRemaining . ' jours !';
+                        }
+                        echo '</div>';
+                        
+                        echo '<div class="tag">';
+                        $displayedTags = 0;
+                        foreach ($tagList as $tag) {
+                            if ($displayedTags < 2) {
+                                $tagClass = getTagClass($tag);
+                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
+                                $displayedTags++;
+                            }
+                        }
+                        
+                        if ($isPaid) {
+                            echo '<span class="tags" data-tag="payant">Payant</span>';
+                        } else {
+                            echo '<span class="tags accent" data-tag="gratuit">Gratuit</span>';
+                        }
+                        
+                        echo '</div></div>';
+                        
+                        echo '<div class="info">';
+                        echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
+                        
+                        if ($row["date_ou_periode"]) {
+                            echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
+                        }
+                        
+                        echo '<div class="featured-rating">' . getStars($randomRating) . '</div>';
+                        
+                        echo '</div>';
+                        
+                        echo '<div class="actions">';
+                        echo '<button class="add-to-cart-button full-width" data-id="' . $row['id'] . '" 
+                            data-title="' . htmlspecialchars($row['titre']) . '" 
+                            data-price="' . $row['prix'] . '" 
+                            data-image="' . htmlspecialchars($row['image_url'] ? $row['image_url'] : 'nature-placeholder.jpg') . '" 
+                            data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
+                            data-tags="' . htmlspecialchars($row['tags']) . '">
+                            <i class="fa-solid fa-cart-shopping"></i> Ajouter au panier
+                            </button>';
+                        echo '</div>';
+                        
+                        echo '</div>';
                     }
                 }
                 
-                if ($isPaid) {
-                    echo '<span class="tags">Payant</span>';
-                } else {
-                    echo '<span class="tags accent">Gratuit</span>';
+                if ($lastChanceCount == 0) {
+                    echo '<div class="no-activities">';
+                    echo '<i class="fa-regular fa-calendar-check"></i>';
+                    echo '<h3>Aucune activité en fin de période actuellement</h3>';
+                    echo '<p>Toutes nos activités sont encore disponibles pour un bon moment !</p>';
+                    echo '</div>';
                 }
-                
-                echo '</div></div>';
-                
-                echo '<div class="info">';
-                echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
-                
-                if ($row["date_ou_periode"]) {
-                    echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
-                }
-                
-                echo '<div class="featured-rating">' . getStars($randomRating) . '</div>';
-                
-                echo '</div>';
-                
-                echo '<div class="actions">';
-                echo '<button class="add-to-cart-button full-width" data-id="' . $row['id'] . '" 
-                    data-title="' . htmlspecialchars($row['titre']) . '" 
-                    data-price="' . $row['prix'] . '" 
-                    data-image="' . htmlspecialchars($row['image_url'] ? $row['image_url'] : 'nature-placeholder.jpg') . '" 
-                    data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
-                    data-tags="' . htmlspecialchars($row['tags']) . '">
-                    <i class="fa-solid fa-cart-shopping"></i> Ajouter au panier
-                    </button>';
-                echo '</div>';
-                
-                echo '</div>';
-                
-                $count++;
             }
-        }
-    }
-    ?>
-  </div>
-</section>
+            ?>
+        </div>
+    </section>
 
-<!-- Section newsletter -->
-<section class="newsletter-section">
-  <div class="newsletter-container">
-    <div class="newsletter-content">
-      <i class="fa-solid fa-envelope-open-text"></i>
-      <h2>Restez informé(e)</h2>
-      <p>Recevez en avant-première nos nouvelles activités et offres exclusives</p>
-      <form class="newsletter-form">
-        <input type="email" placeholder="Votre adresse e-mail" required>
-        <button type="submit">S'abonner</button>
-      </form>
+    <!-- Section divider -->
+    <div class="section-divider">
+        <div class="section-divider-icon">
+            <i class="fa-solid fa-gift"></i>
+        </div>
     </div>
-  </div>
-</section>
+
+    <!-- Section activités gratuites avec slider amélioré -->
+    <section class="content-section free-activities-section fade-in-section">
+        <div class="section-header">
+            <h2>Activités Gratuites</h2>
+            <p>Découvrez notre sélection d'activités sans débourser un centime</p>
+        </div>
+        
+        <div class="activities-slider" id="free-activities-slider">
+            <?php
+            // Reset the result pointer
+            if ($result->num_rows > 0) {
+                $result->data_seek(0);
+                $freeCount = 0;
+                
+                while($row = $result->fetch_assoc()) {
+                    if ($row["prix"] == 0 && $freeCount < 6) {
+                        $randomRating = rand(30, 50) / 10;
+                        $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
+                        
+                        echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; // Added data-id attribute and activity-card class
+                        echo '<div class="content">';
+                        
+                        echo '<div class="image-container">';
+                        if ($row["image_url"]) {
+                            echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
+                        } else {
+                            echo '<img src="nature-placeholder.jpg" alt="placeholder" />';
+                        }
+                        echo '</div>';
+                        
+                        echo '<div class="tag">';
+                        $displayedTags = 0;
+                        foreach ($tagList as $tag) {
+                            if ($displayedTags < 2) {
+                                $tagClass = getTagClass($tag);
+                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
+                                $displayedTags++;
+                            }
+                        }
+                        echo '<span class="tags accent" data-tag="gratuit">Gratuit</span>';
+                        echo '</div></div>';
+                        
+                        echo '<div class="info">';
+                        echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
+                        
+                        if ($row["date_ou_periode"]) {
+                            echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
+                        }
+                        
+                        // Add rating to info section
+                        echo '<div class="featured-rating">' . getStars($randomRating) . '</div>';
+                        
+                        echo '</div>';
+                        
+                        echo '<div class="actions">';
+                        
+                        // Full width button
+                        echo '<button class="add-to-cart-button full-width" data-id="' . $row['id'] . '" 
+                            data-title="' . htmlspecialchars($row['titre']) . '" 
+                            data-price="' . $row['prix'] . '" 
+                            data-image="' . htmlspecialchars($row['image_url'] ? $row['image_url'] : 'nature-placeholder.jpg') . '" 
+                            data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
+                            data-tags="' . htmlspecialchars($row['tags']) . '">
+                            <i class="fa-solid fa-cart-shopping"></i> Ajouter au panier
+                            </button>';
+                        
+                        echo '</div>';
+                        
+                        echo '</div>';
+                        
+                        $freeCount++;
+                    }
+                }
+                
+                if ($freeCount == 0) {
+                    echo '<div class="no-activities" style="min-width: 100%; text-align: center;">';
+                    echo '<i class="fa-regular fa-face-sad-tear"></i>';
+                    echo '<h3>Aucune activité gratuite disponible</h3>';
+                    echo '<p>Revenez bientôt pour découvrir de nouvelles opportunités gratuites !</p>';
+                    echo '</div>';
+                }
+            }
+            ?>
+        </div>
+        
+        <div class="slider-controls">
+            <button class="slider-button prev"><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="slider-button next"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    </section>
+
+    <!-- Section divider -->
+    <div class="section-divider">
+        <div class="section-divider-icon">
+            <i class="fa-solid fa-crown"></i>
+        </div>
+    </div>
+
+    <!-- Completely redesigned "Meilleures Activités" section -->
+    <section class="content-section best-rated-section fade-in-section">
+        <div class="section-header">
+            <h2>Meilleures Activités</h2>
+            <p>Les activités les plus appréciées par notre communauté</p>
+        </div>
+        
+        <div id="best-activities-grid">
+            <?php
+            // Réinitialiser le pointeur du résultat
+            if ($result->num_rows > 0) {
+                $result->data_seek(0);
+                
+                // Créer un tableau pour stocker les activités et leurs notes
+                $ratedActivities = [];
+                
+                while($row = $result->fetch_assoc()) {
+                    $randomRating = rand(30, 50) / 10;
+                    $ratedActivities[] = [
+                        'rating' => $randomRating,
+                        'data' => $row
+                    ];
+                }
+                
+                // Trier les activités par note (décroissante)
+                usort($ratedActivities, function($a, $b) {
+                    return $b['rating'] <=> $a['rating'];
+                });
+                
+                // Afficher les 4 meilleures activités
+                $count = 0;
+                foreach ($ratedActivities as $activity) {
+                    if ($count < 4) {
+                        $row = $activity['data'];
+                        $randomRating = $activity['rating'];
+                        $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
+                        $isPaid = $row["prix"] > 0;
+                        
+                        echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; // Added data-id attribute and activity-card class
+                        echo '<div class="content">';
+                        
+                        echo '<div class="image-container">';
+                        if ($row["image_url"]) {
+                            echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
+                        } else {
+                            echo '<img src="nature-placeholder.jpg" alt="placeholder" />';
+                        }
+                        echo '</div>';
+                        
+                        echo '<div class="featured-badge"><i class="fa-solid fa-medal"></i> Top Rated</div>';
+                        
+                        echo '<div class="tag">';
+                        $displayedTags = 0;
+                        foreach ($tagList as $tag) {
+                            if ($displayedTags < 2) {
+                                $tagClass = getTagClass($tag);
+                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
+                                $displayedTags++;
+                            }
+                        }
+                        
+                        if ($isPaid) {
+                            echo '<span class="tags" data-tag="payant">Payant</span>';
+                        } else {
+                            echo '<span class="tags accent" data-tag="gratuit">Gratuit</span>';
+                        }
+                        
+                        echo '</div></div>';
+                        
+                        echo '<div class="info">';
+                        echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
+                        
+                        if ($row["date_ou_periode"]) {
+                            echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
+                        }
+                        
+                        echo '<div class="featured-rating">' . getStars($randomRating) . '</div>';
+                        
+                        echo '</div>';
+                        
+                        echo '<div class="actions">';
+                        echo '<button class="add-to-cart-button full-width" data-id="' . $row['id'] . '" 
+                            data-title="' . htmlspecialchars($row['titre']) . '" 
+                            data-price="' . $row['prix'] . '" 
+                            data-image="' . htmlspecialchars($row['image_url'] ? $row['image_url'] : 'nature-placeholder.jpg') . '" 
+                            data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
+                            data-tags="' . htmlspecialchars($row['tags']) . '">
+                            <i class="fa-solid fa-cart-shopping"></i> Ajouter au panier
+                            </button>';
+                        echo '</div>';
+                        
+                        echo '</div>';
+                        
+                        $count++;
+                    }
+                }
+            }
+            ?>
+        </div>
+    </section>
+
+    <!-- Section Newsletter redesigned -->
+    <section class="newsletter-section fade-in-section">
+        <div class="newsletter-container">
+            <div class="newsletter-content">
+                <i class="fa-solid fa-envelope-open-text"></i>
+                <h2>Restez informé(e)</h2>
+                <p>Recevez en avant-première nos nouvelles activités et offres exclusives</p>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Votre adresse e-mail" required>
+                    <button type="submit">S'abonner</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Back to top button -->
+    <div class="scroll-top-button" id="scroll-top">
+        <i class="fa-solid fa-arrow-up"></i>
+    </div>
+
+</main>
 
 <?php
 // Inclure le footer
 include '../TEMPLATE/footer.php';
 ?>
+
 <script src="carousel.js"></script>
-<script src="activity-card-handler.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize scroll animations
+        const fadeElems = document.querySelectorAll('.fade-in-section');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                }
+            });
+        }, { threshold: 0.2 });
+        
+        fadeElems.forEach(el => observer.observe(el));
+        
+        // Create floating particles
+        createParticles();
+        
+        // Scroll to top button logic
+        const scrollTopButton = document.getElementById('scroll-top');
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                scrollTopButton.classList.add('visible');
+            } else {
+                scrollTopButton.classList.remove('visible');
+            }
+        });
+        
+        scrollTopButton.addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
         // Initialiser le panier s'il n'existe pas déjà
         if (!localStorage.getItem('synapse-cart')) {
             localStorage.setItem('synapse-cart', JSON.stringify([]));
@@ -410,7 +638,7 @@ include '../TEMPLATE/footer.php';
         
         if (freeActivitiesSlider && prevButton && nextButton) {
             let scrollAmount = 0;
-            const cardWidth = 320; // Largeur approximative d'une carte + marge
+            const cardWidth = 345; // Largeur approximative d'une carte + marge
             
             prevButton.addEventListener('click', function() {
                 scrollAmount -= cardWidth;
@@ -444,6 +672,46 @@ include '../TEMPLATE/footer.php';
                 }
             });
         }
+
+        // Make activity cards clickable - redirect to activity detail page
+        document.querySelectorAll('.activity-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Don't navigate if clicking on add-to-cart button or tag
+                if (e.target.closest('.add-to-cart-button') || e.target.closest('.tags')) {
+                    return;
+                }
+                
+                const activityId = this.getAttribute('data-id');
+                if (activityId) {
+                    window.location.href = 'activite.php?id=' + activityId;
+                }
+            });
+            
+            // Change cursor to pointer on hover to indicate it's clickable
+            card.style.cursor = 'pointer';
+        });
+
+        // Make tags clickable - redirect to activities page with filter
+        document.querySelectorAll('.tags').forEach(tag => {
+            tag.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent the card click event
+                
+                const tagName = this.getAttribute('data-tag');
+                if (tagName) {
+                    // Determine which filter to use based on tag type
+                    if (tagName === 'gratuit' || tagName === 'payant') {
+                        window.location.href = 'activites.php?price=' + tagName;
+                    } else if (tagName === 'interieur' || tagName === 'exterieur') {
+                        window.location.href = 'activites.php?location=' + tagName;
+                    } else {
+                        window.location.href = 'activites.php?category=' + tagName;
+                    }
+                }
+            });
+            
+            // Change cursor on hover
+            tag.style.cursor = 'pointer';
+        });
         
         // Ajouter des événements pour les boutons "Ajouter au panier"
         document.querySelectorAll('.add-to-cart-button').forEach(button => {
@@ -538,8 +806,47 @@ include '../TEMPLATE/footer.php';
                 }, 500);
             }, 3000);
         }
+        
+        // Function to create ambient particles
+        function createParticles() {
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random size
+                const size = Math.random() * 5 + 3;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Random position
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+                
+                // Random animation duration
+                const duration = Math.random() * 15 + 10;
+                particle.style.animationDuration = `${duration}s`;
+                
+                // Random animation delay
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                
+                // Random opacity
+                particle.style.opacity = Math.random() * 0.5 + 0.1;
+                
+                // Random color tint
+                const colors = [
+                    'rgba(69, 161, 99, 0.6)',  // Green
+                    'rgba(233, 196, 106, 0.6)', // Gold
+                    'rgba(139, 109, 65, 0.6)',  // Brown
+                    'rgba(255, 255, 255, 0.6)'  // White
+                ];
+                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                document.body.appendChild(particle);
+            }
+        }
     });
 </script>
+
 <?php
 $conn->close();
 ?>

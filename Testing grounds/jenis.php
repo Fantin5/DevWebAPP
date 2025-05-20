@@ -33,9 +33,25 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     ?>
 
     <div class="page-wrapper">
+      <!-- Floating leaves animation elements -->
+      <div class="floating-leaf leaf-1"></div>
+      <div class="floating-leaf leaf-2"></div>
+      <div class="floating-leaf leaf-3"></div>
+      <div class="floating-leaf leaf-4"></div>
+
       <div class="form-container">
+        <!-- Form decorations -->
+        <div class="form-decoration decoration-top-right"></div>
+        <div class="form-decoration decoration-bottom-left"></div>
         <div class="leaf-decoration leaf-top-left"></div>
         <div class="leaf-decoration leaf-bottom-right"></div>
+
+        <?php
+        // Afficher le message d'erreur si l'image est manquante
+        if (isset($_GET['error']) && $_GET['error'] == 'image_required') {
+            echo '<div class="error-message">Une image est requise pour créer une activité.</div>';
+        }
+        ?>
 
         <h1>Créer une nouvelle activité</h1>
         <p class="subtitle">Partagez votre passion avec la communauté</p>
@@ -122,6 +138,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                   required
                 />
                 <p id="date-validation-message" class="validation-message"></p>
+                <!-- New element for date suggestion message -->
+                <div id="date-suggestion-message" class="suggestion-message hidden"></div>
                 <p class="field-hint">
                   Formats acceptés: date simple (15/06/2025, 15 juin 2025) ou
                   période (01/06/2025 - 15/06/2025, Tous les lundis)
