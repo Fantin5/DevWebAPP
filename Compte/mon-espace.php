@@ -25,6 +25,71 @@ if ($conn->connect_error) {
 // Get user ID from session
 $user_id = $_SESSION['user_id'];
 
+// Variable for messages
+$message = '';
+$message_type = '';
+
+// Connect to activity database to count user activities
+$conn_activity = new mysqli($servername, $username, $password, "activity");
+if ($conn_activity->connect_error) {
+    die("Échec de la connexion à la base de données activity: " . $conn_activity->connect_error);
+}
+
+// Count user activities
+$activity_count = 0;
+$sql_activities = "SELECT description FROM activites WHERE description LIKE '%<!--CREATOR:%'";
+$result_activities = $conn_activity->query($sql_activities);
+
+if ($result_activities && $result_activities->num_rows > 0) {
+    while($row_activity = $result_activities->fetch_assoc()) {
+        // Vérifier si la description contient le motif CREATOR
+        if (isset($row_activity["description"]) && preg_match('/<!--CREATOR:(.*?)-->/', $row_activity["description"], $matches)) {
+            // Extraire et décoder les données du créateur
+            $creator_info = json_decode(base64_decode($matches[1]), true);
+            if (isset($creator_info['user_id']) && $creator_info['user_id'] == $user_id) {
+                $activity_count++;
+            }
+        }
+    }
+}
+$conn_activity->close();
+
+// Handle profile update
+if (isset($_POST['update_profile'])) {
+    $first_name = $_POST['first_name'];
+    $last_name = $_POST['name']; 
+    $email = $_POST['email'];
+    $phone = $_POST['phone'];
+    $birthday = $_POST['birthday'];
+    
+    // Format birthday from DD/MM/YYYY to YYYY-MM-DD for database
+    if (!empty($birthday)) {
+        $birthday_parts = explode('/', $birthday);
+        if (count($birthday_parts) === 3) {
+            $birthday = $birthday_parts[2] . '-' . $birthday_parts[1] . '-' . $birthday_parts[0];
+        }
+    }
+    
+    // Update user information
+    $sql = "UPDATE user_form SET name = ?, email = ?, first_name = ?, birthday = ?, phone_nb = ? WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssssii", $last_name, $email, $first_name, $birthday, $phone, $user_id);
+    
+    if ($stmt->execute()) {
+        $message = "Votre profil a été mis à jour avec succès !";
+        $message_type = "success";
+        
+        // Update session variables if needed
+        $_SESSION['name'] = $last_name;
+        $_SESSION['first_name'] = $first_name;
+        $_SESSION['email'] = $email;
+    } else {
+        $message = "Erreur lors de la mise à jour de votre profil: " . $conn->error;
+        $message_type = "error";
+    }
+    $stmt->close();
+}
+
 // Handle newsletter subscription/unsubscription directly in this page
 if (isset($_POST['newsletter_action'])) {
     $action = $_POST['newsletter_action'];
@@ -94,6 +159,9 @@ function formatPhoneNumber($phone) {
     if (empty($phone)) {
         return "Non renseigné";
     }
+    
+    // Format the phone number to string
+    $phone = (string)$phone;
     
     // If the number starts with 0, keep it
     if (strlen($phone) == 9 && substr($phone, 0, 1) != '0') {
@@ -584,6 +652,98 @@ function formatPhoneNumber($phone) {
             opacity: 0.05;
         }
         
+        /* Styles pour le formulaire de modification de profil */
+        .edit-profile-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .edit-profile-form {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+        }
+        
+        .form-title {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(69, 161, 99, 0.2);
+            outline: none;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .form-button {
+            flex: 1;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .form-cancel {
+            background: #f1f1f1;
+            color: var(--text-secondary);
+        }
+        
+        .form-cancel:hover {
+            background: #e1e1e1;
+        }
+        
+        .form-submit {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .form-submit:hover {
+            background: #3abd7a;
+        }
+        
         /* Responsive styles */
         @media (max-width: 768px) {
             .dashboard-grid {
@@ -602,9 +762,13 @@ function formatPhoneNumber($phone) {
                 padding: 25px;
             }
             
-            .modal {
+            .modal, .edit-profile-form {
                 width: 95%;
                 padding: 20px;
+            }
+            
+            .form-actions {
+                flex-direction: column;
             }
         }
     </style>
@@ -615,7 +779,7 @@ function formatPhoneNumber($phone) {
     <div class="user-space-container">
         <h1 class="page-title">Mon Espace</h1>
         
-        <?php if (isset($message)): ?>
+        <?php if (isset($message) && !empty($message)): ?>
         <div class="message <?php echo $message_type; ?>">
             <i class="fa-solid <?php echo $message_type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'; ?>"></i>
             <div class="message-content">
@@ -654,9 +818,9 @@ function formatPhoneNumber($phone) {
                     </div>
                 </div>
                 
-                <a href="#" class="activity-link">
+                <button id="edit-profile-btn" class="activity-link">
                     <i class="fa-solid fa-pen"></i> Modifier mon profil
-                </a>
+                </button>
             </div>
             
             <!-- Newsletter Card -->
@@ -709,7 +873,7 @@ function formatPhoneNumber($phone) {
                     <h2 class="dashboard-card-title">Mes Activités</h2>
                 </div>
                 
-                <div class="activities-count">0</div>
+                <div class="activities-count"><?php echo $activity_count; ?></div>
                 <p class="center-text">Activités créées par vous</p>
                 
                 <a href="../Testing grounds/mes-activites.php" class="activity-link">
@@ -778,6 +942,44 @@ function formatPhoneNumber($phone) {
         </div>
     </div>
     
+    <!-- Edit Profile Modal -->
+    <div id="edit-profile-modal" class="edit-profile-modal">
+        <div class="edit-profile-form">
+            <h3 class="form-title">Modifier mon profil</h3>
+            <form method="post" action="">
+                <div class="form-group">
+                    <label class="form-label" for="first_name">Prénom</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="name">Nom</label>
+                    <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone">Téléphone</label>
+                    <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone_nb']); ?>">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="birthday">Date de naissance (JJ/MM/AAAA)</label>
+                    <input type="text" class="form-control" id="birthday" name="birthday" value="<?php echo $formatted_birthday; ?>" placeholder="JJ/MM/AAAA">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="form-button form-cancel" id="cancel-edit-profile">Annuler</button>
+                    <button type="submit" class="form-button form-submit" name="update_profile">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <!-- Delete Account Confirmation Modal -->
     <div id="delete-modal" class="modal-overlay">
         <div class="modal">
@@ -822,6 +1024,54 @@ function formatPhoneNumber($phone) {
             const dashboardCartCount = document.getElementById('cart-count');
             if (dashboardCartCount) {
                 dashboardCartCount.textContent = cart.length;
+            }
+            
+            // Edit profile modal functionality
+            const editProfileModal = document.getElementById('edit-profile-modal');
+            const openEditProfileBtn = document.getElementById('edit-profile-btn');
+            const cancelEditProfileBtn = document.getElementById('cancel-edit-profile');
+            
+            openEditProfileBtn.addEventListener('click', function() {
+                editProfileModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+            });
+            
+            cancelEditProfileBtn.addEventListener('click', function() {
+                editProfileModal.style.display = 'none';
+                document.body.style.overflow = 'auto'; // Re-enable scrolling
+            });
+            
+            // Close modal when clicking outside
+            editProfileModal.addEventListener('click', function(event) {
+                if (event.target === editProfileModal) {
+                    editProfileModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            // Format birthday input
+            const birthdayInput = document.getElementById('birthday');
+            if (birthdayInput) {
+                birthdayInput.addEventListener('blur', function() {
+                    // If input is empty, do nothing
+                    if (!this.value) return;
+                    
+                    // Try to format the date (assuming input is DD/MM/YYYY)
+                    const parts = this.value.split(/[\/\-\.]/);
+                    
+                    if (parts.length === 3) {
+                        let day = parts[0].padStart(2, '0');
+                        let month = parts[1].padStart(2, '0');
+                        let year = parts[2];
+                        
+                        // If year is only 2 digits, assume 21st century
+                        if (year.length === 2) {
+                            year = '20' + year;
+                        }
+                        
+                        this.value = `${day}/${month}/${year}`;
+                    }
+                });
             }
             
             // Delete account modal functionality
@@ -872,25 +1122,26 @@ function formatPhoneNumber($phone) {
                 }, 100 * index);
             });
         });
+        
         // Update conversation count
-function updateConversationCount() {
-    fetch('../Messagerie/message_api.php?action=get_conversation_count')
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const countElement = document.getElementById('conversations-count');
-            if (countElement) {
-                countElement.textContent = data.count;
-            }
+        function updateConversationCount() {
+            fetch('../Messagerie/message_api.php?action=get_conversation_count')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const countElement = document.getElementById('conversations-count');
+                    if (countElement) {
+                        countElement.textContent = data.count;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching conversation count:', error);
+            });
         }
-    })
-    .catch(error => {
-        console.error('Error fetching conversation count:', error);
-    });
-}
 
-// Call it once on page load
-updateConversationCount();
+        // Call it once on page load
+        updateConversationCount();
     </script>
 </body>
 </html>
