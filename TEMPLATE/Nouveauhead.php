@@ -3,8 +3,6 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-include '../Admin/adminVerify.php';
-$admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] == 1;
 
 // Vérifier si l'utilisateur est connecté
 $logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
@@ -70,14 +68,3 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
       </div>
     </header>
       <script src="../TEMPLATE/Nouveauhead.js"></script>
-
-
-    <!-- BOUTON ADMINISTRATEUR -->
-    <!-- Si l'utilisateur est un admin, afficher le bouton d'accès à l'espace admin -->
-    <?php if ($admin): ?>
-      <button class="admin-access">
-          <a href="../Admin/admin.php" class="admin-link">
-              <i class="fa-solid fa-user-shield"></i> <br> Accéder à l'espace admin
-          </a>
-      </button>
-    <?php endif; ?>

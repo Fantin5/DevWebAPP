@@ -28,6 +28,7 @@ $sql = "SELECT a.*,
         
 $result = $conn->query($sql);
 
+
 // Fonction pour obtenir les étoiles formatées basées sur la note
 function getStars($rating) {
     $fullStars = floor($rating);
