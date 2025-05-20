@@ -117,11 +117,29 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Événement pour le bouton de paiement (pour l'instant, juste une alerte)
-        const checkoutButton = document.querySelector('.checkout-button');
-        if (checkoutButton) {
-            checkoutButton.addEventListener('click', function() {
-                alert('Fonctionnalité de paiement à venir.');
-            });
+        const paiementForm = document.createElement("form");
+        paiementForm.action = "../Paiement/paiement.php";
+        paiementForm.method = "post";
+        paiementForm.style.display = "inline";
+
+        const panierInput = document.createElement("input");
+        panierInput.type = "hidden";
+        panierInput.name = "panier_json";
+        panierInput.value = JSON.stringify(cartItems);
+
+        const boutonPaiement = document.createElement("button");
+        boutonPaiement.type = "submit";
+        boutonPaiement.className = "checkout-button";
+        boutonPaiement.textContent = "Procéder au paiement";
+
+        paiementForm.appendChild(panierInput);
+        paiementForm.appendChild(boutonPaiement);
+
+        // Ajoute le formulaire à la place du bouton
+        const summaryDiv = panierContent.querySelector('.panier-summary');
+        if (summaryDiv) {
+
+            summaryDiv.appendChild(paiementForm);
         }
     }
     
