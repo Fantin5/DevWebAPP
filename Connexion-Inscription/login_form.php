@@ -136,7 +136,7 @@ if(isset($_POST['register_submit'])){
                         </div>
                      </div>
                   </div>
-                  <a href="" class="forgot-password">Mot de passe oublié</a>
+                  <a href="forgot_password.php" class="forgot-password">Mot de passe oublié</a>
                </div>
                <input type="submit" name="login_submit" value="Se connecter" class="button">
             </div>
