@@ -1,3 +1,108 @@
+<?php
+// Start a session
+session_start();
+
+// Import PHPMailer classes at the top level
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+// Include necessary files
+include_once '../Connexion-Inscription/config.php';
+
+// Check if user is logged in
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+
+// Email processing
+$message_status = '';
+$message_text = '';
+
+// Process the contact form if submitted and user is logged in
+if (isset($_POST['submit_contact']) && $is_logged_in) {
+    $subject = mysqli_real_escape_string($conn, $_POST['subject']);
+    $message = mysqli_real_escape_string($conn, $_POST['message']);
+    $user_email = $_SESSION['user_email'];
+    $user_name = $_SESSION['user_name'];
+    $user_first_name = $_SESSION['user_first_name'];
+    
+    // Validate inputs
+    if (empty($subject) || empty($message)) {
+        $message_status = 'error';
+        $message_text = 'Veuillez remplir tous les champs.';
+    } else {
+        // Import PHPMailer files
+        require '../includes/PHPMailer/Exception.php';
+        require '../includes/PHPMailer/PHPMailer.php';
+        require '../includes/PHPMailer/SMTP.php';
+        
+        $mail = new PHPMailer(true);
+        
+        try {
+            // Server settings
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'synapsentreprise@gmail.com'; 
+            $mail->Password = 'zasd rssc mbsy rnag';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = 587;
+            $mail->CharSet = 'UTF-8';
+            
+            // Recipients
+            $mail->setFrom($user_email, $user_first_name . ' ' . $user_name);
+            $mail->addAddress('synapsentreprise@gmail.com', 'Synapse');
+            $mail->addReplyTo($user_email, $user_first_name . ' ' . $user_name);
+            
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = 'Contact depuis FAQ: ' . $subject;
+            
+            $mail->Body = '
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background-color: #828977; color: white; padding: 10px; text-align: center; }
+                    .content { padding: 20px; background-color: #f9f9f9; }
+                    .footer { font-size: 12px; text-align: center; margin-top: 30px; color: #666; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h2>Message de contact depuis la FAQ</h2>
+                    </div>
+                    <div class="content">
+                        <p><strong>De:</strong> ' . $user_first_name . ' ' . $user_name . ' (' . $user_email . ')</p>
+                        <p><strong>Sujet:</strong> ' . $subject . '</p>
+                        <p><strong>Message:</strong></p>
+                        <p>' . nl2br($message) . '</p>
+                    </div>
+                    <div class="footer">
+                        <p>Ce message a été envoyé depuis le formulaire de contact de la FAQ Synapse.</p>
+                    </div>
+                </div>
+            </body>
+            </html>';
+            
+            $mail->AltBody = "Message de: " . $user_first_name . " " . $user_name . " (" . $user_email . ")\n\n" .
+                           "Sujet: " . $subject . "\n\n" .
+                           "Message:\n" . $message;
+            
+            $mail->send();
+            $message_status = 'success';
+            $message_text = 'Votre message a été envoyé avec succès !';
+        } catch (Exception $e) {
+            $message_status = 'error';
+            $message_text = "Le message n'a pas pu être envoyé. Erreur: " . $mail->ErrorInfo;
+        }
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -9,196 +114,90 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
-<!DOCTYPE html>
-<html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
-    />
-    <link rel="stylesheet" href="./teteaupied.css" />
-  </head>
-  <body>
-    <?php
-    // Inclure le header
-    include '../TEMPLATE/Nouveauhead.php';
-    ?>
-    <!-- Titre principal -->
-    <header>
-        <div class="faq-titre">
-        <h1>Synapse FAQ</h1>
-    </header>
-    <!-- Contenu FAQ -->
-    <section class="faq">
-        <div class="faq-item">
-            <h2 class="question">1. Qu'est-ce que Synapse ?</h2>
-            <p class="answer">Synapse est une plateforme qui met en relation des particuliers et des professionnels pour organiser, promouvoir et participer à des activités de tout type : sportives, culturelles, musicales, etc.</p>
+    <?php include '../TEMPLATE/Nouveauhead.php'; ?>
+    
+    <!-- Page content container with title -->
+    <div class="page-container">
+        <div class="faq-page-title">
+            <h1>Synapse FAQ</h1>
         </div>
         
-        <div class="faq-item">
-            <h2 class="question">2. Qui peut créer une activité ?</h2>
-            <p class="answer">Tout le monde peut créer une activité, que vous soyez un particulier passionné ou un professionnel. Il suffit de créer un compte et de remplir les informations nécessaires.</p>
-        </div>
+        <!-- Contenu FAQ with accordion style -->
+        <section class="faq">
+            <div class="faq-item">
+                <h2 class="question">Qu'est-ce que Synapse ?</h2>
+                <p class="answer">Synapse est une plateforme qui met en relation des particuliers et des professionnels pour organiser, promouvoir et participer à des activités de tout type : sportives, culturelles, musicales, etc.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h2 class="question">Qui peut créer une activité ?</h2>
+                <p class="answer">Tout le monde peut créer une activité, que vous soyez un particulier passionné ou un professionnel. Il suffit de créer un compte et de remplir les informations nécessaires.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h2 class="question">Est-ce que je peux limiter le nombre de participants ?</h2>
+                <p class="answer">Oui, chaque activité peut avoir un nombre de places limité. Une fois la limite atteinte, les utilisateurs peuvent s'inscrire sur une liste d'attente.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h2 class="question">Puis-je organiser une activité privée ?</h2>
+                <p class="answer">Absolument. Lors de la création, vous pouvez choisir de rendre l'activité privée, accessible uniquement via invitation ou lien direct.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h2 class="question">Comment trouver une activité qui m'intéresse ?</h2>
+                <p class="answer">Vous pouvez utiliser notre moteur de recherche avec filtres (type d'activité, lieu, date, etc.) pour trouver rapidement ce qui vous correspond.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h2 class="question">Est-il possible de se désinscrire d'une activité ?</h2>
+                <p class="answer">Oui, vous pouvez vous désinscrire à tout moment depuis votre espace personnel, sauf si une politique d'annulation spécifique a été définie par l'organisateur.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h2 class="question">L'inscription aux activités est-elle gratuite ?</h2>
+                <p class="answer">Certaines activités sont gratuites, d'autres sont payantes selon les choix de l'organisateur. Toutes les informations sont indiquées avant l'inscription.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h2 class="question">Comment puis-je contacter l'organisateur ?</h2>
+                <p class="answer">Une fois inscrit(e), vous aurez accès à une messagerie ou aux coordonnées de l'organisateur pour toute question ou demande spécifique.</p>
+            </div>
+        </section>
         
-        <div class="faq-item">
-            <h2 class="question">3. Est-ce que je peux limiter le nombre de participants ?</h2>
-            <p class="answer">Oui, chaque activité peut avoir un nombre de places limité. Une fois la limite atteinte, les utilisateurs peuvent s’inscrire sur une liste d’attente.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">4. Puis-je organiser une activité privée ?</h2>
-            <p class="answer">Absolument. Lors de la création, vous pouvez choisir de rendre l’activité privée, accessible uniquement via invitation ou lien direct.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">5. Comment trouver une activité qui m'intéresse ?</h2>
-            <p class="answer">Vous pouvez utiliser notre moteur de recherche avec filtres (type d’activité, lieu, date, etc.) pour trouver rapidement ce qui vous correspond.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">6. Est-il possible de se désinscrire d’une activité ?</h2>
-            <p class="answer">Oui, vous pouvez vous désinscrire à tout moment depuis votre espace personnel, sauf si une politique d'annulation spécifique a été définie par l’organisateur.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">7. L'inscription aux activités est-elle gratuite ?</h2>
-            <p class="answer">Certaines activités sont gratuites, d’autres sont payantes selon les choix de l’organisateur. Toutes les informations sont indiquées avant l’inscription.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">8. Comment puis-je contacter l'organisateur ?</h2>
-            <p class="answer">Une fois inscrit(e), vous aurez accès à une messagerie ou aux coordonnées de l’organisateur pour toute question ou demande spécifique.</p>
-        </div>
-        
-    </section>
+        <!-- Section de contact -->
+        <?php if ($is_logged_in): ?>
+            <section class="contact-section">
+                <h2 class="contact-title">Vous avez d'autres questions ?</h2>
+                <p class="contact-description">Nous vous répondrons par email et si votre question est pertinente, nous pourrons l'ajouter à notre base de données FAQ.</p>
+                <?php if (!empty($message_text)): ?>
+                    <div class="<?php echo $message_status; ?>-message">
+                        <?php echo $message_text; ?>
+                    </div>
+                <?php endif; ?>
+                <form class="contact-form" method="post" action="">
+                    <div class="form-group">
+                        <label for="subject">Sujet :</label>
+                        <input type="text" id="subject" name="subject" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Votre message :</label>
+                        <textarea id="message" name="message" class="form-control" required></textarea>
+                    </div>
+                    <button type="submit" name="submit_contact" class="submit-btn">Envoyer</button>
+                </form>
+            </section>
+        <?php else: ?>
+            <div class="login-message">
+                <p>Vous avez d'autres questions ? Connectez-vous pour nous contacter directement.</p>
+                <a href="../Connexion-Inscription/login_form.php" class="login-link">Se connecter</a>
+            </div>
+        <?php endif; ?>
+    </div>
 
-      <?php
-      // Inclure le footer
-      include '../TEMPLATE/footer.php';
-      ?>
-    </body>
-  </html>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synapse.FAQ</title>
-    <link rel="stylesheet" href="faq.css">
-    <!-- Font Awesome pour les icônes -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-</head>
-<body>
-<!DOCTYPE html>
-<html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
-    />
-    <link rel="stylesheet" href="./teteaupied.css" />
-  </head>
-  <body>
-    <header class="header">
-      <img
-        class="logo"
-        src="C:\Users\arthu\Documents\GitHub\DevWebAPP\FAQ\Site logo.png"
-        alt="Site logo"
-      />
-
-      <nav class="nav-links">
-        <ul>
-          <li><a href="#">Devenez Prestataire</a></li>
-          <li><a href="#">Concept</a></li>
-        </ul>
-      </nav>
-
-      <div class="icon">
-        <i class="fa-regular fa-heart" aria-label="Favoris"></i>
-        <a
-          href="../Connexion-Inscription/Connexion.html"
-          class="connexion-profil"
-          aria-label="Connexion"
-        >
-          <i class="fa-solid fa-user"></i>
-        </a>
-      </div>
-    </header>
-
-    <!-- Titre principal -->
-    <header>
-        <div class="faq-titre">
-        <h1>Synapse FAQ</h1>
-    </header>
-
-    <!-- Contenu FAQ -->
-    <section class="faq">
-        <div class="faq-item">
-            <h2 class="question">1. Qu'est-ce que Synapse ?</h2>
-            <p class="answer">Synapse est une plateforme qui met en relation des particuliers et des professionnels pour organiser, promouvoir et participer à des activités de tout type : sportives, culturelles, musicales, etc.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">2. Qui peut créer une activité ?</h2>
-            <p class="answer">Tout le monde peut créer une activité, que vous soyez un particulier passionné ou un professionnel. Il suffit de créer un compte et de remplir les informations nécessaires.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">3. Est-ce que je peux limiter le nombre de participants ?</h2>
-            <p class="answer">Oui, chaque activité peut avoir un nombre de places limité. Une fois la limite atteinte, les utilisateurs peuvent s’inscrire sur une liste d’attente.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">4. Puis-je organiser une activité privée ?</h2>
-            <p class="answer">Absolument. Lors de la création, vous pouvez choisir de rendre l’activité privée, accessible uniquement via invitation ou lien direct.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">5. Comment trouver une activité qui m'intéresse ?</h2>
-            <p class="answer">Vous pouvez utiliser notre moteur de recherche avec filtres (type d’activité, lieu, date, etc.) pour trouver rapidement ce qui vous correspond.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">6. Est-il possible de se désinscrire d’une activité ?</h2>
-            <p class="answer">Oui, vous pouvez vous désinscrire à tout moment depuis votre espace personnel, sauf si une politique d'annulation spécifique a été définie par l’organisateur.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">7. L'inscription aux activités est-elle gratuite ?</h2>
-            <p class="answer">Certaines activités sont gratuites, d’autres sont payantes selon les choix de l’organisateur. Toutes les informations sont indiquées avant l’inscription.</p>
-        </div>
-        
-        <div class="faq-item">
-            <h2 class="question">8. Comment puis-je contacter l'organisateur ?</h2>
-            <p class="answer">Une fois inscrit(e), vous aurez accès à une messagerie ou aux coordonnées de l’organisateur pour toute question ou demande spécifique.</p>
-        </div>
-        
-    </section>
-
-    <footer class="footer">
-        <ul>
-          <li><a href="#">FAQ</a></li>
-          <li><a href="#">CGU</a></li>
-          <li><a href="#">Mentions Légales</a></li>
-        </ul>
-  
-        <ul>
-          <li><i class="fa-solid fa-phone"></i> 06 01 02 03 04</li>
-          <li><i class="fa-regular fa-envelope"></i> synapse@gmail.com</li>
-        </ul>
-        <ul>
-          <li><i class="fa-brands fa-facebook-f"></i> synapse.off</li>
-          <li><i class="fa-brands fa-instagram"></i> synapse.off</li>
-        </ul>
-  
-        <ul>
-          <li>Lundi - Vendredi : 9h à 20h</li>
-          <li>Samedi : 10h à 16h</li>
-        </ul>
-      </footer>
-    </body>
-  </html>
+    <?php include '../TEMPLATE/footer.php'; ?>
+    
+    <!-- Add the JavaScript file for interactivity -->
+    <script src="faq.js"></script>
+</body>
+</html>

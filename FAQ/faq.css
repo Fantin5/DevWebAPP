@@ -1,51 +1,57 @@
+/* Fix for transparent header */
+header.header, 
+.header {
+    background-color: #828977 !important; /* Force solid background */
+    opacity: 1 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Do not inherit transparency from any parent elements */
+body > header,
+body > .header {
+    background-color: #828977 !important; 
+    opacity: 1 !important;
+}
+.contact-description {
+    text-align: center;
+    color: #666;
+    margin-bottom: 20px;
+    font-style: italic;
+    line-height: 1.5;
+    padding: 0 20px;
+}
+/* Explicitly set the header z-index to ensure it's on top */
+header, .header {
+    z-index: 1000 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+}
+
+/* Ensure all header elements inherit the opacity */
+header *, .header * {
+    opacity: 1 !important;
+}
+
+/* Reset any transparency that might be applied */
+* {
+    background-color: transparent;
+}
+
+body {
+    background-color: #E4D8C8;
+}
+
+/* End of header fix */
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-  }
-  
-  /* body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh; 
-    margin: 0;
-    font-family: sans-serif;
-  } */
-  
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: #828977;
-    color: #E4D8C8;
-    padding: 10px 35px;
-  }
-  
-  .logo {
-    height: 50px;
-  }
-  
-  .connexion-profil {
-    color: #E4D8C8;
-  }
-  
-  .nav-links ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    gap: 90px;
-  }
-  
-  .nav-links a {
-    color: inherit;
-    text-decoration: none;
-    font-weight: bold;
-  }
-  
-  
+}
 
-/Couleur fond/
 body {
     background-color: #E4D8C8;
     margin: 0;
@@ -53,50 +59,330 @@ body {
     font-family: Arial, sans-serif;
 }
 
-.faq {
-    padding-left: 30px;
-    padding-right: 30px;
-    font-size: 20px;
-    margin-bottom: 60px;
+/* Page container */
+.page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    margin-top: 100px; /* Space for fixed header */
 }
 
-.faq-titre {
+/* FAQ Page Title - modern design, no green background */
+.faq-page-title {
     text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.faq-page-title h1 {
     font-family: serif;
     font-style: italic;
-    font-size: 35px;
-    margin-top: 30px;
-    margin-bottom: 40px;
+    font-size: 42px;
+    color: #828977;
+    padding-bottom: 15px;
+    display: inline-block;
+    position: relative;
+}
+
+.faq-page-title h1:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background-color: #828977;
+    border-radius: 3px;
+}
+
+/* Override any header styles from the original file */
+.faq-titre {
+    display: none; /* Hide original title */
+}
+
+header {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* FAQ Section */
+.faq {
+    font-size: 16px;
+    margin-bottom: 60px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .faq-item {
-    margin-bottom: 30px; /* 👈 espace entre les blocs de question/réponse */
+    margin-bottom: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-.footer {
+.faq-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.question {
+    font-size: 18px;
+    color: #333;
+    padding: 18px 25px;
+    background-color: #f0ece5;
+    border-left: 4px solid #828977;
+    cursor: pointer;
+    position: relative;
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    background-color: #828977;
-    color: #e4d8c8;
-    padding: 15px 30px;
+    margin: 0;
+}
+
+.question:after {
+    content: '\f107';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    color: #828977;
+    transition: all 0.3s;
+}
+
+.faq-item.active .question:after {
+    transform: rotate(180deg);
+}
+
+.answer {
+    padding: 0;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    line-height: 1.6;
+    color: #555;
+}
+
+.faq-item.active .answer {
+    padding: 20px 25px;
+    max-height: 500px;
+    opacity: 1;
+}
+
+/* Highlight color for the numbers in questions */
+.question span {
+    color: #828977;
     font-weight: bold;
+    margin-right: 10px;
+}
+
+/* Contact form styling */
+.contact-section {
+    margin-top: 60px;
+    padding: 30px 40px;
+    background-color: #fff;
+    border-radius: 10px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 60px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.contact-title {
+    font-family: serif;
+    font-style: italic;
+    font-size: 30px;
+    margin-bottom: 25px;
+    text-align: center;
+    color: #828977;
+    position: relative;
+}
+
+.contact-title:after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background-color: #828977;
+    border-radius: 3px;
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 8px;
+    color: #555;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.form-group label i {
+    margin-right: 8px;
+    color: #828977;
+}
+
+.form-control {
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    background-color: #f9f7f3;
+    color: #333;
     font-size: 16px;
-    margin-top: auto; /* Push the footer to the bottom */
-  }
-  
-  .footer ul {
-    list-style: none;
-  }
-  
-  .footer ul li {
-    margin-bottom: 10px;
-  }
-  
-  .footer a {
-    color: inherit;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #828977;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(130, 137, 119, 0.2);
+}
+
+textarea.form-control {
+    min-height: 150px;
+    resize: vertical;
+}
+
+.submit-btn {
+    padding: 14px 20px;
+    background-color: #828977;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    align-self: center;
+    width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.submit-btn:hover {
+    background-color: #6b7263;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+.submit-btn i {
+    margin-right: 8px;
+}
+
+.login-message {
+    text-align: center;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 10px;
+    margin: 30px auto 60px;
+    max-width: 600px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.login-message p {
+    color: #555;
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.login-link {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 12px 25px;
+    background-color: #828977;
+    color: #fff;
     text-decoration: none;
-  }
-  
-  .footer a:hover {
-    text-decoration: underline;
-  }
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.login-link:hover {
+    background-color: #6b7263;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-link i {
+    margin-right: 8px;
+}
+
+.success-message {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.success-message:before {
+    content: '\f058';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.error-message:before {
+    content: '\f057';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+    .faq {
+        padding: 0 15px;
+    }
+    
+    .question {
+        padding: 15px 20px;
+    }
+    
+    .contact-section, 
+    .login-message {
+        margin-left: 15px;
+        margin-right: 15px;
+        padding: 20px;
+    }
+    
+    .page-container {
+        padding: 10px;
+    }
+}
