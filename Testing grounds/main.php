@@ -146,26 +146,17 @@ include '../TEMPLATE/Nouveauhead.php';
 
 <!-- Main Content -->
 <main>
-    <!-- Floating leaf animation elements (LOTS of them!) -->
+    <!-- Floating leaf animation elements (reduced quantity) -->
     <div class="leaf-animation-container">
         <div class="floating-leaf leaf-1"></div>
-        <div class="floating-leaf leaf-2"></div>
         <div class="floating-leaf leaf-3"></div>
-        <div class="floating-leaf leaf-4"></div>
         <div class="floating-leaf leaf-5"></div>
-        <div class="floating-leaf leaf-6"></div>
         <div class="floating-leaf leaf-7"></div>
-        <div class="floating-leaf leaf-8"></div>
         <div class="floating-leaf leaf-9"></div>
-        <div class="floating-leaf leaf-10"></div>
         <div class="floating-leaf leaf-11"></div>
-        <div class="floating-leaf leaf-12"></div>
         <div class="floating-leaf leaf-13"></div>
-        <div class="floating-leaf leaf-14"></div>
         <div class="floating-leaf leaf-15"></div>
-        <div class="floating-leaf leaf-16"></div>
         <div class="floating-leaf leaf-17"></div>
-        <div class="floating-leaf leaf-18"></div>
     </div>
 
     <!-- Background nature elements -->
@@ -286,7 +277,7 @@ include '../TEMPLATE/Nouveauhead.php';
                         $isPaid = $row["prix"] > 0;
                         $daysRemaining = getDaysRemaining($row);
                         
-                        echo '<div class="featured-card" data-id="' . $row['id'] . '">'; // Added data-id attribute
+                        echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; // Added data-id attribute and activity-card class
                         echo '<div class="content">';
                         
                         echo '<div class="image-container">';
@@ -313,15 +304,15 @@ include '../TEMPLATE/Nouveauhead.php';
                         foreach ($tagList as $tag) {
                             if ($displayedTags < 2) {
                                 $tagClass = getTagClass($tag);
-                                echo '<span class="tags ' . $tagClass . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
+                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
                                 $displayedTags++;
                             }
                         }
                         
                         if ($isPaid) {
-                            echo '<span class="tags">Payant</span>';
+                            echo '<span class="tags" data-tag="payant">Payant</span>';
                         } else {
-                            echo '<span class="tags accent">Gratuit</span>';
+                            echo '<span class="tags accent" data-tag="gratuit">Gratuit</span>';
                         }
                         
                         echo '</div></div>';
@@ -390,7 +381,7 @@ include '../TEMPLATE/Nouveauhead.php';
                         $randomRating = rand(30, 50) / 10;
                         $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
                         
-                        echo '<div class="featured-card" data-id="' . $row['id'] . '">'; // Added data-id attribute
+                        echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; // Added data-id attribute and activity-card class
                         echo '<div class="content">';
                         
                         echo '<div class="image-container">';
@@ -406,11 +397,11 @@ include '../TEMPLATE/Nouveauhead.php';
                         foreach ($tagList as $tag) {
                             if ($displayedTags < 2) {
                                 $tagClass = getTagClass($tag);
-                                echo '<span class="tags ' . $tagClass . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
+                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
                                 $displayedTags++;
                             }
                         }
-                        echo '<span class="tags accent">Gratuit</span>';
+                        echo '<span class="tags accent" data-tag="gratuit">Gratuit</span>';
                         echo '</div></div>';
                         
                         echo '<div class="info">';
@@ -507,7 +498,7 @@ include '../TEMPLATE/Nouveauhead.php';
                         $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
                         $isPaid = $row["prix"] > 0;
                         
-                        echo '<div class="featured-card" data-id="' . $row['id'] . '">'; // Added data-id attribute
+                        echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; // Added data-id attribute and activity-card class
                         echo '<div class="content">';
                         
                         echo '<div class="image-container">';
@@ -525,15 +516,15 @@ include '../TEMPLATE/Nouveauhead.php';
                         foreach ($tagList as $tag) {
                             if ($displayedTags < 2) {
                                 $tagClass = getTagClass($tag);
-                                echo '<span class="tags ' . $tagClass . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
+                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
                                 $displayedTags++;
                             }
                         }
                         
                         if ($isPaid) {
-                            echo '<span class="tags">Payant</span>';
+                            echo '<span class="tags" data-tag="payant">Payant</span>';
                         } else {
-                            echo '<span class="tags accent">Gratuit</span>';
+                            echo '<span class="tags accent" data-tag="gratuit">Gratuit</span>';
                         }
                         
                         echo '</div></div>';
@@ -681,6 +672,46 @@ include '../TEMPLATE/footer.php';
                 }
             });
         }
+
+        // Make activity cards clickable - redirect to activity detail page
+        document.querySelectorAll('.activity-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Don't navigate if clicking on add-to-cart button or tag
+                if (e.target.closest('.add-to-cart-button') || e.target.closest('.tags')) {
+                    return;
+                }
+                
+                const activityId = this.getAttribute('data-id');
+                if (activityId) {
+                    window.location.href = 'activite.php?id=' + activityId;
+                }
+            });
+            
+            // Change cursor to pointer on hover to indicate it's clickable
+            card.style.cursor = 'pointer';
+        });
+
+        // Make tags clickable - redirect to activities page with filter
+        document.querySelectorAll('.tags').forEach(tag => {
+            tag.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent the card click event
+                
+                const tagName = this.getAttribute('data-tag');
+                if (tagName) {
+                    // Determine which filter to use based on tag type
+                    if (tagName === 'gratuit' || tagName === 'payant') {
+                        window.location.href = 'activites.php?price=' + tagName;
+                    } else if (tagName === 'interieur' || tagName === 'exterieur') {
+                        window.location.href = 'activites.php?location=' + tagName;
+                    } else {
+                        window.location.href = 'activites.php?category=' + tagName;
+                    }
+                }
+            });
+            
+            // Change cursor on hover
+            tag.style.cursor = 'pointer';
+        });
         
         // Ajouter des événements pour les boutons "Ajouter au panier"
         document.querySelectorAll('.add-to-cart-button').forEach(button => {
@@ -778,7 +809,7 @@ include '../TEMPLATE/footer.php';
         
         // Function to create ambient particles
         function createParticles() {
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < 20; i++) {
                 const particle = document.createElement('div');
                 particle.classList.add('particle');
                 
