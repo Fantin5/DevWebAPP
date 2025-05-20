@@ -2,6 +2,10 @@
 
 @include 'config.php';
 
+// Import PHPMailer classes
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 session_start();
 
 // Partie de connexion
@@ -17,7 +21,11 @@ if(isset($_POST['login_submit'])){
 
    if(mysqli_num_rows($result) > 0){
       $row = mysqli_fetch_array($result);
-      if (password_verify($password, $row['password'])) {
+      
+      // Vérifier si l'email a été vérifié
+      if ($row['email_verified'] == 0) {
+         $login_error[] = 'Veuillez vérifier votre email avant de vous connecter. <a href="resend_verification.php?email=' . urlencode($email) . '">Renvoyer l\'email de vérification</a>';
+      } elseif (password_verify($password, $row['password'])) {
          // Stocker les informations utilisateur en session
          $_SESSION['user_id'] = $row['id'];
          $_SESSION['user_name'] = $row['name'];
@@ -61,22 +69,96 @@ if(isset($_POST['register_submit'])){
     if (mysqli_num_rows($result) > 0) {
        $register_error[] = 'Email déjà utilisé!';
     } else {
+       // Générer un token de vérification
+       $verification_token = bin2hex(random_bytes(32));
+       $verification_expires = time() + 86400; // 24 heures
+       
        // Hachage du mot de passe
        $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
-       // Insertion en base
-       $insert = "INSERT INTO user_form(name, first_name, birthday, phone_nb, email, password)
-                  VALUES('$name', '$first_name', '$birthday', '$phone_nb', '$email', '$pass')";
-       mysqli_query($conn, $insert);
        
-       // Auto-login après inscription réussie
-       $_SESSION['user_id'] = mysqli_insert_id($conn);
-       $_SESSION['user_name'] = $name;
-       $_SESSION['user_first_name'] = $first_name;
-       $_SESSION['user_email'] = $email;
-       $_SESSION['logged_in'] = true;
+       // Insertion en base avec le token de vérification
+       $insert = "INSERT INTO user_form(name, first_name, birthday, phone_nb, email, password, verification_token, verification_expires, email_verified)
+                  VALUES('$name', '$first_name', '$birthday', '$phone_nb', '$email', '$pass', '$verification_token', '$verification_expires', 0)";
        
-       header('Location: ../Testing grounds/main.php');
-       exit();
+       if (mysqli_query($conn, $insert)) {
+          // Créer le lien de vérification
+          $verification_link = "http://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/verify_email.php?email=" . urlencode($email) . "&token=" . $verification_token;
+          
+          // Envoyer l'email de vérification
+          require '../includes/PHPMailer/Exception.php';
+          require '../includes/PHPMailer/PHPMailer.php';
+          require '../includes/PHPMailer/SMTP.php';
+          
+          $mail = new PHPMailer(true);
+          
+          try {
+             // Server settings
+             $mail->isSMTP();
+             $mail->Host = 'smtp.gmail.com';
+             $mail->SMTPAuth = true;
+             $mail->Username = 'synapsentreprise@gmail.com';
+             $mail->Password = 'zasd rssc mbsy rnag';
+             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+             $mail->Port = 587;
+             $mail->CharSet = 'UTF-8';
+             
+             // Recipients
+             $mail->setFrom('synapsentreprise@gmail.com', 'Synapse');
+             $mail->addAddress($email, $first_name . ' ' . $name);
+             
+             // Content
+             $mail->isHTML(true);
+             $mail->Subject = 'Vérification de votre compte Synapse';
+             
+             // Email content
+             $mail->Body = '
+             <html>
+             <head>
+                 <style>
+                     body { font-family: Arial, sans-serif; line-height: 1.6; }
+                     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                     .header { background-color: #828977; color: white; padding: 10px; text-align: center; }
+                     .content { padding: 20px; background-color: #f9f9f9; }
+                     .button { display: inline-block; padding: 10px 20px; background-color: #828977; color: white; text-decoration: none; border-radius: 5px; }
+                     .footer { font-size: 12px; text-align: center; margin-top: 30px; color: #666; }
+                 </style>
+             </head>
+             <body>
+                 <div class="container">
+                     <div class="header">
+                         <h2>Bienvenue sur Synapse !</h2>
+                     </div>
+                     <div class="content">
+                         <p>Bonjour ' . $first_name . ',</p>
+                         <p>Merci de vous être inscrit sur Synapse. Pour activer votre compte, veuillez cliquer sur le bouton ci-dessous :</p>
+                         <p><a href="' . $verification_link . '" style="display: inline-block; padding: 10px 20px; background-color: #828977; color: white; text-decoration: none; border-radius: 5px;">Vérifier mon email</a></p>
+                         <p>Si le bouton ne fonctionne pas, vous pouvez également copier et coller ce lien dans votre navigateur :</p>
+                         <p>' . $verification_link . '</p>
+                         <p>Ce lien expirera dans 24 heures.</p>
+                     </div>
+                     <div class="footer">
+                         <p>Cet email a été envoyé automatiquement. Merci de ne pas y répondre.</p>
+                     </div>
+                 </div>
+             </body>
+             </html>';
+             
+             $mail->AltBody = 'Bonjour ' . $first_name . ',
+             
+Merci de vous être inscrit sur Synapse. Pour activer votre compte, veuillez cliquer sur le lien suivant :
+' . $verification_link . '
+
+Ce lien expirera dans 24 heures.';
+             
+             $mail->send();
+             
+             $register_success = "Inscription réussie ! Un email de vérification a été envoyé à $email. Veuillez vérifier votre boîte de réception pour activer votre compte.";
+          } catch (Exception $e) {
+             $register_error[] = "L'email de vérification n'a pas pu être envoyé. " . $mail->ErrorInfo;
+          }
+       } else {
+          $register_error[] = "Erreur lors de l'enregistrement. Veuillez réessayer.";
+       }
     }
  }
 
@@ -99,6 +181,16 @@ if(isset($_POST['register_submit'])){
    
    <!-- Styles spécifiques à la page de connexion -->
    <link rel="stylesheet" href="Connexion.css">
+   <style>
+      .success-message {
+         color: #45a163;
+         text-align: center;
+         margin: 10px 0;
+         padding: 10px;
+         background-color: #f0f8f0;
+         border-radius: 5px;
+      }
+   </style>
 </head>
 <body>
    <?php include '../TEMPLATE/Nouveauhead.php'; ?>
@@ -145,6 +237,10 @@ if(isset($_POST['register_submit'])){
 
       <!-- Affichage "Créer un compte" -->
       <div id="register-section" class="form-container">
+         <?php if(isset($register_success)): ?>
+            <div class="success-message"><?php echo $register_success; ?></div>
+         <?php endif; ?>
+         
          <form action="" method="post" onsubmit="return validateForm()">
             <?php
             if(isset($register_error)){
