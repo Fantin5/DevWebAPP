@@ -46,6 +46,27 @@ if (isset($_POST['newsletter_action'])) {
     $stmt->close();
 }
 
+// Handle account deletion
+if (isset($_POST['delete_account']) && $_POST['delete_account'] === 'confirm') {
+    // Delete the user from the database
+    $sql = "DELETE FROM user_form WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $user_id);
+    
+    if ($stmt->execute()) {
+        // Destroy session
+        session_destroy();
+        
+        // Redirect to a confirmation page or home page
+        header('Location: ../Testing grounds/main.php?message=Compte supprimé avec succès');
+        exit();
+    } else {
+        $message = "Erreur lors de la suppression de votre compte: " . $conn->error;
+        $message_type = "error";
+    }
+    $stmt->close();
+}
+
 // Get user information including newsletter subscription status
 $sql = "SELECT * FROM user_form WHERE id = ?";
 $stmt = $conn->prepare($sql);
@@ -99,17 +120,51 @@ function formatPhoneNumber($phone) {
     <link rel="stylesheet" href="../TEMPLATE/Nouveauhead.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #45a163;
+            --secondary-color: #828977;
+            --accent-color: #ff9f67;
+            --danger-color: #e74c3c;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-radius: 15px;
+            --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --transition-speed: 0.3s;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
         .user-space-container {
             width: 90%;
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 40px auto;
+            padding: 20px;
         }
         
         .page-title {
             text-align: center;
-            color: #828977;
-            margin-bottom: 30px;
-            font-size: 32px;
+            color: var(--secondary-color);
+            margin-bottom: 40px;
+            font-size: 36px;
+            font-weight: 700;
+            position: relative;
+        }
+        
+        .page-title:after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
         }
         
         .dashboard-grid {
@@ -120,77 +175,104 @@ function formatPhoneNumber($phone) {
         }
         
         .dashboard-card {
-            background-color: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--box-shadow);
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+            position: relative;
+            overflow: hidden;
         }
         
         .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+            transform: translateY(-7px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        }
+        
+        .dashboard-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+        
+        .dashboard-card:hover:before {
+            width: 7px;
         }
         
         .dashboard-card-header {
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         
         .dashboard-card-icon {
-            width: 50px;
-            height: 50px;
-            background-color: rgba(130, 137, 119, 0.1);
+            width: 56px;
+            height: 56px;
+            background-color: rgba(69, 161, 99, 0.12);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 15px;
+            margin-right: 18px;
             font-size: 24px;
-            color: #828977;
+            color: var(--primary-color);
+            transition: all var(--transition-speed);
+        }
+        
+        .dashboard-card:hover .dashboard-card-icon {
+            background-color: var(--primary-color);
+            color: white;
+            transform: scale(1.05);
         }
         
         .dashboard-card-title {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 600;
-            color: #333;
+            color: var(--text-primary);
             margin: 0;
         }
         
         .user-info-section {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         
         .user-info-name {
-            font-size: 20px;
-            margin: 0 0 5px 0;
-            color: #333;
+            font-size: 22px;
+            margin: 0 0 8px 0;
+            color: var(--text-primary);
+            font-weight: 600;
         }
         
         .user-info-email {
-            font-size: 15px;
+            font-size: 16px;
             margin: 0;
-            color: #666;
+            color: var(--text-secondary);
         }
         
         .user-info-item {
-            margin: 15px 0;
+            margin: 18px 0;
         }
         
         .user-info-label {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 5px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
             display: block;
+            font-weight: 500;
         }
         
         .user-info-value {
             font-size: 16px;
-            color: #333;
-            padding: 8px 12px;
-            background-color: #f9f9f9;
-            border-radius: 6px;
+            color: var(--text-primary);
+            padding: 12px 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-color);
         }
         
         .newsletter-status {
@@ -200,89 +282,121 @@ function formatPhoneNumber($phone) {
         }
         
         .status-indicator {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            margin-right: 10px;
+            margin-right: 12px;
+            transition: transform 0.3s ease;
         }
         
         .status-active {
-            background-color: #45a163;
+            background-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(69, 161, 99, 0.2);
         }
         
         .status-inactive {
-            background-color: #e74c3c;
+            background-color: var(--danger-color);
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2);
         }
         
         .newsletter-status-text {
-            font-size: 15px;
-            color: #333;
+            font-size: 16px;
+            color: var(--text-primary);
+            font-weight: 500;
         }
         
-        .newsletter-button {
+        .newsletter-button, .action-button {
             width: 100%;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 10px;
             border: none;
             font-weight: 600;
+            font-size: 15px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all var(--transition-speed);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
         
         .subscribe-button {
             background-color: var(--primary-color);
-            color: #111;
+            color: white;
         }
         
         .subscribe-button:hover {
             background-color: #3abd7a;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(69, 161, 99, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(69, 161, 99, 0.3);
         }
         
         .unsubscribe-button {
             background-color: #f1f1f1;
-            color: #666;
+            color: var(--text-secondary);
         }
         
         .unsubscribe-button:hover {
             background-color: #e1e1e1;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
         }
         
         .activities-count {
-            font-size: 24px;
-            color: #828977;
+            font-size: 32px;
+            color: var(--primary-color);
             font-weight: bold;
             margin-bottom: 10px;
+            text-align: center;
         }
         
         .activity-link {
             display: block;
-            margin-top: 15px;
+            margin-top: 20px;
             color: var(--primary-color);
             text-decoration: none;
             font-weight: 600;
             transition: all 0.2s;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background-color: rgba(69, 161, 99, 0.08);
         }
         
         .activity-link:hover {
-            color: #3abd7a;
-            text-decoration: underline;
+            color: #1e8746;
+            background-color: rgba(69, 161, 99, 0.15);
+            transform: translateX(5px);
+        }
+        
+        .activity-link i {
+            margin-right: 8px;
+            transition: transform 0.2s;
+        }
+        
+        .activity-link:hover i {
+            transform: translateX(3px);
         }
         
         .message {
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
+            padding: 18px 24px;
+            border-radius: 12px;
+            margin-bottom: 35px;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 18px;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            0% {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
         
         .message i {
@@ -291,11 +405,12 @@ function formatPhoneNumber($phone) {
         
         .message-content {
             flex: 1;
+            font-size: 16px;
         }
         
         .message.success {
-            background-color: rgba(69, 161, 99, 0.1);
-            border-left: 4px solid var(--primary-color);
+            background-color: rgba(69, 161, 99, 0.12);
+            border-left: 5px solid var(--primary-color);
         }
         
         .message.success i {
@@ -303,17 +418,193 @@ function formatPhoneNumber($phone) {
         }
         
         .message.error {
-            background-color: rgba(231, 76, 60, 0.1);
-            border-left: 4px solid #e74c3c;
+            background-color: rgba(231, 76, 60, 0.12);
+            border-left: 5px solid var(--danger-color);
         }
         
         .message.error i {
-            color: #e74c3c;
+            color: var(--danger-color);
         }
         
+        /* Delete Account Card */
+        .delete-account-card {
+            background-color: rgba(231, 76, 60, 0.05);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: var(--box-shadow);
+            border-left: 5px solid var(--danger-color);
+        }
+        
+        .delete-account-title {
+            color: var(--danger-color);
+            font-size: 22px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .delete-account-warning {
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        .delete-button {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .delete-button:hover {
+            background-color: #c0392b;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(231, 76, 60, 0.3);
+        }
+        
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+            animation: modalIn 0.3s ease-out;
+        }
+        
+        @keyframes modalIn {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            color: var(--danger-color);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .modal-icon {
+            font-size: 50px;
+            color: var(--danger-color);
+            margin-bottom: 20px;
+        }
+        
+        .modal-content {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        
+        .modal-button {
+            flex: 1;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .modal-cancel {
+            background: #f1f1f1;
+            color: var(--text-secondary);
+        }
+        
+        .modal-cancel:hover {
+            background: #e1e1e1;
+        }
+        
+        .modal-confirm {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .modal-confirm:hover {
+            background: #c0392b;
+        }
+        
+        /* Additional styling for better visual appeal */
+        .center-text {
+            text-align: center;
+        }
+        
+        .card-decoration {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            opacity: 0.1;
+        }
+        
+        .card-decoration:before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            opacity: 0.05;
+        }
+        
+        /* Responsive styles */
         @media (max-width: 768px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .user-space-container {
+                padding: 15px;
+            }
+            
+            .page-title {
+                font-size: 28px;
+            }
+            
+            .dashboard-card {
+                padding: 25px;
+            }
+            
+            .modal {
+                width: 95%;
+                padding: 20px;
             }
         }
     </style>
@@ -336,6 +627,7 @@ function formatPhoneNumber($phone) {
         <div class="dashboard-grid">
             <!-- User Profile Card -->
             <div class="dashboard-card">
+                <div class="card-decoration"></div>
                 <div class="dashboard-card-header">
                     <div class="dashboard-card-icon">
                         <i class="fa-solid fa-user"></i>
@@ -369,6 +661,7 @@ function formatPhoneNumber($phone) {
             
             <!-- Newsletter Card -->
             <div class="dashboard-card">
+                <div class="card-decoration"></div>
                 <div class="dashboard-card-header">
                     <div class="dashboard-card-icon">
                         <i class="fa-solid fa-envelope"></i>
@@ -408,6 +701,7 @@ function formatPhoneNumber($phone) {
             
             <!-- My Activities Card -->
             <div class="dashboard-card">
+                <div class="card-decoration"></div>
                 <div class="dashboard-card-header">
                     <div class="dashboard-card-icon">
                         <i class="fa-solid fa-calendar-check"></i>
@@ -416,7 +710,7 @@ function formatPhoneNumber($phone) {
                 </div>
                 
                 <div class="activities-count">0</div>
-                <p>Activités créées par vous</p>
+                <p class="center-text">Activités créées par vous</p>
                 
                 <a href="mes-activites.php" class="activity-link">
                     <i class="fa-solid fa-list"></i> Voir mes activités
@@ -429,6 +723,7 @@ function formatPhoneNumber($phone) {
             
             <!-- My Cart Card -->
             <div class="dashboard-card">
+                <div class="card-decoration"></div>
                 <div class="dashboard-card-header">
                     <div class="dashboard-card-icon">
                         <i class="fa-solid fa-cart-shopping"></i>
@@ -439,11 +734,46 @@ function formatPhoneNumber($phone) {
                 <div class="activities-count">
                     <span id="cart-count">0</span>
                 </div>
-                <p>Activités dans votre panier</p>
+                <p class="center-text">Activités dans votre panier</p>
                 
                 <a href="panier.php" class="activity-link">
                     <i class="fa-solid fa-basket-shopping"></i> Voir mon panier
                 </a>
+            </div>
+        </div>
+        
+        <!-- Delete Account Section -->
+        <div class="delete-account-card">
+            <h2 class="delete-account-title">
+                <i class="fa-solid fa-triangle-exclamation"></i> Supprimer mon compte
+            </h2>
+            <p class="delete-account-warning">
+                Attention, cette action est irréversible. Toutes vos données personnelles seront supprimées définitivement de notre base de données. Vous perdrez l'accès à votre compte et à toutes vos activités.
+            </p>
+            <button id="open-delete-modal" class="action-button delete-button">
+                <i class="fa-solid fa-trash"></i> Supprimer mon compte
+            </button>
+        </div>
+    </div>
+    
+    <!-- Delete Account Confirmation Modal -->
+    <div id="delete-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="fa-solid fa-trash"></i>
+                </div>
+                <h3 class="modal-title">Confirmation de suppression</h3>
+            </div>
+            <div class="modal-content">
+                <p>Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront définitivement effacées.</p>
+            </div>
+            <div class="modal-actions">
+                <button id="cancel-delete" class="modal-button modal-cancel">Annuler</button>
+                <form method="post" style="flex: 1;">
+                    <input type="hidden" name="delete_account" value="confirm">
+                    <button type="submit" class="modal-button modal-confirm">Supprimer définitivement</button>
+                </form>
             </div>
         </div>
     </div>
@@ -472,14 +802,53 @@ function formatPhoneNumber($phone) {
                 dashboardCartCount.textContent = cart.length;
             }
             
+            // Delete account modal functionality
+            const deleteModal = document.getElementById('delete-modal');
+            const openModalBtn = document.getElementById('open-delete-modal');
+            const cancelDeleteBtn = document.getElementById('cancel-delete');
+            
+            openModalBtn.addEventListener('click', function() {
+                deleteModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+            });
+            
+            cancelDeleteBtn.addEventListener('click', function() {
+                deleteModal.style.display = 'none';
+                document.body.style.overflow = 'auto'; // Re-enable scrolling
+            });
+            
+            // Close modal when clicking outside
+            deleteModal.addEventListener('click', function(event) {
+                if (event.target === deleteModal) {
+                    deleteModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
             // Fade out message after 5 seconds
             const message = document.querySelector('.message');
             if (message) {
                 setTimeout(function() {
                     message.style.opacity = '0';
                     message.style.transition = 'opacity 0.5s ease';
+                    setTimeout(function() {
+                        message.style.display = 'none';
+                    }, 500);
                 }, 5000);
             }
+            
+            // Add animations for dashboard cards
+            const cards = document.querySelectorAll('.dashboard-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease, box-shadow 0.3s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
         });
     </script>
 </body>

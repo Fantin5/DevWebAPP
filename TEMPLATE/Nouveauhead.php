@@ -23,8 +23,8 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
   </head>
   <body>
 
-    <!-- Header -->
-    <header class="header">
+    <!-- Header --    <header class="header">
+>
       <a href="../Testing grounds/main.php">
         <img
           class="logo"
