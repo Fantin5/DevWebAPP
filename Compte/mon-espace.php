@@ -741,7 +741,29 @@ function formatPhoneNumber($phone) {
                 </a>
             </div>
         </div>
-        
+      <!--message card -->
+<div class="dashboard-card">
+    <div class="card-decoration"></div>
+    <div class="dashboard-card-header">
+        <div class="dashboard-card-icon">
+            <i class="fa-solid fa-comments"></i>
+        </div>
+        <h2 class="dashboard-card-title">Messagerie</h2>
+    </div>
+    
+    <div class="activities-count">
+        <span id="conversations-count">0</span>
+    </div>
+    <p class="center-text">Conversations actives</p>
+    
+    <a href="../Messagerie/messagerie.php" class="activity-link">
+        <i class="fa-solid fa-envelope"></i> Accéder à ma messagerie
+    </a>
+    
+    <a href="../Messagerie/messagerie.php?new=1" class="activity-link">
+        <i class="fa-solid fa-plus"></i> Nouvelle conversation
+    </a>
+</div>
         <!-- Delete Account Section -->
         <div class="delete-account-card">
             <h2 class="delete-account-title">
@@ -850,6 +872,25 @@ function formatPhoneNumber($phone) {
                 }, 100 * index);
             });
         });
+        // Update conversation count
+function updateConversationCount() {
+    fetch('../Messagerie/message_api.php?action=get_conversation_count')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const countElement = document.getElementById('conversations-count');
+            if (countElement) {
+                countElement.textContent = data.count;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching conversation count:', error);
+    });
+}
+
+// Call it once on page load
+updateConversationCount();
     </script>
 </body>
 </html>
