@@ -8,6 +8,12 @@ use PHPMailer\PHPMailer\Exception;
 
 session_start();
 
+// Display account switching errors
+if(isset($_SESSION['switch_error'])) {
+    $login_error[] = $_SESSION['switch_error'];
+    unset($_SESSION['switch_error']); // Clear the error after displaying
+}
+
 // Partie de connexion
 if(isset($_POST['login_submit'])){
    $email = mysqli_real_escape_string($conn, $_POST['email']);

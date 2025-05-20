@@ -113,7 +113,21 @@ if (isset($_POST['newsletter_action'])) {
 
 // Handle account deletion
 if (isset($_POST['delete_account']) && $_POST['delete_account'] === 'confirm') {
-    // Delete the user from the database
+    // First delete related records in the messages table
+    $sql_delete_messages = "DELETE FROM messages WHERE sender_id = ? OR receiver_id = ?";
+    $stmt_messages = $conn->prepare($sql_delete_messages);
+    $stmt_messages->bind_param("ii", $user_id, $user_id);
+    $stmt_messages->execute();
+    $stmt_messages->close();
+    
+    // Then delete related records in the conversations table
+    $sql_delete_conversations = "DELETE FROM conversations WHERE user1_id = ? OR user2_id = ?";
+    $stmt_conversations = $conn->prepare($sql_delete_conversations);
+    $stmt_conversations->bind_param("ii", $user_id, $user_id);
+    $stmt_conversations->execute();
+    $stmt_conversations->close();
+    
+    // Finally delete the user from the database
     $sql = "DELETE FROM user_form WHERE id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $user_id);
@@ -771,6 +785,136 @@ function formatPhoneNumber($phone) {
                 flex-direction: column;
             }
         }
+        /* Account Switcher Styles */
+.saved-account-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 3px solid var(--secondary-color);
+    transition: all 0.3s ease;
+}
+
+.saved-account-item:hover {
+    background-color: #f1f1f1;
+    transform: translateX(3px);
+}
+
+.saved-account-item.current-account {
+    border-left-color: var(--primary-color);
+    background-color: rgba(69, 161, 99, 0.08);
+}
+
+.saved-account-info {
+    flex: 1;
+}
+
+.account-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.account-email {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.switch-button {
+    padding: 6px 12px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin: 0 10px;
+    transition: all 0.2s;
+}
+
+.switch-button:hover {
+    background-color: #3abd7a;
+    transform: translateY(-2px);
+}
+
+.remove-account-button {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background-color: #f1f1f1;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.remove-account-button:hover {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.current-label {
+    font-size: 0.8em;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
+.switch-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.switch-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    background-color: #ccc;
+    border-radius: 34px;
+    transition: .4s;
+    margin-right: 10px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.toggle-label {
+    color: var(--text-primary);
+    font-weight: 500;
+}
     </style>
 </head>
 <body>
@@ -928,6 +1072,36 @@ function formatPhoneNumber($phone) {
         <i class="fa-solid fa-plus"></i> Nouvelle conversation
     </a>
 </div>
+<!-- Account Switcher Card -->
+<div class="dashboard-card">
+    <div class="card-decoration"></div>
+    <div class="dashboard-card-header">
+        <div class="dashboard-card-icon">
+            <i class="fa-solid fa-users-gear"></i>
+        </div>
+        <h2 class="dashboard-card-title">Changer de compte</h2>
+    </div>
+    
+    <div id="saved-accounts-container">
+        <p class="center-text">Comptes enregistrés</p>
+        <div id="saved-accounts-list" class="user-info-item">
+            <!-- Saved accounts will be populated here via JavaScript -->
+            <p class="center-text" id="no-accounts-message">Aucun compte enregistré</p>
+        </div>
+    </div>
+
+    <div class="user-info-item">
+        <label class="switch-toggle">
+            <input type="checkbox" id="remember-account-toggle">
+            <span class="slider"></span>
+            <span class="toggle-label">Mémoriser ce compte</span>
+        </label>
+    </div>
+    
+    <a href="../Connexion-Inscription/login_form.php" class="activity-link">
+        <i class="fa-solid fa-user-plus"></i> Se connecter à un autre compte
+    </a>
+</div>
         <!-- Delete Account Section -->
         <div class="delete-account-card">
             <h2 class="delete-account-title">
@@ -1005,143 +1179,288 @@ function formatPhoneNumber($phone) {
     <?php include '../TEMPLATE/footer.php'; ?>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize cart if it doesn't exist
-            if (!localStorage.getItem('synapse-cart')) {
-                localStorage.setItem('synapse-cart', JSON.stringify([]));
-            }
-            
-            // Update cart count
-            const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
-            
-            // Update in navigation
-            const cartCount = document.getElementById('panier-count');
-            if (cartCount) {
-                cartCount.textContent = cart.length;
-            }
-            
-            // Update in dashboard
-            const dashboardCartCount = document.getElementById('cart-count');
-            if (dashboardCartCount) {
-                dashboardCartCount.textContent = cart.length;
-            }
-            
-            // Edit profile modal functionality
-            const editProfileModal = document.getElementById('edit-profile-modal');
-            const openEditProfileBtn = document.getElementById('edit-profile-btn');
-            const cancelEditProfileBtn = document.getElementById('cancel-edit-profile');
-            
-            openEditProfileBtn.addEventListener('click', function() {
-                editProfileModal.style.display = 'flex';
-                document.body.style.overflow = 'hidden'; // Prevent scrolling
-            });
-            
-            cancelEditProfileBtn.addEventListener('click', function() {
+// Complete JS with all functionality for mon-espace.php
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize cart if it doesn't exist
+    if (!localStorage.getItem('synapse-cart')) {
+        localStorage.setItem('synapse-cart', JSON.stringify([]));
+    }
+    
+    // Update cart count
+    const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+    
+    // Update in navigation
+    const cartCount = document.getElementById('panier-count');
+    if (cartCount) {
+        cartCount.textContent = cart.length;
+    }
+    
+    // Update in dashboard
+    const dashboardCartCount = document.getElementById('cart-count');
+    if (dashboardCartCount) {
+        dashboardCartCount.textContent = cart.length;
+    }
+    
+    // Edit profile modal functionality
+    const editProfileModal = document.getElementById('edit-profile-modal');
+    const openEditProfileBtn = document.getElementById('edit-profile-btn');
+    const cancelEditProfileBtn = document.getElementById('cancel-edit-profile');
+    
+    if (openEditProfileBtn) {
+        openEditProfileBtn.addEventListener('click', function() {
+            editProfileModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        });
+    }
+    
+    if (cancelEditProfileBtn) {
+        cancelEditProfileBtn.addEventListener('click', function() {
+            editProfileModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Re-enable scrolling
+        });
+    }
+    
+    // Close modal when clicking outside
+    if (editProfileModal) {
+        editProfileModal.addEventListener('click', function(event) {
+            if (event.target === editProfileModal) {
                 editProfileModal.style.display = 'none';
-                document.body.style.overflow = 'auto'; // Re-enable scrolling
-            });
-            
-            // Close modal when clicking outside
-            editProfileModal.addEventListener('click', function(event) {
-                if (event.target === editProfileModal) {
-                    editProfileModal.style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                }
-            });
-            
-            // Format birthday input
-            const birthdayInput = document.getElementById('birthday');
-            if (birthdayInput) {
-                birthdayInput.addEventListener('blur', function() {
-                    // If input is empty, do nothing
-                    if (!this.value) return;
-                    
-                    // Try to format the date (assuming input is DD/MM/YYYY)
-                    const parts = this.value.split(/[\/\-\.]/);
-                    
-                    if (parts.length === 3) {
-                        let day = parts[0].padStart(2, '0');
-                        let month = parts[1].padStart(2, '0');
-                        let year = parts[2];
-                        
-                        // If year is only 2 digits, assume 21st century
-                        if (year.length === 2) {
-                            year = '20' + year;
-                        }
-                        
-                        this.value = `${day}/${month}/${year}`;
-                    }
-                });
+                document.body.style.overflow = 'auto';
             }
+        });
+    }
+    
+    // Format birthday input
+    const birthdayInput = document.getElementById('birthday');
+    if (birthdayInput) {
+        birthdayInput.addEventListener('blur', function() {
+            // If input is empty, do nothing
+            if (!this.value) return;
             
-            // Delete account modal functionality
-            const deleteModal = document.getElementById('delete-modal');
-            const openModalBtn = document.getElementById('open-delete-modal');
-            const cancelDeleteBtn = document.getElementById('cancel-delete');
+            // Try to format the date (assuming input is DD/MM/YYYY)
+            const parts = this.value.split(/[\/\-\.]/);
             
-            openModalBtn.addEventListener('click', function() {
-                deleteModal.style.display = 'flex';
-                document.body.style.overflow = 'hidden'; // Prevent scrolling
-            });
-            
-            cancelDeleteBtn.addEventListener('click', function() {
-                deleteModal.style.display = 'none';
-                document.body.style.overflow = 'auto'; // Re-enable scrolling
-            });
-            
-            // Close modal when clicking outside
-            deleteModal.addEventListener('click', function(event) {
-                if (event.target === deleteModal) {
-                    deleteModal.style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                }
-            });
-            
-            // Fade out message after 5 seconds
-            const message = document.querySelector('.message');
-            if (message) {
-                setTimeout(function() {
-                    message.style.opacity = '0';
-                    message.style.transition = 'opacity 0.5s ease';
-                    setTimeout(function() {
-                        message.style.display = 'none';
-                    }, 500);
-                }, 5000);
-            }
-            
-            // Add animations for dashboard cards
-            const cards = document.querySelectorAll('.dashboard-card');
-            cards.forEach((card, index) => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
+            if (parts.length === 3) {
+                let day = parts[0].padStart(2, '0');
+                let month = parts[1].padStart(2, '0');
+                let year = parts[2];
                 
-                setTimeout(() => {
-                    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease, box-shadow 0.3s ease';
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, 100 * index);
+                // If year is only 2 digits, assume 21st century
+                if (year.length === 2) {
+                    year = '20' + year;
+                }
+                
+                this.value = `${day}/${month}/${year}`;
+            }
+        });
+    }
+    
+    // Delete account modal functionality
+    const deleteModal = document.getElementById('delete-modal');
+    const openModalBtn = document.getElementById('open-delete-modal');
+    const cancelDeleteBtn = document.getElementById('cancel-delete');
+    
+    if (openModalBtn) {
+        openModalBtn.addEventListener('click', function() {
+            deleteModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        });
+    }
+    
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', function() {
+            deleteModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Re-enable scrolling
+        });
+    }
+    
+    // Close modal when clicking outside
+    if (deleteModal) {
+        deleteModal.addEventListener('click', function(event) {
+            if (event.target === deleteModal) {
+                deleteModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
+    
+    // Fade out message after 5 seconds
+    const message = document.querySelector('.message');
+    if (message) {
+        setTimeout(function() {
+            message.style.opacity = '0';
+            message.style.transition = 'opacity 0.5s ease';
+            setTimeout(function() {
+                message.style.display = 'none';
+            }, 500);
+        }, 5000);
+    }
+    
+    // Add animations for dashboard cards
+    const cards = document.querySelectorAll('.dashboard-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease, box-shadow 0.3s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, 100 * index);
+    });
+    
+    // Account Switcher Functionality
+    const savedAccountsList = document.getElementById('saved-accounts-list');
+    const noAccountsMessage = document.getElementById('no-accounts-message');
+    const rememberAccountToggle = document.getElementById('remember-account-toggle');
+    
+    if (savedAccountsList && noAccountsMessage && rememberAccountToggle) {
+        // Load saved accounts from localStorage
+        function loadSavedAccounts() {
+            const savedAccounts = JSON.parse(localStorage.getItem('synapse-saved-accounts')) || [];
+            const currentUserId = <?php echo $user_id; ?>;
+            
+            if (savedAccounts.length === 0) {
+                noAccountsMessage.style.display = 'block';
+                return;
+            }
+            
+            noAccountsMessage.style.display = 'none';
+            savedAccountsList.innerHTML = '';
+            
+            savedAccounts.forEach(account => {
+                const accountElement = document.createElement('div');
+                accountElement.className = 'saved-account-item';
+                
+                const isCurrentAccount = (account.id == currentUserId);
+                
+                accountElement.innerHTML = `
+                    <div class="saved-account-info ${isCurrentAccount ? 'current-account' : ''}">
+                        <div class="account-name">${account.first_name} ${account.name}</div>
+                        <div class="account-email">${account.email}</div>
+                    </div>
+                    ${isCurrentAccount ? 
+                        '<span class="current-label">Actuel</span>' : 
+                        '<button class="switch-button" data-id="' + account.id + '" data-email="' + account.email + '">Connecter</button>'}
+                    <button class="remove-account-button" data-id="${account.id}">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                `;
+                
+                savedAccountsList.appendChild(accountElement);
             });
+            
+            // Add event listeners to switch and remove buttons
+            document.querySelectorAll('.switch-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    switchToAccount(this.dataset.id, this.dataset.email);
+                });
+            });
+            
+            document.querySelectorAll('.remove-account-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    removeAccount(this.dataset.id);
+                });
+            });
+            
+            // Check if current account is saved
+            const currentAccountSaved = savedAccounts.some(account => account.id == currentUserId);
+            rememberAccountToggle.checked = currentAccountSaved;
+        }
+        
+        // Switch to another account
+        function switchToAccount(userId, email) {
+            // Create a form to post to login procedure
+            const form = document.createElement('form');
+            form.method = 'post';
+            // Use the correct path to account_switch.php
+            form.action = '../Compte/account_switch.php';
+            form.style.display = 'none';
+            
+            const userIdInput = document.createElement('input');
+            userIdInput.type = 'hidden';
+            userIdInput.name = 'switch_user_id';
+            userIdInput.value = userId;
+            
+            const emailInput = document.createElement('input');
+            emailInput.type = 'hidden';
+            emailInput.name = 'email';
+            emailInput.value = email;
+            
+            form.appendChild(userIdInput);
+            form.appendChild(emailInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+        
+        // Remove account from saved list
+        function removeAccount(userId) {
+            let savedAccounts = JSON.parse(localStorage.getItem('synapse-saved-accounts')) || [];
+            savedAccounts = savedAccounts.filter(account => account.id != userId);
+            localStorage.setItem('synapse-saved-accounts', JSON.stringify(savedAccounts));
+            
+            loadSavedAccounts();
+        }
+        
+        // Save current account to localStorage
+        function saveCurrentAccount(save) {
+            const currentUser = {
+                id: <?php echo $user_id; ?>,
+                name: "<?php echo addslashes($user['name']); ?>",
+                first_name: "<?php echo addslashes($user['first_name']); ?>",
+                email: "<?php echo addslashes($user['email']); ?>"
+            };
+            
+            let savedAccounts = JSON.parse(localStorage.getItem('synapse-saved-accounts')) || [];
+            
+            if (save) {
+                // Check if account already exists
+                const existingIndex = savedAccounts.findIndex(account => account.id == currentUser.id);
+                
+                if (existingIndex === -1) {
+                    savedAccounts.push(currentUser);
+                } else {
+                    // Update existing account info
+                    savedAccounts[existingIndex] = currentUser;
+                }
+            } else {
+                // Remove account from saved list
+                savedAccounts = savedAccounts.filter(account => account.id != currentUser.id);
+            }
+            
+            localStorage.setItem('synapse-saved-accounts', JSON.stringify(savedAccounts));
+            loadSavedAccounts();
+        }
+        
+        // Toggle account saving
+        rememberAccountToggle.addEventListener('change', function() {
+            saveCurrentAccount(this.checked);
         });
         
-        // Update conversation count
-        function updateConversationCount() {
-            fetch('../Messagerie/message_api.php?action=get_conversation_count')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const countElement = document.getElementById('conversations-count');
-                    if (countElement) {
-                        countElement.textContent = data.count;
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching conversation count:', error);
-            });
-        }
+        // Initial load of saved accounts
+        loadSavedAccounts();
+    }
+});
 
-        // Call it once on page load
-        updateConversationCount();
+// Update conversation count
+function updateConversationCount() {
+    fetch('../Messagerie/message_api.php?action=get_conversation_count')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const countElement = document.getElementById('conversations-count');
+            if (countElement) {
+                countElement.textContent = data.count;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching conversation count:', error);
+    });
+}
+
+// Call it once on page load
+updateConversationCount();
     </script>
 </body>
 </html>
