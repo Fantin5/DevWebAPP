@@ -273,6 +273,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             break;
             
+        case 'delete_conversation':
+            // Delete a conversation
+            if (isset($_POST['conversation_id'])) {
+                $conversation_id = (int)$_POST['conversation_id'];
+                
+                // Verify conversation belongs to the user
+                $conv_query = "SELECT * FROM conversations 
+                              WHERE id = $conversation_id 
+                              AND (user1_id = $user_id OR user2_id = $user_id)";
+                $conv_result = mysqli_query($conn, $conv_query);
+                
+                if (mysqli_num_rows($conv_result) > 0) {
+                    // Delete messages first (due to foreign key constraints)
+                    $conv_data = mysqli_fetch_assoc($conv_result);
+                    $other_user_id = ($conv_data['user1_id'] == $user_id) ? $conv_data['user2_id'] : $conv_data['user1_id'];
+                    
+                    $delete_messages = "DELETE FROM messages 
+                                      WHERE (sender_id = $user_id AND receiver_id = $other_user_id)
+                                      OR (sender_id = $other_user_id AND receiver_id = $user_id)";
+                    
+                    if (mysqli_query($conn, $delete_messages)) {
+                        // Now delete the conversation
+                        $delete_conv = "DELETE FROM conversations WHERE id = $conversation_id";
+                        
+                        if (mysqli_query($conn, $delete_conv)) {
+                            $response = [
+                                'success' => true,
+                                'message' => 'Conversation supprimée avec succès'
+                            ];
+                        } else {
+                            $response = [
+                                'success' => false,
+                                'message' => 'Erreur lors de la suppression de la conversation: ' . mysqli_error($conn)
+                            ];
+                        }
+                    } else {
+                        $response = [
+                            'success' => false,
+                            'message' => 'Erreur lors de la suppression des messages: ' . mysqli_error($conn)
+                        ];
+                    }
+                } else {
+                    $response = [
+                        'success' => false,
+                        'message' => 'Conversation non trouvée ou vous n\'avez pas les droits pour la supprimer'
+                    ];
+                }
+            } else {
+                $response = [
+                    'success' => false,
+                    'message' => 'ID de conversation non spécifié'
+                ];
+            }
+            break;
+            
         default:
             $response = [
                 'success' => false,

@@ -712,11 +712,11 @@ function formatPhoneNumber($phone) {
                 <div class="activities-count">0</div>
                 <p class="center-text">Activités créées par vous</p>
                 
-                <a href="mes-activites.php" class="activity-link">
+                <a href="../Testing grounds/mes-activites.php" class="activity-link">
                     <i class="fa-solid fa-list"></i> Voir mes activités
                 </a>
                 
-                <a href="jenis.php" class="activity-link">
+                <a href="../Testing grounds/jenis.php" class="activity-link">
                     <i class="fa-solid fa-plus"></i> Créer une nouvelle activité
                 </a>
             </div>
@@ -736,7 +736,7 @@ function formatPhoneNumber($phone) {
                 </div>
                 <p class="center-text">Activités dans votre panier</p>
                 
-                <a href="panier.php" class="activity-link">
+                <a href="../Testing grounds/panier.php" class="activity-link">
                     <i class="fa-solid fa-basket-shopping"></i> Voir mon panier
                 </a>
             </div>

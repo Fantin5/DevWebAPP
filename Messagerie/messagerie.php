@@ -323,6 +323,101 @@ function formatMessageTime($timestamp) {
             padding: 0 5px;
         }
         
+        /* Delete conversation button */
+        .delete-conversation {
+            position: absolute;
+            right: 15px;
+            bottom: 15px;
+            color: rgba(231, 76, 60, 0.6);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 5px;
+            z-index: 10;
+            opacity: 0;
+            transition: all 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .conversation-item:hover .delete-conversation {
+            opacity: 1;
+        }
+
+        .delete-conversation:hover {
+            color: #e74c3c;
+            transform: scale(1.1);
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Confirmation dialog */
+        .confirm-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .confirm-dialog.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .confirm-content {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        .confirm-dialog.show .confirm-content {
+            transform: scale(1);
+        }
+
+        .confirm-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .confirm-buttons button {
+            padding: 8px 20px;
+            border-radius: 5px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .confirm-cancel {
+            background-color: #f1f1f1;
+            color: #666;
+        }
+
+        .confirm-delete {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
         /* Message area styles */
         .message-area {
             flex: 1;
@@ -643,6 +738,11 @@ function formatMessageTime($timestamp) {
                             <?php if ($conversation['unread_count'] > 0): ?>
                                 <div class="unread-indicator"><?php echo $conversation['unread_count']; ?></div>
                             <?php endif; ?>
+                            
+                            <!-- Delete button -->
+                            <div class="delete-conversation" data-id="<?php echo $conversation['id']; ?>">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </div>
                         </a>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -763,6 +863,18 @@ function formatMessageTime($timestamp) {
                     </a>
                 </div>
             <?php endif; ?>
+        </div>
+    </div>
+    
+    <!-- Confirmation Dialog for Deletion -->
+    <div class="confirm-dialog" id="delete-dialog">
+        <div class="confirm-content">
+            <h3>Supprimer la conversation</h3>
+            <p>Êtes-vous sûr de vouloir supprimer cette conversation ? Cette action est irréversible.</p>
+            <div class="confirm-buttons">
+                <button class="confirm-cancel" id="cancel-delete">Annuler</button>
+                <button class="confirm-delete" id="confirm-delete">Supprimer</button>
+            </div>
         </div>
     </div>
     
@@ -913,6 +1025,72 @@ function formatMessageTime($timestamp) {
             if (new URLSearchParams(window.location.search).get('conversation_id')) {
                 setInterval(checkNewMessages, 5000);
             }
+
+            // Handle conversation deletion
+            const deleteButtons = document.querySelectorAll('.delete-conversation');
+            const deleteDialog = document.getElementById('delete-dialog');
+            const cancelDelete = document.getElementById('cancel-delete');
+            const confirmDelete = document.getElementById('confirm-delete');
+            let conversationToDelete = null;
+
+            // Add event listener to delete buttons
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Get conversation ID
+                    conversationToDelete = this.getAttribute('data-id');
+                    
+                    // Show confirmation dialog
+                    deleteDialog.classList.add('show');
+                });
+            });
+
+            // Cancel delete
+            cancelDelete.addEventListener('click', function() {
+                deleteDialog.classList.remove('show');
+                conversationToDelete = null;
+            });
+
+            // Confirm delete
+            confirmDelete.addEventListener('click', function() {
+                if (conversationToDelete) {
+                    // Send delete request
+                    const formData = new FormData();
+                    formData.append('action', 'delete_conversation');
+                    formData.append('conversation_id', conversationToDelete);
+                    
+                    fetch('message_api.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Reload the page to show updated conversation list
+                            window.location.href = 'messagerie.php';
+                        } else {
+                            alert('Erreur: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Une erreur est survenue lors de la suppression de la conversation.');
+                    });
+                }
+                
+                // Hide dialog
+                deleteDialog.classList.remove('show');
+            });
+
+            // Close dialog when clicking outside
+            deleteDialog.addEventListener('click', function(e) {
+                if (e.target === deleteDialog) {
+                    deleteDialog.classList.remove('show');
+                    conversationToDelete = null;
+                }
+            });
         });
     </script>
 </body>
