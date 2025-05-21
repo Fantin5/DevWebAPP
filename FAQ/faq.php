@@ -18,12 +18,12 @@ $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
 // Email processing
 $message_status = '';
 $message_text = '';
-// halo
 
 // Process the contact form if submitted and user is logged in
 if (isset($_POST['submit_contact']) && $is_logged_in) {
     $subject = mysqli_real_escape_string($conn, $_POST['subject']);
     $message = mysqli_real_escape_string($conn, $_POST['message']);
+    $user_id = $_SESSION['user_id'];
     $user_email = $_SESSION['user_email'];
     $user_name = $_SESSION['user_name'];
     $user_first_name = $_SESSION['user_first_name'];
@@ -33,75 +33,97 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
         $message_status = 'error';
         $message_text = 'Veuillez remplir tous les champs.';
     } else {
-        // Import PHPMailer files
-        require '../includes/PHPMailer/Exception.php';
-        require '../includes/PHPMailer/PHPMailer.php';
-        require '../includes/PHPMailer/SMTP.php';
+        // Save the question to the database
+        $insert_query = "INSERT INTO faq_questions (user_id, user_name, user_first_name, user_email, subject, question, status) 
+                        VALUES (?, ?, ?, ?, ?, ?, 'pending')";
+        $stmt = $conn->prepare($insert_query);
+        $stmt->bind_param("isssss", $user_id, $user_name, $user_first_name, $user_email, $subject, $message);
         
-        $mail = new PHPMailer(true);
-        
-        try {
-            // Server settings
-            $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com';
-            $mail->SMTPAuth = true;
-            $mail->Username = 'synapsentreprise@gmail.com'; 
-            $mail->Password = 'zasd rssc mbsy rnag';
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port = 587;
-            $mail->CharSet = 'UTF-8';
-            
-            // Recipients
-            $mail->setFrom($user_email, $user_first_name . ' ' . $user_name);
-            $mail->addAddress('synapsentreprise@gmail.com', 'Synapse');
-            $mail->addReplyTo($user_email, $user_first_name . ' ' . $user_name);
-            
-            // Content
-            $mail->isHTML(true);
-            $mail->Subject = 'Contact depuis FAQ: ' . $subject;
-            
-            $mail->Body = '
-            <html>
-            <head>
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background-color: #828977; color: white; padding: 10px; text-align: center; }
-                    .content { padding: 20px; background-color: #f9f9f9; }
-                    .footer { font-size: 12px; text-align: center; margin-top: 30px; color: #666; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h2>Message de contact depuis la FAQ</h2>
-                    </div>
-                    <div class="content">
-                        <p><strong>De:</strong> ' . $user_first_name . ' ' . $user_name . ' (' . $user_email . ')</p>
-                        <p><strong>Sujet:</strong> ' . $subject . '</p>
-                        <p><strong>Message:</strong></p>
-                        <p>' . nl2br($message) . '</p>
-                    </div>
-                    <div class="footer">
-                        <p>Ce message a été envoyé depuis le formulaire de contact de la FAQ Synapse.</p>
-                    </div>
-                </div>
-            </body>
-            </html>';
-            
-            $mail->AltBody = "Message de: " . $user_first_name . " " . $user_name . " (" . $user_email . ")\n\n" .
-                           "Sujet: " . $subject . "\n\n" .
-                           "Message:\n" . $message;
-            
-            $mail->send();
+        if ($stmt->execute()) {
             $message_status = 'success';
-            $message_text = 'Votre message a été envoyé avec succès !';
-        } catch (Exception $e) {
+            $message_text = 'Votre question a été soumise avec succès ! Elle sera examinée par notre équipe.';
+            
+            // Envoyer un e-mail de notification aux administrateurs
+            require '../includes/PHPMailer/Exception.php';
+            require '../includes/PHPMailer/PHPMailer.php';
+            require '../includes/PHPMailer/SMTP.php';
+            
+            $mail = new PHPMailer(true);
+            
+            try {
+                // Server settings
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com';
+                $mail->SMTPAuth = true;
+                $mail->Username = 'synapsentreprise@gmail.com'; 
+                $mail->Password = 'zasd rssc mbsy rnag';
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port = 587;
+                $mail->CharSet = 'UTF-8';
+                
+                // Recipients
+                $mail->setFrom($user_email, $user_first_name . ' ' . $user_name);
+                $mail->addAddress('synapsentreprise@gmail.com', 'Synapse');
+                $mail->addReplyTo($user_email, $user_first_name . ' ' . $user_name);
+                
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = 'Nouvelle question FAQ: ' . $subject;
+                
+                $mail->Body = '
+                <html>
+                <head>
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                        .header { background-color: #828977; color: white; padding: 10px; text-align: center; }
+                        .content { padding: 20px; background-color: #f9f9f9; }
+                        .footer { font-size: 12px; text-align: center; margin-top: 30px; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h2>Nouvelle question FAQ reçue</h2>
+                        </div>
+                        <div class="content">
+                            <p><strong>De:</strong> ' . $user_first_name . ' ' . $user_name . ' (' . $user_email . ')</p>
+                            <p><strong>Sujet:</strong> ' . $subject . '</p>
+                            <p><strong>Question:</strong></p>
+                            <p>' . nl2br($message) . '</p>
+                            <p><a href="' . (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]/Admin/admin_faq.php" . '" style="display: inline-block; padding: 10px 20px; background-color: #828977; color: white; text-decoration: none; border-radius: 5px;">Gérer les questions FAQ</a></p>
+                        </div>
+                        <div class="footer">
+                            <p>Ce message a été envoyé automatiquement. Merci de ne pas y répondre.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>';
+                
+                $mail->AltBody = "Nouvelle question FAQ\n\n" .
+                               "De: " . $user_first_name . " " . $user_name . " (" . $user_email . ")\n\n" .
+                               "Sujet: " . $subject . "\n\n" .
+                               "Question:\n" . $message . "\n\n" .
+                               "Connectez-vous à l'interface d'administration pour la gérer.";
+                
+                $mail->send();
+            } catch (Exception $e) {
+                // Ne rien faire, l'email de notification n'est pas critique
+            }
+        } else {
             $message_status = 'error';
-            $message_text = "Le message n'a pas pu être envoyé. Erreur: " . $mail->ErrorInfo;
+            $message_text = "Une erreur s'est produite. Veuillez réessayer.";
         }
     }
 }
+
+// Fetch approved public FAQ questions
+$faq_query = "SELECT q.*, 
+             DATE_FORMAT(q.updated_at, '%d/%m/%Y') as formatted_date 
+             FROM faq_questions q 
+             WHERE q.status = 'approved' AND q.public = 1 
+             ORDER BY q.id ASC";
+$faq_result = $conn->query($faq_query);
 ?>
 
 <!DOCTYPE html>
@@ -113,6 +135,38 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
     <link rel="stylesheet" href="faq.css">
     <!-- Font Awesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .admin-badge {
+            display: inline-block;
+            font-size: 12px;
+            background-color: #828977;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        
+        .superadmin-badge {
+            background-color: #5a6157;
+            font-weight: bold;
+        }
+        
+        .answer-info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 15px;
+            font-style: italic;
+            text-align: right;
+        }
+        
+        .faq-item.user-question {
+            border-left: 4px solid #828977;
+        }
+        
+        .faq-item.user-question .question {
+            background-color: #f5f8f5;
+        }
+    </style>
 </head>
 <body>
     <?php include '../TEMPLATE/Nouveauhead.php'; ?>
@@ -125,6 +179,7 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
         
         <!-- Contenu FAQ with accordion style -->
         <section class="faq">
+            <!-- Static FAQ Items -->
             <div class="faq-item">
                 <h2 class="question">Qu'est-ce que Synapse ?</h2>
                 <p class="answer">Synapse est une plateforme qui met en relation des particuliers et des professionnels pour organiser, promouvoir et participer à des activités de tout type : sportives, culturelles, musicales, etc.</p>
@@ -164,6 +219,30 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
                 <h2 class="question">Comment puis-je contacter l'organisateur ?</h2>
                 <p class="answer">Une fois inscrit(e), vous aurez accès à une messagerie ou aux coordonnées de l'organisateur pour toute question ou demande spécifique.</p>
             </div>
+            
+            <!-- Dynamic FAQ Items from user submissions -->
+            <?php if($faq_result && $faq_result->num_rows > 0): ?>
+                <?php while($faq = $faq_result->fetch_assoc()): ?>
+                    <div class="faq-item user-question">
+                        <h2 class="question"><?php echo htmlspecialchars($faq['subject']); ?></h2>
+                        <div class="answer">
+                            <p><?php echo nl2br(htmlspecialchars($faq['question'])); ?></p>
+                            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+                            <p><?php echo nl2br(htmlspecialchars($faq['answer'])); ?></p>
+                            <div class="answer-info">
+                                Répondu par : <?php echo htmlspecialchars($faq['admin_first_name'] . ' ' . $faq['admin_name']); ?>
+                                <?php if($faq['admin_type'] == 1): ?>
+                                    <span class="admin-badge superadmin-badge">Super Admin</span>
+                                <?php else: ?>
+                                    <span class="admin-badge">Admin</span>
+                                <?php endif; ?>
+                                <br>
+                                <small>Le <?php echo $faq['formatted_date']; ?></small>
+                            </div>
+                        </div>
+                    </div>
+                <?php endwhile; ?>
+            <?php endif; ?>
         </section>
         
         <!-- Section de contact -->
