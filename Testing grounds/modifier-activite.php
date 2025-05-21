@@ -760,7 +760,9 @@ function getTagStyleClass($tag) {
                     
                     <div class="form-group">
                         <label for="description">Description détaillée</label>
-                        <textarea id="description" name="description" placeholder="Décrivez votre activité..."><?php echo htmlspecialchars($activity['description']); ?></textarea>
+                        <textarea id="description" name="description">
+    <?php echo htmlspecialchars(preg_replace('/<!--CREATOR:.*?-->/', '', $activity['description'])); ?>
+</textarea>
                     </div>
                 </div>
                 

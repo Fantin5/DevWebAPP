@@ -34,7 +34,12 @@ if(isset($_POST['login_submit'])){
          $_SESSION['user_type'] = $row['user_type'];
          $_SESSION['logged_in'] = true;
          
-         header('Location: ../Testing grounds/main.php');
+         // Check if user is admin and redirect accordingly
+         if($_SESSION['user_type'] == 1) {
+            header('Location: ./../Admin/admin.php');
+         } else {
+            header('Location: ../Testing grounds/main.php');
+         }
          exit();
       } else {
          $login_error[] = 'Mot de passe incorrect !';
@@ -73,8 +78,15 @@ if(isset($_POST['register_submit'])){
        $verification_token = bin2hex(random_bytes(32));
        $verification_expires = time() + 86400; // 24 heures
        
-       // Hachage du mot de passe
-       $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
+// Hachage du mot de passe
+$pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
+
+// Date actuelle pour created_at
+$created_at = date('Y-m-d H:i:s');
+
+// Insertion en base avec le token de vérification et la date d'inscription
+$insert = "INSERT INTO user_form(name, first_name, birthday, phone_nb, email, password, verification_token, verification_expires, email_verified, created_at)
+           VALUES('$name', '$first_name', '$birthday', '$phone_nb', '$email', '$pass', '$verification_token', '$verification_expires', 0, '$created_at')";
        
        // Insertion en base avec le token de vérification
        $insert = "INSERT INTO user_form(name, first_name, birthday, phone_nb, email, password, verification_token, verification_expires, email_verified)
