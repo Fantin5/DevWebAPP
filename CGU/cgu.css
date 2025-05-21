@@ -68,14 +68,14 @@ body {
     margin-top: 100px; /* Space for fixed header */
 }
 
-/* cgu Page Title - modern design, no green background */
-.cgu-page-title {
+/* FAQ Page Title - modern design, no green background */
+.faq-page-title {
     text-align: center;
     margin-bottom: 40px;
     position: relative;
 }
 
-.cgu-page-title h1 {
+.faq-page-title h1 {
     font-family: serif;
     font-style: italic;
     font-size: 42px;
@@ -85,7 +85,7 @@ body {
     position: relative;
 }
 
-.cgu-page-title h1:after {
+.faq-page-title h1:after {
     content: "";
     position: absolute;
     bottom: 0;
@@ -98,7 +98,7 @@ body {
 }
 
 /* Override any header styles from the original file */
-.cgu-titre {
+.faq-titre {
     display: none; /* Hide original title */
 }
 
@@ -107,8 +107,8 @@ header {
     box-shadow: none !important;
 }
 
-/* cgu Section */
-.cgu {
+/* FAQ Section */
+.faq {
     font-size: 16px;
     margin-bottom: 60px;
     max-width: 900px;
@@ -116,7 +116,7 @@ header {
     margin-right: auto;
 }
 
-.cgu-item {
+.faq-item {
     margin-bottom: 15px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -125,7 +125,7 @@ header {
     transition: all 0.3s ease;
 }
 
-.cgu-item:hover {
+.faq-item:hover {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
 }
@@ -152,7 +152,7 @@ header {
     transition: all 0.3s;
 }
 
-.cgu-item.active .question:after {
+.faq-item.active .question:after {
     transform: rotate(180deg);
 }
 
@@ -166,7 +166,7 @@ header {
     color: #555;
 }
 
-.cgu-item.active .answer {
+.faq-item.active .answer {
     padding: 20px 25px;
     max-height: 500px;
     opacity: 1;
@@ -368,7 +368,7 @@ textarea.form-control {
 
 /* Media queries for responsiveness */
 @media (max-width: 768px) {
-    .cgu {
+    .faq {
         padding: 0 15px;
     }
     
