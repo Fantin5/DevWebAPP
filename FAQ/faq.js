@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const number = index + 1;
         
         question.innerHTML = `<span>${number}.</span> ${cleanText}`;
-        
+        // halo
         // Add click event to toggle accordion
         question.addEventListener('click', () => {
             // Close all other items

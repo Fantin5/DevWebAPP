@@ -18,6 +18,7 @@ $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
 // Email processing
 $message_status = '';
 $message_text = '';
+// halo
 
 // Process the contact form if submitted and user is logged in
 if (isset($_POST['submit_contact']) && $is_logged_in) {

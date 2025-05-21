@@ -20,6 +20,7 @@ body > .header {
     line-height: 1.5;
     padding: 0 20px;
 }
+/* halo */
 /* Explicitly set the header z-index to ensure it's on top */
 header, .header {
     z-index: 1000 !important;
