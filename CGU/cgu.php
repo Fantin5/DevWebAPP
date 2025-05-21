@@ -1,65 +1,69 @@
 <?php
-session_start();
-$is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+require_once('include/header.php');
+
+// Vérifie si l'utilisateur est connecté
+$is_logged_in = isset($_SESSION['user_id']);
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synapse - Conditions Générales d'Utilisation</title>
-    <link rel="stylesheet" href="faq.css"> <!-- ou renomme à cgu.css si tu veux séparer -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-</head>
-<body>
-    <?php include '../TEMPLATE/Nouveauhead.php'; ?>
 
-    <div class="page-container">
-        <div class="faq-page-title">
-            <h1>Conditions Générales d'Utilisation</h1>
-        </div>
+<div class="container mt-5">
+    <h1 class="mb-4">Conditions Générales d'Utilisation</h1>
 
-        <section class="faq">
-            <div class="faq-item">
-                <h2 class="question">1. Objet</h2>
-                <p class="answer">Les présentes Conditions Générales d'Utilisation (CGU) ont pour objet de définir les modalités de mise à disposition des services de la plateforme Synapse et les conditions d’utilisation de ces services par l’utilisateur.</p>
-            </div>
-
-            <div class="faq-item">
-                <h2 class="question">2. Acceptation des conditions</h2>
-                <p class="answer">L'utilisation de la plateforme implique l'acceptation pleine et entière des présentes CGU. En vous inscrivant sur le site, vous reconnaissez les avoir lues, comprises et acceptées sans réserve.</p>
-            </div>
-
-            <div class="faq-item">
-                <h2 class="question">3. Accès au service</h2>
-                <p class="answer">Le site est accessible gratuitement à tout utilisateur disposant d’un accès à Internet. Certains services peuvent toutefois être réservés aux utilisateurs identifiés.</p>
-            </div>
-
-            <div class="faq-item">
-                <h2 class="question">4. Obligations de l'utilisateur</h2>
-                <p class="answer">L’utilisateur s’engage à utiliser la plateforme de manière conforme à la loi et aux présentes CGU. Toute utilisation abusive ou frauduleuse pourra entraîner la suspension ou suppression du compte.</p>
-            </div>
-
-            <div class="faq-item">
-                <h2 class="question">5. Propriété intellectuelle</h2>
-                <p class="answer">Tous les contenus présents sur le site (textes, images, logos, etc.) sont la propriété exclusive de Synapse ou de ses partenaires. Toute reproduction ou utilisation sans autorisation est interdite.</p>
-            </div>
-
-            <div class="faq-item">
-                <h2 class="question">6. Données personnelles</h2>
-                <p class="answer">Synapse s'engage à respecter la vie privée de ses utilisateurs. Les données collectées sont traitées conformément à notre politique de confidentialité.</p>
-            </div>
-
-            <div class="faq-item">
-                <h2 class="question">7. Modifications des CGU</h2>
-                <p class="answer">Synapse se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés par email ou lors de leur prochaine connexion.</p>
-            </div>
-
-            <div class="faq-item">
-                <h2 class="question">8. Loi applicable</h2>
-                <p class="answer">Les présentes CGU sont soumises au droit français. En cas de litige, les tribunaux compétents seront ceux du ressort du siège de Synapse.</p>
-            </div>
-        </section>
+    <div class="faq-item">
+        <h5>1. Acceptation des conditions</h5>
+        <p>En accédant et en utilisant ce site, vous acceptez sans réserve les présentes Conditions Générales d'Utilisation.</p>
     </div>
-</body>
-</html>
+
+    <div class="faq-item">
+        <h5>2. Modification des conditions</h5>
+        <p>Nous nous réservons le droit de modifier ces CGU à tout moment. Les modifications prennent effet dès leur mise en ligne.</p>
+    </div>
+
+    <div class="faq-item">
+        <h5>3. Utilisation du site</h5>
+        <p>Vous vous engagez à utiliser ce site de manière licite, dans le respect des lois en vigueur et des présentes CGU.</p>
+    </div>
+
+    <div class="faq-item">
+        <h5>4. Propriété intellectuelle</h5>
+        <p>Le contenu du site (textes, images, logo, etc.) est protégé par les lois sur la propriété intellectuelle. Toute reproduction est interdite sans autorisation.</p>
+    </div>
+
+    <div class="faq-item">
+        <h5>5. Données personnelles</h5>
+        <p>Les données collectées sont traitées conformément à notre politique de confidentialité.</p>
+    </div>
+
+    <div class="faq-item">
+        <h5>6. Responsabilité</h5>
+        <p>Nous ne saurions être tenus responsables en cas d’erreurs, d’interruptions ou d’indisponibilité du site.</p>
+    </div>
+
+    <div class="faq-item">
+        <h5>7. Loi applicable</h5>
+        <p>Les présentes CGU sont régies par la loi française. Tout litige sera soumis à la juridiction compétente.</p>
+    </div>
+</div>
+
+<!-- Formulaire de contact (inchangé) -->
+<div class="container mt-5">
+    <h2>Une question concernant les CGU ?</h2>
+    <form method="post" action="">
+        <div class="form-group">
+            <label for="name">Nom :</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Adresse e-mail :</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="message">Message :</label>
+            <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Envoyer</button>
+    </form>
+</div>
+
+<?php
+require_once('include/footer.php');
+?>
