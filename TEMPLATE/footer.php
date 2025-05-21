@@ -1,8 +1,8 @@
 <footer class="footer">
     <ul>
       <li><a href="../FAQ/faq.php">FAQ</a></li>
-      <li><a href="#">CGU</a></li>
-      <li><a href="#">Mentions Légales</a></li>
+      <li><a href="../CGU/cgu.php">CGU</a></li>
+      <li><a href="../FAQ/faq.php">Mentions Légales</a></li>
     </ul>
 
     <ul>
