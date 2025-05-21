@@ -10,37 +10,50 @@ if(isset($_GET['delete']) && !empty($_GET['delete'])) {
     if($id == $_SESSION['user_id']) {
         $error = "Vous ne pouvez pas supprimer votre propre compte.";
     } else {
-        // Vérifier si l'utilisateur à supprimer est un super admin
+        // Vérifier si l'utilisateur à supprimer est un admin ou super admin
         $check_query = "SELECT user_type FROM user_form WHERE id = $id";
         $result = mysqli_query($conn, $check_query);
         $user = mysqli_fetch_assoc($result);
         
-        // Si l'utilisateur est un super admin et que la personne connectée n'est pas super admin
-        if($user['user_type'] == 1 && $_SESSION['user_type'] != 1) {
-            $error = "Vous n'avez pas les droits pour supprimer un super administrateur.";
-        } else {
-            // Gérer les contraintes de clé étrangère - supprimer d'abord les messages
-            // Supprimer les messages envoyés par l'utilisateur
-            mysqli_query($conn, "DELETE FROM messages WHERE sender_id = $id");
-            
-            // Supprimer les messages reçus par l'utilisateur
-            mysqli_query($conn, "DELETE FROM messages WHERE receiver_id = $id");
-            
-            // Supprimer les conversations impliquant l'utilisateur
-            mysqli_query($conn, "DELETE FROM conversations WHERE user1_id = $id OR user2_id = $id");
-            
-            // Supprimer les infos de paiement
-            mysqli_query($conn, "DELETE FROM payment_info WHERE user_id = $id");
-            
-            // Enfin, supprimer l'utilisateur
-            $delete_query = "DELETE FROM user_form WHERE id = $id";
-            if(mysqli_query($conn, $delete_query)) {
-                header("Location: admin_users.php?success=deleted");
-                exit();
+        // Si l'utilisateur connecté est un admin standard
+        if($_SESSION['user_type'] == 2) {
+            // Les admins standards ne peuvent pas supprimer des super admins ou d'autres admins
+            if($user['user_type'] == 1 || $user['user_type'] == 2) {
+                $error = "Vous n'avez pas les droits pour supprimer un autre administrateur.";
             } else {
-                $error = "Erreur lors de la suppression: " . mysqli_error($conn);
+                // Procéder à la suppression d'un utilisateur standard
+                // Gérer les contraintes de clé étrangère
+                procederSuppression($conn, $id);
             }
+        } else if($_SESSION['user_type'] == 1) {
+            // Les super admins peuvent supprimer n'importe qui
+            procederSuppression($conn, $id);
         }
+    }
+}
+
+// Fonction pour procéder à la suppression en gérant les contraintes de clé étrangère
+function procederSuppression($conn, $id) {
+    // Supprimer les messages envoyés par l'utilisateur
+    mysqli_query($conn, "DELETE FROM messages WHERE sender_id = $id");
+    
+    // Supprimer les messages reçus par l'utilisateur
+    mysqli_query($conn, "DELETE FROM messages WHERE receiver_id = $id");
+    
+    // Supprimer les conversations impliquant l'utilisateur
+    mysqli_query($conn, "DELETE FROM conversations WHERE user1_id = $id OR user2_id = $id");
+    
+    // Supprimer les infos de paiement
+    mysqli_query($conn, "DELETE FROM payment_info WHERE user_id = $id");
+    
+    // Enfin, supprimer l'utilisateur
+    $delete_query = "DELETE FROM user_form WHERE id = $id";
+    if(mysqli_query($conn, $delete_query)) {
+        header("Location: admin_users.php?success=deleted");
+        exit();
+    } else {
+        global $error;
+        $error = "Erreur lors de la suppression: " . mysqli_error($conn);
     }
 }
 
@@ -196,7 +209,7 @@ $result_users = $conn->query($users);
                                     <a href="admin_users.php?delete=<?php echo $admin['id']; ?>" 
                                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet administrateur?')">Supprimer</a>
                                 <?php else: ?>
-                                    <span style="color: #999;"><?php echo ($admin['id'] == $_SESSION['user_id']) ? '(Votre compte)' : '(Super Admin)'; ?></span>
+                                    <span style="color: #999;"><?php echo ($admin['id'] == $_SESSION['user_id']) ? '(Votre compte)' : '(Accès restreint)'; ?></span>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -221,11 +234,13 @@ $result_users = $conn->query($users);
                             <td><?php echo htmlspecialchars($admin['phone_nb']); ?></td>
                             <td><?php echo isset($admin['created_at']) ? $admin['created_at'] : 'N/A'; ?></td>
                             <td>
-                                <a href="admin_users.php?delete=<?php echo $admin['id']; ?>" 
-                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet administrateur?')">Supprimer</a>
                                 <?php if($_SESSION['user_type'] == 1): ?>
+                                    <a href="admin_users.php?delete=<?php echo $admin['id']; ?>" 
+                                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet administrateur?')">Supprimer</a>
                                     <a href="admin_users.php?remove_admin=<?php echo $admin['id']; ?>" 
                                        onclick="return confirm('Êtes-vous sûr de vouloir retirer les droits d\'administrateur?')">Retirer admin</a>
+                                <?php else: ?>
+                                    <span style="color: #999;">(Accès restreint)</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
