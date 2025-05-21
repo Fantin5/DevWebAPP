@@ -42,77 +42,77 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Afficher les éléments du panier
-        let cartHTML = `
-            <div class="panier-items">
-        `;
+// Afficher les éléments du panier
+let cartHTML = `
+    <div class="panier-items">
+`;
 
-        cartItems.forEach((item, index) => {
-            // Formater les tags
-            const tagsHTML = item.tags.map(tag => {
-                let tagClass = '';
-                if (['exterieur', 'gratuit', 'ecologie', 'randonnee'].includes(tag)) {
-                    tagClass = 'accent';
-                } else if (['interieur', 'bien_etre', 'meditation'].includes(tag)) {
-                    tagClass = 'secondary';
-                }
-                return `<span class="panier-item-tag ${tagClass}">${formatTagName(tag)}</span>`;
-            }).join('');
+cartItems.forEach((item, index) => {
+    // Formater les tags
+    const tagsHTML = item.tags.map(tag => {
+        let tagClass = '';
+        if (['exterieur', 'gratuit', 'ecologie', 'randonnee'].includes(tag)) {
+            tagClass = 'accent';
+        } else if (['interieur', 'bien_etre', 'meditation'].includes(tag)) {
+            tagClass = 'secondary';
+        }
+        return `<span class="panier-item-tag ${tagClass}">${formatTagName(tag)}</span>`;
+    }).join('');
 
-            // Formater le prix
-            const priceText = item.prix > 0 ? `${item.prix.toFixed(2)} €` : 'Gratuit';
+    // Formater le prix
+    const priceText = item.prix > 0 ? `${item.prix.toFixed(2)} €` : 'Gratuit';
 
-            cartHTML += `
-                <div class="panier-item" data-id="${item.id}">
-                    <img src="${item.image}" alt="${item.titre}" class="panier-item-image">
-                    <div class="panier-item-details">
-                        <h3 class="panier-item-title">${item.titre}</h3>
-                        ${item.periode ? `<p class="panier-item-period"><i class="fa-regular fa-calendar"></i> ${item.periode}</p>` : ''}
-                        <div class="panier-item-tags">
-                            ${tagsHTML}
-                        </div>
-                        <p class="panier-item-price">${priceText}</p>
-                    </div>
-                    <div class="panier-item-actions">
-                        <button class="panier-item-buy" data-index="${index}">
-                            <i class="fa-solid fa-credit-card"></i> Acheter maintenant
-                        </button>
-                        <button class="panier-item-remove" data-index="${index}">
-                            <i class="fa-solid fa-trash"></i> Supprimer
-                        </button>
-                    </div>
-                </div> 
-            `;
-        });
-
-        cartHTML += `
+    cartHTML += `
+        <div class="panier-item" data-id="${item.id}">
+            <img src="${item.image}" alt="${item.titre}" class="panier-item-image">
+            <div class="panier-item-details">
+                <h3 class="panier-item-title">${item.titre}</h3>
+                ${item.periode ? `<p class="panier-item-period"><i class="fa-regular fa-calendar"></i> ${item.periode}</p>` : ''}
+                <div class="panier-item-tags">
+                    ${tagsHTML}
+                </div>
+                <p class="panier-item-price">${priceText}</p>
             </div>
-            <div class="panier-summary">
-                <h3>Récapitulatif de votre panier</h3>
-                <div class="summary-row">
-                    <span>Nombre d'activités</span>
-                    <span>${cartItems.length}</span>
-                </div>
-                <div class="summary-row">
-                    <span>Activités gratuites</span>
-                    <span>${cartItems.filter(item => item.prix <= 0).length}</span>
-                </div>
-                <div class="summary-row">
-                    <span>Activités payantes</span>
-                    <span>${cartItems.filter(item => item.prix > 0).length}</span>
-                </div>
-                <div class="summary-total">
-                    <span>Total</span>
-                    <span>${total.toFixed(2)} €</span>
-                </div>
-                <form action="../Paiement/paiement.php" method="post" style="display: inline">
-                    <input type="hidden" name="panier_json" value='${JSON.stringify(cartItems)}'>
-                    <button type="submit" class="checkout-button">
-                        <i class="fa-solid fa-lock"></i> Procéder au paiement
-                    </button>
-                </form>
+            <div class="panier-item-actions">
+                <button class="panier-item-buy" data-index="${index}">
+                    <i class="fa-solid fa-credit-card"></i> Acheter maintenant
+                </button>
+                <button class="panier-item-remove" data-index="${index}">
+                    <i class="fa-solid fa-trash"></i> Supprimer
+                </button>
             </div>
-        `;
+        </div> 
+    `;
+});
+
+cartHTML += `
+    </div>
+    <div class="panier-summary">
+        <h3>Récapitulatif de votre panier</h3>
+        <div class="summary-row">
+            <span>Nombre d'activités</span>
+            <span>${cartItems.length}</span>
+        </div>
+        <div class="summary-row">
+            <span>Activités gratuites</span>
+            <span>${cartItems.filter(item => item.prix <= 0).length}</span>
+        </div>
+        <div class="summary-row">
+            <span>Activités payantes</span>
+            <span>${cartItems.filter(item => item.prix > 0).length}</span>
+        </div>
+        <div class="summary-total">
+            <span>Total</span>
+            <span>${total.toFixed(2)} €</span>
+        </div>
+        <form action="../Paiement/paiement.php" method="post" style="display: inline">
+            <input type="hidden" name="panier_json" value='${JSON.stringify(cartItems).replace(/'/g, "&apos;")}'>
+            <button type="submit" class="checkout-button">
+                <i class="fa-solid fa-lock"></i> Procéder au paiement
+            </button>
+        </form>
+    </div>
+`;
 
         panierContent.innerHTML = cartHTML;
 
