@@ -64,8 +64,8 @@
             exit();
         }
 
-        // Vérification de la session (rejeter si non admin)
-        if ($_SESSION['user_type'] != 1) {
+        // Vérification de la session (rejeter si ni super admin ni admin)
+        if ($_SESSION['user_type'] != 1 && $_SESSION['user_type'] != 2) {
             // Si l'utilisateur essaye d'accéder à une page admin
             if (in_array($current_page, $admin_pages)) {
                 // Rediriger vers la page d'accueil

@@ -6,14 +6,31 @@
 
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Control Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .nav-button { 
+            display: inline-block; 
+            padding: 8px 15px; 
+            margin-bottom: 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .nav-button:hover { background-color: #45a049; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 8px; text-align: left; border: 1px solid #ddd; }
+    </style>
 </head>
 <body>
     <h1>Salle de contrôle</h1>
+    <a href="../Testing grounds/main.php" class="nav-button">Retour à la page principale</a>
+    
     <table>
         <tbody>
             <tr>

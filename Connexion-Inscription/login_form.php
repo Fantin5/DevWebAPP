@@ -41,7 +41,7 @@ if(isset($_POST['login_submit'])){
          $_SESSION['logged_in'] = true;
          
          // Check if user is admin and redirect accordingly
-         if($_SESSION['user_type'] == 1) {
+         if($_SESSION['user_type'] == 1 || $_SESSION['user_type'] == 2) {
             header('Location: ./../Admin/admin.php');
          } else {
             header('Location: ../Testing grounds/main.php');

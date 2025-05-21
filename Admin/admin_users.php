@@ -2,9 +2,6 @@
 // Recherche de l'utilisateur connecté (id de session)
 include 'adminVerify.php';
 
-// Configuration de la base de données est déjà incluse dans adminVerify.php
-// $conn est disponible via adminVerify.php
-
 // Handle delete action
 if(isset($_GET['delete']) && !empty($_GET['delete'])) {
     $id = (int)$_GET['delete'];
@@ -23,8 +20,49 @@ if(isset($_GET['delete']) && !empty($_GET['delete'])) {
     }
 }
 
-// Requête pour les admins
-$admin = "SELECT * FROM user_form WHERE user_type = 1";
+// Handle change user type action (only for super admin)
+if(isset($_GET['make_admin']) && !empty($_GET['make_admin']) && $_SESSION['user_type'] == 1) {
+    $id = (int)$_GET['make_admin'];
+    
+    // Mettre à jour le type d'utilisateur à 2 (admin normal)
+    $update_query = "UPDATE user_form SET user_type = 2 WHERE id = $id";
+    if(mysqli_query($conn, $update_query)) {
+        header("Location: admin_users.php?success=admin_added");
+        exit();
+    } else {
+        $error = "Erreur lors de la mise à jour: " . mysqli_error($conn);
+    }
+}
+
+// Handle remove admin action (only for super admin)
+if(isset($_GET['remove_admin']) && !empty($_GET['remove_admin']) && $_SESSION['user_type'] == 1) {
+    $id = (int)$_GET['remove_admin'];
+    
+    // Ne pas permettre de rétrograder un super admin
+    $check_query = "SELECT user_type FROM user_form WHERE id = $id";
+    $result = mysqli_query($conn, $check_query);
+    $user = mysqli_fetch_assoc($result);
+    
+    if($user['user_type'] == 1) {
+        $error = "Vous ne pouvez pas rétrograder un super admin.";
+    } else {
+        // Mettre à jour le type d'utilisateur à 0 (utilisateur normal)
+        $update_query = "UPDATE user_form SET user_type = 0 WHERE id = $id";
+        if(mysqli_query($conn, $update_query)) {
+            header("Location: admin_users.php?success=admin_removed");
+            exit();
+        } else {
+            $error = "Erreur lors de la mise à jour: " . mysqli_error($conn);
+        }
+    }
+}
+
+// Requête pour les super admins
+$super_admin = "SELECT * FROM user_form WHERE user_type = 1";
+$result_super_admin = $conn->query($super_admin);
+
+// Requête pour les admins normaux
+$admin = "SELECT * FROM user_form WHERE user_type = 2";
 $result_admin = $conn->query($admin);
 
 // Requête pour les utilisateurs lambdas
@@ -83,11 +121,16 @@ $result_users = $conn->query($users);
         <div class="nav-buttons">
             <a href="admin.php">Tableau de bord</a>
             <a href="../Testing grounds/main.php">Site utilisateur</a>
-            <a href="create_user.php">Ajouter un utilisateur</a>
         </div>
         
-        <?php if(isset($_GET['success']) && $_GET['success'] == 'deleted'): ?>
-            <p class="success">L'utilisateur a été supprimé avec succès.</p>
+        <?php if(isset($_GET['success'])): ?>
+            <?php if($_GET['success'] == 'deleted'): ?>
+                <p class="success">L'utilisateur a été supprimé avec succès.</p>
+            <?php elseif($_GET['success'] == 'admin_added'): ?>
+                <p class="success">L'utilisateur a été promu administrateur avec succès.</p>
+            <?php elseif($_GET['success'] == 'admin_removed'): ?>
+                <p class="success">Les droits d'administrateur ont été retirés avec succès.</p>
+            <?php endif; ?>
         <?php endif; ?>
         
         <?php if(isset($error)): ?>
@@ -107,7 +150,36 @@ $result_users = $conn->query($users);
                 </tr>
             </thead>
             <tbody>
-                <!-- Affichage des admins -->
+                <!-- Affichage des super admins -->
+                <tr>
+                    <th colspan="7" class="section-header">Super Administrateurs <span class="user-count"><?php echo $result_super_admin->num_rows; ?></span></th>
+                </tr>
+                <?php if ($result_super_admin->num_rows == 0): ?>
+                    <tr>
+                        <td colspan="7">Aucun super administrateur trouvé</td>
+                    </tr>
+                <?php else: ?>
+                    <?php while ($admin = $result_super_admin->fetch_assoc()): ?>
+                        <tr <?php if($admin['id'] == $_SESSION['user_id']) echo 'class="you-row"'; ?>>
+                            <td><?php echo $admin['id']; ?></td>
+                            <td><?php echo htmlspecialchars($admin['name']); ?></td>
+                            <td><?php echo htmlspecialchars($admin['first_name']); ?></td>
+                            <td><?php echo htmlspecialchars($admin['email']); ?></td>
+                            <td><?php echo htmlspecialchars($admin['phone_nb']); ?></td>
+                            <td><?php echo isset($admin['created_at']) ? $admin['created_at'] : 'N/A'; ?></td>
+                            <td>
+                                <?php if($admin['id'] != $_SESSION['user_id']): ?>
+                                    <a href="admin_users.php?delete=<?php echo $admin['id']; ?>" 
+                                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet administrateur?')">Supprimer</a>
+                                <?php else: ?>
+                                    <span style="color: #999;">(Votre compte)</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                <?php endif; ?>
+
+                <!-- Affichage des admins normaux -->
                 <tr>
                     <th colspan="7" class="section-header">Administrateurs <span class="user-count"><?php echo $result_admin->num_rows; ?></span></th>
                 </tr>
@@ -117,7 +189,7 @@ $result_users = $conn->query($users);
                     </tr>
                 <?php else: ?>
                     <?php while ($admin = $result_admin->fetch_assoc()): ?>
-                        <tr <?php if($admin['id'] == $_SESSION['user_id']) echo 'class="you-row"'; ?>>
+                        <tr>
                             <td><?php echo $admin['id']; ?></td>
                             <td><?php echo htmlspecialchars($admin['name']); ?></td>
                             <td><?php echo htmlspecialchars($admin['first_name']); ?></td>
@@ -125,12 +197,11 @@ $result_users = $conn->query($users);
                             <td><?php echo htmlspecialchars($admin['phone_nb']); ?></td>
                             <td><?php echo isset($admin['created_at']) ? $admin['created_at'] : 'N/A'; ?></td>
                             <td>
-                                <a href="edit_user.php?id=<?php echo $admin['id']; ?>">Modifier</a>
-                                <?php if($admin['id'] != $_SESSION['user_id']): ?>
-                                    <a href="admin_users.php?delete=<?php echo $admin['id']; ?>" 
-                                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet administrateur?')">Supprimer</a>
-                                <?php else: ?>
-                                    <span style="color: #999;">(Votre compte)</span>
+                                <a href="admin_users.php?delete=<?php echo $admin['id']; ?>" 
+                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet administrateur?')">Supprimer</a>
+                                <?php if($_SESSION['user_type'] == 1): ?>
+                                    <a href="admin_users.php?remove_admin=<?php echo $admin['id']; ?>" 
+                                       onclick="return confirm('Êtes-vous sûr de vouloir retirer les droits d\'administrateur?')">Retirer admin</a>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -155,9 +226,12 @@ $result_users = $conn->query($users);
                             <td><?php echo htmlspecialchars($user['phone_nb']); ?></td>
                             <td><?php echo isset($user['created_at']) ? $user['created_at'] : 'N/A'; ?></td>
                             <td>
-                                <a href="edit_user.php?id=<?php echo $user['id']; ?>">Modifier</a>
                                 <a href="admin_users.php?delete=<?php echo $user['id']; ?>" 
                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur?')">Supprimer</a>
+                                <?php if($_SESSION['user_type'] == 1): ?>
+                                    <a href="admin_users.php?make_admin=<?php echo $user['id']; ?>"
+                                       onclick="return confirm('Êtes-vous sûr de vouloir promouvoir cet utilisateur en administrateur?')">Promouvoir admin</a>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endwhile; ?>

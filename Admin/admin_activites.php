@@ -71,7 +71,6 @@ $result = $conn->query($activites_query);
     <div class="nav-buttons">
         <a href="admin.php">Tableau de bord</a>
         <a href="../Testing grounds/main.php">Site utilisateur</a>
-        <a href="create_activity.php">Ajouter une activité</a>
     </div>
     
     <?php if(isset($_GET['success']) && $_GET['success'] == 'deleted'): ?>
@@ -165,7 +164,6 @@ $result = $conn->query($activites_query);
                         <?php endif; ?>
                     </td>
                     <td class="action-links">
-                        <a href="edit_activity.php?id=<?php echo $activite['id']; ?>">Modifier</a>
                         <a href="admin_activites.php?delete=<?php echo $activite['id']; ?>" 
                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette activité?')">Supprimer</a>
                     </td>
