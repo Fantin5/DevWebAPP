@@ -48,6 +48,24 @@ if ($result->num_rows === 0) {
 
 $activity = $result->fetch_assoc();
 
+// Check if the user is registered for this activity
+$userRegistered = false;
+if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
+    $user_id = $_SESSION['user_id'];
+    
+    $check_registration_sql = "SELECT id FROM activites_achats WHERE user_id = ? AND activite_id = ?";
+    $check_stmt = $conn->prepare($check_registration_sql);
+    $check_stmt->bind_param("ii", $user_id, $activity_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+    
+    if ($check_result->num_rows > 0) {
+        $userRegistered = true;
+    }
+    
+    $check_stmt->close();
+}
+
 // Extract creator information from description if it exists
 $creator_data = null;
 if (preg_match('/<!--CREATOR:([^-]+)-->/', $activity["description"], $matches)) {
@@ -863,6 +881,77 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
         }
         
         .add-to-cart-button span {
+            z-index: 2;
+        }
+        
+        /* Registration badge and view registered activities button */
+        .registration-badge {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 16px 30px;
+            border-radius: 50px;
+            text-align: center;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 12px 25px rgba(39, 94, 62, 0.3);
+        }
+
+        .registration-badge i {
+            font-size: 20px;
+        }
+
+        .view-registrations-button {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-dark) 100%);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 16px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.4s ease;
+            box-shadow: 0 12px 25px rgba(148, 107, 45, 0.3);
+            width: 100%;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .view-registrations-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                rgba(255, 255, 255, 0) 0%, 
+                rgba(255, 255, 255, 0.2) 50%, 
+                rgba(255, 255, 255, 0) 100%);
+            transform: skewX(-25deg);
+            transition: left 0.7s ease;
+            z-index: 1;
+        }
+
+        .view-registrations-button:hover {
+            background: linear-gradient(135deg, var(--secondary-dark) 0%, var(--secondary-color) 100%);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(148, 107, 45, 0.4);
+        }
+
+        .view-registrations-button:hover::before {
+            left: 100%;
+        }
+
+        .view-registrations-button i, .view-registrations-button span {
+            position: relative;
             z-index: 2;
         }
         
@@ -1702,6 +1791,15 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                         <?php endif; ?>
                     </div>
                     
+                    <?php if ($userRegistered): ?>
+                    <div class="registration-badge">
+                        <i class="fa-solid fa-check-circle"></i> 
+                        <span>Vous êtes inscrit à cette activité</span>
+                    </div>
+                    <a href="mes-activites-registered.php" class="view-registrations-button">
+                        <i class="fa-solid fa-list"></i> <span>Voir mes inscriptions</span>
+                    </a>
+                    <?php else: ?>
                     <button class="signup-button" id="signup-button" data-id="<?php echo $activity['id']; ?>">
                         <i class="fa-solid fa-user-plus"></i> <span>S'inscrire à cette activité</span>
                     </button>
@@ -1714,6 +1812,7 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                             data-tags="<?php echo htmlspecialchars($activity['tags']); ?>">
                         <i class="fa-solid fa-cart-shopping"></i> <span>Ajouter au panier</span>
                     </button>
+                    <?php endif; ?>
                     
                     <?php if ($activity["date_ou_periode"]): ?>
                         <div class="activity-status">

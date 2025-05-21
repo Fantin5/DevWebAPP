@@ -21,27 +21,27 @@
     ?>
 
     <div class="page-wrapper">
-      <!-- Floating elements animation -->
+      <!-- Floating elements animation - Garde les éléments originaux et en ajoute quelques-uns -->
       <div class="floating-element cart-float-1"></div>
       <div class="floating-element leaf-float-1"></div>
       <div class="floating-element coin-float-1"></div>
       <div class="floating-element cart-float-2"></div>
       <div class="floating-element coin-float-2"></div>
       <div class="floating-element cart-float-1"></div>
-<div class="floating-element leaf-float-1"></div>
-<div class="floating-element coin-float-1"></div>
-<div class="floating-element cart-float-2"></div>
-<div class="floating-element coin-float-2"></div>
-<div class="floating-element cart-float-1"></div>
-<div class="floating-element leaf-float-1"></div>
-<div class="floating-element coin-float-1"></div>
-<div class="floating-element cart-float-2"></div>
-<div class="floating-element coin-float-2"></div>
-<div class="floating-element cart-float-1"></div>
-<div class="floating-element leaf-float-1"></div>
-<div class="floating-element coin-float-1"></div>
-<div class="floating-element cart-float-2"></div>
-<div class="floating-element coin-float-2"></div>
+      <div class="floating-element leaf-float-1"></div>
+      <div class="floating-element coin-float-1"></div>
+      <div class="floating-element cart-float-2"></div>
+      <div class="floating-element coin-float-2"></div>
+      <div class="floating-element cart-float-1"></div>
+      <div class="floating-element leaf-float-1"></div>
+      <div class="floating-element coin-float-1"></div>
+      <div class="floating-element cart-float-2"></div>
+      <div class="floating-element coin-float-2"></div>
+      <div class="floating-element cart-float-1"></div>
+      <div class="floating-element leaf-float-1"></div>
+      <div class="floating-element coin-float-1"></div>
+      <div class="floating-element cart-float-2"></div>
+      <div class="floating-element coin-float-2"></div>
 
       <div class="panier-container">
         <h1 class="panier-title">Votre Panier</h1>

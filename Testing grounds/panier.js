@@ -105,9 +105,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span>Total</span>
                     <span>${total.toFixed(2)} €</span>
                 </div>
-                <button class="checkout-button">
-                    <i class="fa-solid fa-lock"></i> Procéder au paiement
-                </button>
+                <form action="../Paiement/paiement.php" method="post" style="display: inline">
+                    <input type="hidden" name="panier_json" value='${JSON.stringify(cartItems)}'>
+                    <button type="submit" class="checkout-button">
+                        <i class="fa-solid fa-lock"></i> Procéder au paiement
+                    </button>
+                </form>
             </div>
         `;
 
@@ -143,17 +146,34 @@ document.addEventListener('DOMContentLoaded', function() {
             button.addEventListener('click', function () {
                 // Animation du bouton
                 this.classList.add('buying');
+                const index = parseInt(this.getAttribute('data-index'));
+                const item = cartItems[index];
+                
+                // Créer un panier temporaire avec seulement cet élément
+                const singleItemCart = [item];
                 
                 // Vérifier si l'utilisateur est connecté
                 fetch('../Connexion-Inscription/auth_check.php')
                     .then(response => response.json())
                     .then(data => {
                         if (data.logged_in) {
-                            // Afficher une notification si l'utilisateur est connecté
-                            showNotification('Préparation de votre commande...', 'info');
-                            setTimeout(() => {
-                                showNotification('Fonctionnalité de paiement à venir.', 'info');
-                            }, 2000);
+                            // Vérifier si l'utilisateur a déjà enregistré ses informations bancaires
+                            fetch('../Paiement/payment_functions.php?action=check_payment_info')
+                                .then(response => response.json())
+                                .then(paymentData => {
+                                    if (paymentData.has_payment_info) {
+                                        // Si l'utilisateur a déjà des informations de paiement, procéder directement
+                                        processDirectPayment(singleItemCart);
+                                    } else {
+                                        // Sinon, rediriger vers la page de paiement avec uniquement cet article
+                                        redirectToPayment(singleItemCart);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error checking payment info:', error);
+                                    // Par défaut, rediriger vers la page de paiement
+                                    redirectToPayment(singleItemCart);
+                                });
                         } else {
                             // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
                             showNotification('Connexion requise pour l\'achat', 'error');
@@ -168,32 +188,54 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
             });
         });
+    }
+    
+    // Fonction pour rediriger vers la page de paiement avec un panier spécifique
+    function redirectToPayment(items) {
+        // Créer un formulaire temporaire pour envoyer les données
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = '../Paiement/paiement.php';
+        form.style.display = 'none';
         
-        // Événement pour le bouton de paiement (pour l'instant, juste une alerte)
-        const paiementForm = document.createElement("form");
-        paiementForm.action = "../Paiement/paiement.php";
-        paiementForm.method = "post";
-        paiementForm.style.display = "inline";
-
-        const panierInput = document.createElement("input");
-        panierInput.type = "hidden";
-        panierInput.name = "panier_json";
-        panierInput.value = JSON.stringify(cartItems);
-
-        const boutonPaiement = document.createElement("button");
-        boutonPaiement.type = "submit";
-        boutonPaiement.className = "checkout-button";
-        boutonPaiement.textContent = "Procéder au paiement";
-
-        paiementForm.appendChild(panierInput);
-        paiementForm.appendChild(boutonPaiement);
-
-        // Ajoute le formulaire à la place du bouton
-        const summaryDiv = panierContent.querySelector('.panier-summary');
-        if (summaryDiv) {
-
-            summaryDiv.appendChild(paiementForm);
-        }
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'panier_json';
+        input.value = JSON.stringify(items);
+        
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+    
+    // Fonction pour traiter un paiement direct (quand l'utilisateur a déjà des infos de paiement)
+    function processDirectPayment(items) {
+        showNotification('Traitement de votre paiement...', 'info');
+        
+        fetch('../Paiement/payment_functions.php?action=process_payment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ items: items }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Paiement réussi !', 'success');
+                
+                // Si c'était un achat individuel, on laisse les autres articles dans le panier
+                setTimeout(() => {
+                    window.location.href = '../Testing grounds/main.php';
+                }, 2000);
+            } else {
+                showNotification(data.message || 'Erreur lors du paiement', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error processing payment:', error);
+            showNotification('Une erreur est survenue', 'error');
+        });
     }
     
     // Fonction pour supprimer un élément du panier

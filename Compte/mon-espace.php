@@ -52,6 +52,21 @@ if ($result_activities && $result_activities->num_rows > 0) {
         }
     }
 }
+
+// Count user registered activities (purchased)
+$registered_activity_count = 0;
+$sql_registered = "SELECT COUNT(*) as count FROM activites_achats WHERE user_id = ?";
+$stmt_registered = $conn_activity->prepare($sql_registered);
+$stmt_registered->bind_param("i", $user_id);
+$stmt_registered->execute();
+$result_registered = $stmt_registered->get_result();
+
+if ($result_registered && $result_registered->num_rows > 0) {
+    $row_registered = $result_registered->fetch_assoc();
+    $registered_activity_count = $row_registered['count'];
+}
+
+$stmt_registered->close();
 $conn_activity->close();
 
 // Handle profile update
@@ -1026,6 +1041,28 @@ input:checked + .slider:before {
                 
                 <a href="../Testing grounds/jenis.php" class="activity-link">
                     <i class="fa-solid fa-plus"></i> Créer une nouvelle activité
+                </a>
+            </div>
+            
+            <!-- My Registered Activities Card -->
+            <div class="dashboard-card">
+                <div class="card-decoration"></div>
+                <div class="dashboard-card-header">
+                    <div class="dashboard-card-icon">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <h2 class="dashboard-card-title">Mes Inscriptions</h2>
+                </div>
+                
+                <div class="activities-count"><?php echo $registered_activity_count; ?></div>
+                <p class="center-text">Activités auxquelles vous êtes inscrit</p>
+                
+                <a href="../Testing grounds/mes-activites-registered.php" class="activity-link">
+                    <i class="fa-solid fa-list"></i> Voir mes inscriptions
+                </a>
+                
+                <a href="../Testing grounds/activites.php" class="activity-link">
+                    <i class="fa-solid fa-compass"></i> Explorer d'autres activités
                 </a>
             </div>
             

@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const expiryInput = document.querySelector('input[name="expiry_date"]');
     const cvvInput = document.querySelector('input[name="cvv"]');
     const form = document.querySelector('form');
+    const saveInfoCheckbox = document.getElementById('save_payment_info');
     let transactionMessage = null;
 
     // Placeholder pour la carte
@@ -84,18 +85,49 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!confirm('Confirmez-vous le paiement ?')) {
             return;
         }
-        // Affiche le message de validation
-        if (!transactionMessage) {
-            transactionMessage = document.createElement('div');
-            transactionMessage.textContent = "Transaction validée";
-            transactionMessage.style = "color: #45cf91; font-weight: bold; font-size: 1.3em; margin: 20px 0; text-align:center;";
-            form.parentNode.insertBefore(transactionMessage, form.nextSibling);
+
+        // Préparation des données du formulaire pour l'envoi AJAX
+        const formData = new FormData(form);
+        formData.append('process_payment', true);
+        
+        // Si la case "Enregistrer mes informations" est cochée
+        if (saveInfoCheckbox && saveInfoCheckbox.checked) {
+            formData.append('save_info', true);
         }
-        // Désactive le bouton
-        form.querySelector('button[type="submit"]').disabled = true;
-        // Redirige après 5 secondes
-        setTimeout(function() {
-            window.location.href = "../Testing grounds/main.php";
-        }, 5000);
+        
+        // Envoyer la requête AJAX pour traiter le paiement
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Afficher le message de validation
+                if (!transactionMessage) {
+                    transactionMessage = document.createElement('div');
+                    transactionMessage.textContent = "Transaction validée";
+                    transactionMessage.style = "color: #45cf91; font-weight: bold; font-size: 1.3em; margin: 20px 0; text-align:center;";
+                    form.parentNode.insertBefore(transactionMessage, form.nextSibling);
+                }
+                // Désactiver le bouton
+                form.querySelector('button[type="submit"]').disabled = true;
+                
+                // Vider le localStorage pour le panier
+                localStorage.setItem('synapse-cart', JSON.stringify([]));
+                
+                // Redirige après 3 secondes
+                setTimeout(function() {
+                    window.location.href = "../Testing grounds/main.php";
+                }, 3000);
+            } else {
+                // Afficher un message d'erreur
+                alert(data.message || "Erreur lors du traitement du paiement");
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Une erreur est survenue lors du traitement du paiement");
+        });
     });
 });
