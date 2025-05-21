@@ -40,12 +40,13 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
   </ul>
 </nav>
     
-      <div class="icon">
-        <a href="../Testing grounds/panier.php" class="panier-link" aria-label="Panier">
-          <i class="fa-solid fa-cart-shopping"></i>
-          <span class="panier-count" id="panier-count">0</span>
-        </a>
-        <?php if($logged_in): ?>
+<div class="icon">
+  <?php include '../TEMPLATE/admin_button.php'; ?>
+  <a href="../Testing grounds/panier.php" class="panier-link" aria-label="Panier">
+    <i class="fa-solid fa-cart-shopping"></i>
+    <span class="panier-count" id="panier-count">0</span>
+  </a>
+  <?php if($logged_in): ?>
         <!-- Menu déroulant pour l'utilisateur connecté -->
         <div class="profile-dropdown">
           <a href="#" class="connexion-profil" aria-label="Profil">
