@@ -20,6 +20,9 @@ if ($conn->connect_error) {
 $successMessage = '';
 $errorMessage = '';
 
+// Get current user ID
+$user_id = $_SESSION['user_id'];
+
 // Vérifier si un ID d'activité est fourni
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     // Rediriger vers la page mes activités si aucun ID valide n'est fourni
@@ -36,6 +39,33 @@ $available_tags = [
     'randonnee', 'jardinage', 'meditation', 'artisanat'
 ];
 
+// Récupérer les détails de l'activité avant modification
+$sql = "SELECT a.*, 
+        (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags
+        FROM activites a 
+        WHERE a.id = ?";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $activity_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Vérifier si l'activité existe
+if ($result->num_rows === 0) {
+    // Rediriger vers la page mes activités si l'activité n'existe pas
+    header("Location: mes-activites.php");
+    exit();
+}
+
+$activity = $result->fetch_assoc();
+$stmt->close();
+
+// Extraire l'information du créateur depuis la description
+$creator_info = '';
+if (preg_match('/<!--CREATOR:(.*?)-->/', $activity['description'], $matches)) {
+    $creator_info = $matches[0]; // Capture the entire creator comment
+}
+
 // Traitement du formulaire lors de la soumission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Récupérer les données du formulaire
@@ -44,6 +74,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $date_ou_periode = trim($_POST['date_ou_periode']);
     $prix = isset($_POST['prix']) ? floatval($_POST['prix']) : 0;
     $selected_tags = isset($_POST['tags']) ? $_POST['tags'] : [];
+    
+    // Add creator information back to the description if it existed
+    if (!empty($creator_info)) {
+        $description = $creator_info . $description;
+    }
     
     // Gestion de l'image
     $image_url = $activity['image_url']; // Garder l'image actuelle par défaut
@@ -140,27 +175,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->close();
     }
 }
-
-// Récupérer les détails de l'activité
-$sql = "SELECT a.*, 
-        (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags
-        FROM activites a 
-        WHERE a.id = ?";
-
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $activity_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-// Vérifier si l'activité existe
-if ($result->num_rows === 0) {
-    // Rediriger vers la page mes activités si l'activité n'existe pas
-    header("Location: mes-activites.php");
-    exit();
-}
-
-$activity = $result->fetch_assoc();
-$stmt->close();
 
 // Récupérer les tags actuels de l'activité
 $current_tags = [];
@@ -716,6 +730,22 @@ function getTagStyleClass($tag) {
         .hidden {
             display: none;
         }
+        
+        /* Creator info notice */
+        .creator-info-notice {
+            background-color: #f8f9fa;
+            border-left: 4px solid #45a163;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #555;
+            font-size: 14px;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .creator-info-notice i {
+            color: #45a163;
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
@@ -758,11 +788,16 @@ function getTagStyleClass($tag) {
                 <div class="form-section">
                     <h3>Description</h3>
                     
+                    <?php if (!empty($creator_info)): ?>
+                    <div class="creator-info-notice">
+                        <i class="fa-solid fa-info-circle"></i>
+                        Les informations du créateur seront automatiquement préservées.
+                    </div>
+                    <?php endif; ?>
+                    
                     <div class="form-group">
                         <label for="description">Description détaillée</label>
-                        <textarea id="description" name="description">
-    <?php echo htmlspecialchars(preg_replace('/<!--CREATOR:.*?-->/', '', $activity['description'])); ?>
-</textarea>
+                        <textarea id="description" name="description"><?php echo htmlspecialchars(preg_replace('/<!--CREATOR:.*?-->/', '', $activity['description'])); ?></textarea>
                     </div>
                 </div>
                 
@@ -1170,4 +1205,3 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 $conn->close();
 ?>
-<!-- le code est horrible pardon mdrr -->

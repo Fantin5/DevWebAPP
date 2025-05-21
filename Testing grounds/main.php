@@ -692,27 +692,27 @@ include '../TEMPLATE/footer.php';
             card.style.cursor = 'pointer';
         });
 
-        // Make tags clickable - redirect to activities page with filter
-        document.querySelectorAll('.tags').forEach(tag => {
-            tag.addEventListener('click', function(e) {
-                e.stopPropagation(); // Prevent the card click event
-                
-                const tagName = this.getAttribute('data-tag');
-                if (tagName) {
-                    // Determine which filter to use based on tag type
-                    if (tagName === 'gratuit' || tagName === 'payant') {
-                        window.location.href = 'activites.php?price=' + tagName;
-                    } else if (tagName === 'interieur' || tagName === 'exterieur') {
-                        window.location.href = 'activites.php?location=' + tagName;
-                    } else {
-                        window.location.href = 'activites.php?category=' + tagName;
-                    }
-                }
-            });
-            
-            // Change cursor on hover
-            tag.style.cursor = 'pointer';
-        });
+// Make tags clickable - redirect to activities page with filter
+document.querySelectorAll('.tags').forEach(tag => {
+    tag.addEventListener('click', function(e) {
+        e.stopPropagation(); // Prevent the card click event
+        
+        const tagName = this.getAttribute('data-tag');
+        if (tagName) {
+            // Determine which filter to use based on tag type
+            if (tagName === 'gratuit' || tagName === 'payant') {
+                window.location.href = 'activites.php?price=' + encodeURIComponent(tagName);
+            } else if (tagName === 'interieur' || tagName === 'exterieur') {
+                window.location.href = 'activites.php?location=' + encodeURIComponent(tagName);
+            } else {
+                window.location.href = 'activites.php?category=' + encodeURIComponent(tagName);
+            }
+        }
+    });
+    
+    // Change cursor on hover
+    tag.style.cursor = 'pointer';
+});
         
         // Ajouter des événements pour les boutons "Ajouter au panier"
         document.querySelectorAll('.add-to-cart-button').forEach(button => {

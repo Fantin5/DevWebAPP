@@ -137,6 +137,10 @@ function getTagClass($tag) {
 }
 ?>
 
+<?php
+// (PHP code remains the same as in previous answer)
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
   <head>
@@ -150,425 +154,479 @@ function getTagClass($tag) {
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
     <style>
+      /* Common styles - same as before */
+      body { 
+          font-family: Arial, sans-serif; 
+          position: relative;
+          overflow-x: hidden;
+          min-height: 100vh;
+          background: linear-gradient(135deg, rgba(228, 216, 200, 0.8) 0%, rgba(215, 225, 210, 0.8) 100%);
+      }
+
       .activities-page-title {
-        text-align: center;
-        margin: 40px 0;
-        color: #828977;
+          text-align: center;
+          margin: 40px 0;
+          color: var(--text-dark);
+          font-size: 42px;
+          position: relative;
+          display: inline-block;
+          font-family: 'Georgia', serif;
+          width: 100%;
+      }
+      
+      .activities-page-title::after {
+          content: '';
+          position: absolute;
+          bottom: -10px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 80px;
+          height: 3px;
+          background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+          border-radius: 2px;
       }
       
       .page-container {
-        width: 90%;
-        max-width: 1200px;
-        margin: 30px auto 60px;
+          width: 90%;
+          max-width: 1200px;
+          margin: 30px auto 60px;
+          position: relative;
+          z-index: 2;
       }
       
       .action-buttons {
-        text-align: center;
-        margin-bottom: 40px;
+          text-align: center;
+          margin-bottom: 40px;
       }
       
       .create-button {
-        background-color: var(--primary-color);
-        color: #111;
-        padding: 14px 30px;
-        border-radius: 30px;
-        text-decoration: none;
-        font-weight: bold;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(69, 161, 99, 0.3);
+          background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+          color: white;
+          padding: 16px 30px;
+          border-radius: 50px;
+          text-decoration: none;
+          font-weight: bold;
+          display: inline-flex;
+          align-items: center;
+          gap: 12px;
+          transition: all 0.4s ease;
+          box-shadow: 0 12px 25px rgba(39, 94, 62, 0.3);
+          position: relative;
+          overflow: hidden;
+      }
+      
+      .create-button::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, 
+              rgba(255, 255, 255, 0) 0%, 
+              rgba(255, 255, 255, 0.2) 50%, 
+              rgba(255, 255, 255, 0) 100%);
+          transform: skewX(-25deg);
+          transition: left 0.7s ease;
+          z-index: 1;
       }
       
       .create-button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(69, 161, 99, 0.4);
-        background-color: #3abd7a;
+          background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+          transform: translateY(-5px);
+          box-shadow: 0 15px 35px rgba(39, 94, 62, 0.4);
       }
       
+      .create-button:hover::before {
+          left: 100%;
+      }
+      
+      .create-button i, .create-button span {
+          position: relative;
+          z-index: 2;
+      }
+      
+      /* Activities Grid Styling */
       .activities-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 30px;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 30px;
+          position: relative;
+          animation: fadeIn 1s forwards;
       }
       
+      @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+      }
+      
+      /* No activities message */
       .no-activities {
-        text-align: center;
-        padding: 40px;
-        background: white;
-        border-radius: 15px;
-        box-shadow: var(--shadow-md);
-        grid-column: 1 / -1;
+          text-align: center;
+          padding: 60px 30px;
+          background-color: rgba(255, 255, 255, 0.7);
+          border-radius: 20px;
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+          grid-column: 1/-1;
+          animation: fadeIn 0.8s ease;
       }
       
       .no-activities i {
-        font-size: 48px;
-        color: #828977;
-        margin-bottom: 20px;
+          font-size: 64px;
+          color: #828977;
+          margin-bottom: 25px;
+          opacity: 0.5;
+      }
+      
+      .no-activities h3 {
+          font-size: 24px;
+          color: #444;
+          margin-bottom: 10px;
       }
       
       .no-activities p {
-        color: #666;
-        font-size: 18px;
-        margin-bottom: 0;
+          color: #666;
+          font-size: 18px;
       }
       
-      .activity-card {
-        background-color: white;
-        border-radius: var(--border-radius-md);
-        overflow: hidden;
-        box-shadow: var(--shadow-md);
-        display: flex;
-        flex-direction: column;
-        transition: transform 0.3s, box-shadow 0.3s;
-        position: relative;
+      /* Updated Card styling */
+      .card {
+          background-color: rgba(255, 255, 255, 0.9);
+          backdrop-filter: blur(10px);
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+          display: flex;
+          flex-direction: column;
+          transition: all 0.4s ease;
+          border: 1px solid rgba(255, 255, 255, 0.7);
+          position: relative;
+          z-index: 1;
+          animation: cardAppear 0.6s ease-out forwards;
+          opacity: 0;
+          transform: translateY(30px);
+          /* No fixed height to allow content to determine size */
       }
       
-      .activity-card:hover {
-        transform: translateY(-10px);
-        box-shadow: var(--shadow-lg);
+      @keyframes cardAppear {
+          to { opacity: 1; transform: translateY(0); }
       }
       
-      .card-content {
-        position: relative;
-        display: flex;
-        flex-direction: column;
+      .card:nth-child(3n+1) { animation-delay: 0.1s; }
+      .card:nth-child(3n+2) { animation-delay: 0.2s; }
+      .card:nth-child(3n+3) { animation-delay: 0.3s; }
+      
+      .card:hover {
+          transform: translateY(-10px);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
       }
       
       .image-container {
-        height: 200px;
-        overflow: hidden;
-        position: relative;
+          height: 200px; /* Slightly reduced height */
+          overflow: hidden;
+          position: relative;
       }
       
-      .activity-card img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.5s;
+      .card img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.7s ease;
       }
       
-      .activity-card:hover img {
-        transform: scale(1.1);
+      .card:hover img {
+          transform: scale(1.1);
       }
       
-      /* Fixed tag container */
-      .tag-container {
-        position: absolute;
-        bottom: 15px;
-        left: 15px;
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        max-width: 90%;
-        z-index: 1;
+      /* Price tag and tags */
+      .price-tag {
+          position: absolute;
+          top: 15px;
+          right: 15px;
+          background: linear-gradient(135deg, rgba(148, 107, 45, 0.9) 0%, rgba(97, 70, 30, 0.9) 100%);
+          color: white;
+          padding: 6px 12px;
+          border-radius: 30px;
+          font-size: 14px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+          z-index: 10;
       }
       
-      /* Fixed tag styling */
+      .price-tag.free {
+          background: linear-gradient(135deg, rgba(69, 161, 99, 0.9) 0%, rgba(39, 94, 62, 0.9) 100%);
+      }
+      
       .tag {
-        background-color: #828977;
-        color: white;
-        padding: 6px 14px;
-        border-radius: 30px;
-        font-size: 12px;
-        font-weight: 600;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        margin-bottom: 5px;
-        white-space: nowrap;
-        display: inline-block;
+          position: absolute;
+          bottom: 15px;
+          left: 15px;
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          z-index: 2;
+          max-width: calc(100% - 30px);
       }
       
-      .tag.primary {
-        background-color: var(--primary-color);
-        color: #111;
+      .tags {
+          background-color: rgba(60, 140, 92, 0.9);
+          color: white;
+          padding: 6px 12px;
+          border-radius: 50px;
+          font-size: 12px;
+          font-weight: 600;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
       }
       
-      .tag.secondary {
-        background-color: var(--secondary-color);
-        color: white;
+      .tags.accent {
+          background-color: rgba(233, 196, 106, 0.9);
+          color: var(--text-dark);
       }
       
-      .tag.accent {
-        background-color: var(--accent-color);
-        color: #111;
+      .tags.secondary {
+          background-color: rgba(148, 107, 45, 0.9);
+          color: white;
       }
       
-      /* Improved card info section */
-      .card-info {
-        flex-grow: 1;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        min-height: 120px; /* Ensure consistent height */
+      /* Info section - reduced padding */
+      .info {
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+          padding: 15px 20px;
+          position: relative;
+          background-color: white;
       }
       
-      .card-title {
-        font-size: 18px;
-        font-weight: 700;
-        margin: 0 0 15px 0;
-        color: #333;
-        line-height: 1.4;
+      .card h3 {
+          font-size: 18px;
+          line-height: 1.4;
+          margin: 0 0 10px 0;
+          color: var(--text-dark);
+          font-weight: 700;
+          min-height: unset; /* Remove fixed height */
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
       }
       
       .period {
-        color: #666;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 15px;
+          color: #666;
+          margin: 0 0 5px 0;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
       }
       
-      .period i {
-        color: #828977;
-      }
-      
-      .price {
-        font-weight: bold;
-        margin-top: auto;
-        color: #333;
-      }
-      
-      .price.free {
-        color: var(--primary-color);
-      }
-      
-      /* Fixed card actions */
-      .card-actions {
-        padding: 15px 20px;
-        border-top: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        background-color: #f9f9f9;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-      
-      /* Fixed action links */
-      .action-links {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      
-      .card-button {
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 14px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s;
-        border: none;
-      }
-      
-      .edit-button {
-        background-color: #f1c40f;
-        color: #333;
-      }
-      
-      .edit-button:hover {
-        background-color: #e2b607;
-        transform: translateY(-2px);
-      }
-      
-      .delete-button {
-        background-color: #e74c3c;
-        color: white;
-      }
-      
-      .delete-button:hover {
-        background-color: #c0392b;
-        transform: translateY(-2px);
+      /* Completely redesigned actions section */
+      .actions {
+          padding: 15px 20px;
+          border-top: 1px solid #eee;
+          background-color: #f9f9f9;
+          display: grid;
+          grid-template-columns: 1fr; /* Single column layout */
+          gap: 15px;
       }
       
       .rating {
-        color: #f1c40f;
-        display: flex;
-        align-items: center;
-        gap: 5px;
+          color: #f1c40f;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          gap: 5px;
       }
       
-      .stars {
-        display: flex;
-        align-items: center;
-        gap: 2px;
+      .action-links {
+          display: grid;
+          grid-template-columns: 1fr 1fr; /* Two equal columns */
+          gap: 10px;
       }
       
-      .rating-value {
-        color: #666;
-        font-weight: 600;
-        margin-left: 5px;
+      .card-button {
+          padding: 8px 0;
+          border-radius: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          font-weight: 600;
+          font-size: 13px;
+          cursor: pointer;
+          border: none;
+          transition: all 0.3s ease;
       }
       
+      .edit-button {
+          background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+          color: #333;
+          box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
+      }
+      
+      .delete-button {
+          background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+          color: white;
+          box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+      }
+      
+      .card-button:hover {
+          transform: translateY(-3px);
+      }
+      
+      .edit-button:hover {
+          box-shadow: 0 6px 15px rgba(243, 156, 18, 0.4);
+      }
+      
+      .delete-button:hover {
+          box-shadow: 0 6px 15px rgba(231, 76, 60, 0.4);
+      }
+      
+      /* Notification and confirm dialog */
       .notification {
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 15px 25px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 600;
-        z-index: 1000;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        opacity: 1;
-        transition: opacity 0.5s;
+          position: fixed;
+          top: 30px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 18px 30px;
+          border-radius: 15px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-weight: 600;
+          z-index: 1000;
+          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+          opacity: 0;
+          animation: notificationFadeIn 0.5s forwards;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      @keyframes notificationFadeIn {
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
       }
       
       .notification.success {
-        background-color: var(--primary-color);
-        color: #111;
+          background-color: rgba(69, 161, 99, 0.9);
+          color: white;
       }
       
       .notification.error {
-        background-color: #e74c3c;
-        color: white;
+          background-color: rgba(231, 76, 60, 0.9);
+          color: white;
       }
       
       .confirm-dialog {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.7);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1001;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(5px);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1001;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.3s;
       }
       
       .confirm-dialog.show {
-        opacity: 1;
-        visibility: visible;
+          opacity: 1;
+          visibility: visible;
       }
       
       .confirm-content {
-        background-color: white;
-        border-radius: 12px;
-        padding: 30px;
-        max-width: 450px;
-        width: 90%;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        transform: translateY(20px);
-        transition: transform 0.3s;
+          background-color: white;
+          border-radius: 20px;
+          padding: 30px;
+          max-width: 450px;
+          width: 90%;
+          text-align: center;
+          box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+          transform: translateY(20px);
+          transition: transform 0.3s;
       }
       
       .confirm-dialog.show .confirm-content {
-        transform: translateY(0);
+          transform: translateY(0);
       }
       
       .confirm-content h3 {
-        margin-top: 0;
-        color: #333;
+          font-size: 24px;
+          margin-top: 0;
+          color: #333;
       }
       
       .confirm-content p {
-        color: #666;
-        margin-bottom: 25px;
+          color: #666;
+          margin-bottom: 25px;
+          font-size: 16px;
+          line-height: 1.6;
       }
       
       .confirm-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
+          display: flex;
+          justify-content: center;
+          gap: 15px;
       }
       
       .confirm-cancel {
-        padding: 10px 20px;
-        background-color: #f1f1f1;
-        color: #666;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.2s;
+          padding: 12px 25px;
+          background-color: #f8f9fa;
+          color: #666;
+          border: none;
+          border-radius: 50px;
+          cursor: pointer;
+          font-weight: 600;
+          transition: all 0.2s;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
       }
       
       .confirm-cancel:hover {
-        background-color: #e1e1e1;
+          background-color: #e9ecef;
+          transform: translateY(-3px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
       }
       
       .confirm-delete {
-        padding: 10px 20px;
-        background-color: #e74c3c;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.2s;
+          padding: 12px 25px;
+          background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+          color: white;
+          border: none;
+          border-radius: 50px;
+          cursor: pointer;
+          font-weight: 600;
+          transition: all 0.2s;
+          box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
       }
       
       .confirm-delete:hover {
-        background-color: #c0392b;
+          transform: translateY(-3px);
+          box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
       }
       
-      /* Style pour le menu déroulant du profil */
-      .profile-dropdown {
-        position: relative;
-        display: inline-block;
-      }
-      
-      .dropdown-content {
-        display: none;
-        position: absolute;
-        right: 0;
-        background-color: white;
-        min-width: 200px;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-        z-index: 1;
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      
-      .dropdown-content a {
-        color: #333;
-        padding: 12px 16px;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        transition: all 0.2s;
-      }
-      
-      .dropdown-content a:hover {
-        background-color: #f5f5f5;
-      }
-      
-      .profile-dropdown:hover .dropdown-content {
-        display: block;
+      @media (max-width: 992px) {
+          .activities-grid {
+              grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          }
       }
       
       @media (max-width: 768px) {
-        .activities-grid {
-          grid-template-columns: 1fr;
-        }
-        
-        .card-actions {
-          flex-direction: column;
-        }
-        
-        .action-links {
-          width: 100%;
-          justify-content: space-between;
-        }
-        
-        .card-button {
-          padding: 10px;
-          flex: 1;
-          justify-content: center;
-        }
+          .activities-page-title {
+              font-size: 32px;
+          }
+      }
+      
+      @media (max-width: 576px) {
+          .activities-grid {
+              grid-template-columns: 1fr;
+          }
       }
     </style>
   </head>
@@ -595,7 +653,7 @@ function getTagClass($tag) {
       
       <div class="action-buttons">
         <a href="./jenis.php" class="create-button">
-          <i class="fa-solid fa-plus"></i> Créer une nouvelle activité
+          <i class="fa-solid fa-plus"></i> <span>Créer une nouvelle activité</span>
         </a>
       </div>
 
@@ -617,19 +675,18 @@ function getTagClass($tag) {
                         $userActivityCount++;
                         
                         // Générer une note aléatoire pour la démonstration
-                        $randomRating = rand(30, 50) / 10; // Note entre 3.0 et 5.0 
+                        $randomRating = (($row['id'] * 7) % 21 + 30) / 10; // Note entre 3.0 et 5.0
                         
                         // Liste des tags
                         $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
                         
                         // Type de prix
                         $isPaid = $row["prix"] > 0;
-                        $priceText = $isPaid ? number_format($row["prix"], 2) . " €" : "Gratuit";
                         
-                        echo '<div class="activity-card" data-id="' . $row['id'] . '">';
-                        echo '<div class="card-content">';
-                    
-                        // Image avec conteneur de taille fixe
+                        echo '<div class="card" data-id="' . $row['id'] . '">';
+                        echo '<div class="content">';
+                        
+                        // Image container
                         echo '<div class="image-container">';
                         if ($row["image_url"]) {
                             echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
@@ -638,40 +695,41 @@ function getTagClass($tag) {
                         }
                         echo '</div>';
                         
-                        echo '<div class="tag-container">';
+                        // Price tag
+                        if ($isPaid) {
+                            echo '<div class="price-tag">';
+                            echo '<i class="fa-solid fa-euro-sign"></i> ' . number_format($row["prix"], 2) . ' €';
+                            echo '</div>';
+                        } else {
+                            echo '<div class="price-tag free">';
+                            echo '<i class="fa-solid fa-gift"></i> Gratuit';
+                            echo '</div>';
+                        }
                         
-                        // Affichage des tags (limité à 2)
+                        // Tags
+                        echo '<div class="tag">';
                         $displayedTags = 0;
                         foreach ($tagList as $tag) {
                             if ($displayedTags < 2) {
                                 $tagClass = getTagClass($tag);
-                                echo '<span class="tag ' . $tagClass . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
+                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
                                 $displayedTags++;
                             }
                         }
-                        
-                        // Afficher le statut gratuit/payant
-                        if ($isPaid) {
-                            echo '<span class="tag">Payant</span>';
-                        } else {
-                            echo '<span class="tag accent">Gratuit</span>';
-                        }
-                        
                         echo '</div></div>';
                         
-                        echo '<div class="card-info">';
-                        echo '<h3 class="card-title">' . htmlspecialchars($row["titre"]) . '</h3>';
+                        // Info
+                        echo '<div class="info">';
+                        echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
                         
-                        // Date ou période
                         if ($row["date_ou_periode"]) {
                             echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
                         }
                         
-                        echo '<p class="price ' . ($isPaid ? '' : 'free') . '">' . $priceText . '</p>';
-                        
                         echo '</div>';
                         
-                        echo '<div class="card-actions">';
+                        // Actions - completely redesigned layout
+                        echo '<div class="actions">';
                         echo '<div class="rating">' . getStars($randomRating) . '</div>';
                         
                         echo '<div class="action-links">';
@@ -680,7 +738,6 @@ function getTagClass($tag) {
                         echo '</div>';
                         
                         echo '</div>';
-                        
                         echo '</div>';
                     }
                 }
@@ -691,7 +748,8 @@ function getTagClass($tag) {
         if ($userActivityCount == 0) {
             echo '<div class="no-activities">';
             echo '<i class="fa-solid fa-calendar-xmark"></i>';
-            echo '<p>Vous n\'avez pas encore créé d\'activités.</p>';
+            echo '<h3>Vous n\'avez pas encore créé d\'activités</h3>';
+            echo '<p>Créez votre première activité en cliquant sur le bouton ci-dessus.</p>';
             echo '</div>';
         }
         ?>
@@ -774,7 +832,7 @@ function getTagClass($tag) {
         }
         
         // Rendre les cartes cliquables pour naviguer vers les détails
-        document.querySelectorAll('.activity-card').forEach(card => {
+        document.querySelectorAll('.card').forEach(card => {
           card.addEventListener('click', function(e) {
             // Ne pas rediriger si l'utilisateur a cliqué sur un bouton d'action
             if (e.target.closest('.card-button') || e.target.closest('.action-links')) {
@@ -786,12 +844,27 @@ function getTagClass($tag) {
               window.location.href = 'activite.php?id=' + activityId;
             }
           });
-          
-          // Style au survol pour indiquer que c'est cliquable
-          card.addEventListener('mouseenter', function() {
-            this.style.cursor = 'pointer';
-          });
         });
+        
+        // Create animated particles for background effect
+        for (let i = 0; i < 10; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Random size and position
+            const size = Math.random() * 5 + 3;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${Math.random() * 100}vw`;
+            particle.style.top = `${Math.random() * 100}vh`;
+            
+            // Random animation
+            particle.style.animationDuration = `${Math.random() * 15 + 10}s`;
+            particle.style.animationDelay = `${Math.random() * 5}s`;
+            
+            // Add to body
+            document.body.appendChild(particle);
+        }
       });
     </script>
   </body>

@@ -1296,56 +1296,7 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
                     </div>
                 </div>
                 
-                <!-- Active Filters -->
-                <?php if(isset($_GET['search']) || isset($_GET['category']) || isset($_GET['location']) || isset($_GET['price']) || isset($_GET['price_min']) || isset($_GET['price_max'])): ?>
-                <div class="active-filters">
-                    <?php if(isset($_GET['search']) && !empty($_GET['search'])): ?>
-                    <div class="active-filter-tag">
-                        <i class="fa-solid fa-magnifying-glass"></i> 
-                        <?php echo htmlspecialchars($_GET['search']); ?>
-                        <i class="fa-solid fa-xmark"></i>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <?php if(isset($_GET['category']) && !empty($_GET['category'])): 
-                    $categories = explode(',', $_GET['category']);
-                    foreach($categories as $category): ?>
-                    <div class="active-filter-tag category" data-category="<?php echo htmlspecialchars($category); ?>">
-                        <i class="fa-solid fa-tag"></i>
-                        <?php echo ucfirst(str_replace('_', ' ', $category)); ?>
-                        <i class="fa-solid fa-xmark"></i>
-                    </div>
-                    <?php endforeach; endif; ?>
-                    
-                    <?php if(isset($_GET['location']) && !empty($_GET['location'])): ?>
-                    <div class="active-filter-tag location">
-                        <i class="fa-solid fa-location-dot"></i>
-                        <?php echo $_GET['location'] === 'interieur' ? 'Intérieur' : 'Extérieur'; ?>
-                        <i class="fa-solid fa-xmark"></i>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <?php if(isset($_GET['price']) && !empty($_GET['price'])): ?>
-                    <div class="active-filter-tag price">
-                        <i class="fa-solid fa-euro-sign"></i>
-                        <?php echo $_GET['price'] === 'gratuit' ? 'Gratuit' : 'Payant'; ?>
-                        <i class="fa-solid fa-xmark"></i>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <?php if((isset($_GET['price_min']) && $_GET['price_min'] !== '') || (isset($_GET['price_max']) && $_GET['price_max'] !== '')): ?>
-                    <div class="active-filter-tag price">
-                        <i class="fa-solid fa-euro-sign"></i>
-                        <?php 
-                        $min = isset($_GET['price_min']) && $_GET['price_min'] !== '' ? $_GET['price_min'] . '€' : '0€';
-                        $max = isset($_GET['price_max']) && $_GET['price_max'] !== '' ? $_GET['price_max'] . '€' : '∞';
-                        echo $min . ' à ' . $max;
-                        ?>
-                        <i class="fa-solid fa-xmark"></i>
-                    </div>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
+
             </div>
         </div>
 
@@ -1470,520 +1421,542 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize the cart if it doesn't exist
-        if (!localStorage.getItem('synapse-cart')) {
-            localStorage.setItem('synapse-cart', JSON.stringify([]));
-        }
+    // Initialize the cart if it doesn't exist
+    if (!localStorage.getItem('synapse-cart')) {
+        localStorage.setItem('synapse-cart', JSON.stringify([]));
+    }
+    
+    // Update cart count
+    updateCartCount();
+    
+    // Create a filter state object
+    let filterState = {
+        search: document.getElementById('search-input').value || '',
+        category: '',
+        priceMin: document.getElementById('price-min').value || '',
+        priceMax: document.getElementById('price-max').value || '',
+        isPaid: '',
+        location: ''
+    };
+    
+    // Process URL parameters on page load
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Handle price parameter from URL
+    if (urlParams.has('price')) {
+        const priceValue = urlParams.get('price');
+        filterState.isPaid = priceValue;
         
-        // Update cart count
-        updateCartCount();
-        
-        // Create a filter state object
-        let filterState = {
-            search: document.getElementById('search-input').value || '',
-            category: '',
-            priceMin: document.getElementById('price-min').value || '',
-            priceMax: document.getElementById('price-max').value || '',
-            isPaid: '',
-            location: ''
-        };
-        
-        // Initialize category filters from URL
-        if (window.location.search.includes('category=')) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const categories = urlParams.get('category').split(',');
-            filterState.category = categories.join(',');
-            
-            // Check the corresponding checkboxes
-            categories.forEach(cat => {
-                const checkbox = document.querySelector(`input[id="cat_${cat}"]`);
-                if (checkbox) checkbox.checked = true;
-            });
-        }
-        
-        // Initialize isPaid and location from active pills
-        document.querySelectorAll('.filter-pill[data-filter="price"].active').forEach(pill => {
-            filterState.isPaid = pill.getAttribute('data-value') || '';
-        });
-        
-        document.querySelectorAll('.filter-pill[data-filter="location"].active').forEach(pill => {
-            filterState.location = pill.getAttribute('data-value') || '';
-        });
-        
-        // Search input with debounce
-        const searchInput = document.getElementById('search-input');
-        let searchTimeout;
-        
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    filterState.search = this.value.trim();
-                    ajaxFilter();
-                }, 300);
-            });
-            
-            searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    clearTimeout(searchTimeout);
-                    filterState.search = this.value.trim();
-                    ajaxFilter();
-                }
-            });
-        }
-        
-        // Price filter pills
+        // Update the corresponding filter pill
         document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(pill => {
-            pill.addEventListener('click', function() {
-                // Update active state
-                document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(p => {
-                    p.classList.remove('active');
-                });
-                this.classList.add('active');
-                
-                // Update filter state
-                filterState.isPaid = this.getAttribute('data-value');
-                
-                // Clear price min/max
-                document.getElementById('price-min').value = '';
-                document.getElementById('price-max').value = '';
-                filterState.priceMin = '';
-                filterState.priceMax = '';
-                
-                ajaxFilter();
-            });
+            pill.classList.remove('active');
+        });
+        const activePricePill = document.querySelector(`.filter-pill[data-filter="price"][data-value="${priceValue}"]`);
+        if (activePricePill) {
+            activePricePill.classList.add('active');
+        }
+    }
+    
+    // Handle location parameter from URL
+    if (urlParams.has('location')) {
+        const locationValue = urlParams.get('location');
+        filterState.location = locationValue;
+        
+        // Update the corresponding filter pill
+        document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(pill => {
+            pill.classList.remove('active');
+        });
+        const activeLocationPill = document.querySelector(`.filter-pill[data-filter="location"][data-value="${locationValue}"]`);
+        if (activeLocationPill) {
+            activeLocationPill.classList.add('active');
+        }
+    }
+    
+    // Handle category parameter from URL
+    if (urlParams.has('category')) {
+        const categories = urlParams.get('category').split(',');
+        filterState.category = categories.join(',');
+        
+        // Check the corresponding checkboxes
+        categories.forEach(cat => {
+            const checkbox = document.querySelector(`input[id="cat_${cat}"]`);
+            if (checkbox) checkbox.checked = true;
         });
         
-        // Category filters
-        document.querySelectorAll('.category-checkbox input').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
+        // Update selected categories display
+        updateSelectedCategoriesDisplay(categories);
+    }
+    
+    // Search input with debounce
+    const searchInput = document.getElementById('search-input');
+    let searchTimeout;
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                filterState.search = this.value.trim();
+                ajaxFilter();
+            }, 300);
+        });
+        
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                clearTimeout(searchTimeout);
+                filterState.search = this.value.trim();
+                ajaxFilter();
+            }
+        });
+    }
+    
+    // Price filter pills
+    document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(pill => {
+        pill.addEventListener('click', function() {
+            // Update active state
+            document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(p => {
+                p.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            // Update filter state
+            filterState.isPaid = this.getAttribute('data-value');
+            
+            // Clear price min/max
+            document.getElementById('price-min').value = '';
+            document.getElementById('price-max').value = '';
+            filterState.priceMin = '';
+            filterState.priceMax = '';
+            
+            ajaxFilter();
+        });
+    });
+    
+    // Category filters
+    document.querySelectorAll('.category-checkbox input').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateCategoryFilter();
+        });
+    });
+    
+    function updateCategoryFilter() {
+        // Get all checked category checkboxes
+        const checkedCategories = Array.from(
+            document.querySelectorAll('.category-checkbox input:checked')
+        ).map(cb => cb.value);
+        
+        // Update filter state
+        filterState.category = checkedCategories.join(',');
+        
+        // Update selected categories display
+        updateSelectedCategoriesDisplay(checkedCategories);
+        
+        // Apply filters
+        ajaxFilter();
+    }
+    
+    function updateSelectedCategoriesDisplay(categories) {
+        // Get or create container
+        let container = document.querySelector('.selected-categories');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'selected-categories';
+            document.querySelector('.category-checkboxes').after(container);
+        }
+        
+        // Clear container
+        container.innerHTML = '';
+        
+        // Add tag for each selected category
+        categories.forEach(category => {
+            const tag = document.createElement('div');
+            tag.className = 'selected-category';
+            tag.innerHTML = `
+                ${ucfirst(category.replace('_', ' '))}
+                <i class="fa-solid fa-xmark" data-category="${category}"></i>
+            `;
+            container.appendChild(tag);
+            
+            // Add click handler
+            tag.querySelector('i').addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Uncheck the corresponding checkbox
+                document.querySelector(`input[value="${this.dataset.category}"]`).checked = false;
                 updateCategoryFilter();
             });
         });
         
-        function updateCategoryFilter() {
-            // Get all checked category checkboxes
-            const checkedCategories = Array.from(
-                document.querySelectorAll('.category-checkbox input:checked')
-            ).map(cb => cb.value);
+        // Show/hide based on categories
+        if (categories.length > 0) {
+            container.style.display = 'flex';
+        } else {
+            container.style.display = 'none';
+        }
+    }
+    
+    // Helper function for capitalizing first letter
+    function ucfirst(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+    
+    // Location filter pills
+    document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(pill => {
+        pill.addEventListener('click', function() {
+            // Update active state
+            document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(p => {
+                p.classList.remove('active');
+            });
+            this.classList.add('active');
             
             // Update filter state
-            filterState.category = checkedCategories.join(',');
+            filterState.location = this.getAttribute('data-value');
+            ajaxFilter();
+        });
+    });
+    
+    // Price range filter
+    const priceMin = document.getElementById('price-min');
+    const priceMax = document.getElementById('price-max');
+    const applyPriceButton = document.getElementById('apply-price');
+    
+    if (applyPriceButton) {
+        applyPriceButton.addEventListener('click', function() {
+            filterState.priceMin = priceMin.value;
+            filterState.priceMax = priceMax.value;
             
-            // Update selected categories display
-            updateSelectedCategoriesDisplay(checkedCategories);
+            // Clear price pill filters
+            document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(p => {
+                p.classList.remove('active');
+            });
+            document.querySelector('.filter-pill[data-filter="price"][data-value=""]').classList.add('active');
+            filterState.isPaid = '';
+            
+            ajaxFilter();
+        });
+    }
+    
+    // Reset button
+    const resetButton = document.getElementById('reset-filters');
+    if (resetButton) {
+        resetButton.addEventListener('click', function() {
+            // Reset all filter inputs
+            if (searchInput) searchInput.value = '';
+            if (priceMin) priceMin.value = '';
+            if (priceMax) priceMax.value = '';
+            
+            // Reset filter pills
+            document.querySelectorAll('.filter-pill').forEach(pill => {
+                pill.classList.remove('active');
+            });
+            document.querySelectorAll('.filter-pill[data-value=""]').forEach(pill => {
+                pill.classList.add('active');
+            });
+            
+            // Reset category checkboxes
+            document.querySelectorAll('.category-checkbox input').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Clear selected categories display
+            const selectedCategoriesContainer = document.querySelector('.selected-categories');
+            if (selectedCategoriesContainer) {
+                selectedCategoriesContainer.innerHTML = '';
+                selectedCategoriesContainer.style.display = 'none';
+            }
+            
+            // Reset filter state
+            filterState = {
+                search: '',
+                category: '',
+                priceMin: '',
+                priceMax: '',
+                isPaid: '',
+                location: ''
+            };
+            
+            // Apply filters
+            ajaxFilter();
+        });
+    }
+    
+    // Active filter tags
+    document.querySelectorAll('.active-filter-tag').forEach(tag => {
+        tag.addEventListener('click', function() {
+            // Identify which filter to remove
+            if (this.querySelector('i.fa-magnifying-glass')) {
+                if (searchInput) searchInput.value = '';
+                filterState.search = '';
+                ajaxFilter();
+            } else if (this.classList.contains('category')) {
+                // Get the category to remove
+                const categoryToRemove = this.getAttribute('data-category');
+                
+                // Update checkboxes if they exist
+                const checkbox = document.querySelector(`.category-checkbox input[value="${categoryToRemove}"]`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                    updateCategoryFilter();
+                } else {
+                    // If direct URL navigation, update filter state by removing this category
+                    const categories = filterState.category.split(',');
+                    const filteredCategories = categories.filter(cat => cat !== categoryToRemove);
+                    filterState.category = filteredCategories.join(',');
+                    ajaxFilter();
+                }
+            } else if (this.querySelector('i.fa-location-dot')) {
+                // Reset location pills
+                document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(p => {
+                    p.classList.remove('active');
+                });
+                document.querySelector('.filter-pill[data-filter="location"][data-value=""]').classList.add('active');
+                filterState.location = '';
+                ajaxFilter();
+            } else if (this.querySelector('i.fa-euro-sign')) {
+                // Check if this is price range or price type
+                const text = this.textContent.trim();
+                if (text.includes('à')) {
+                    // It's a price range
+                    if (priceMin) priceMin.value = '';
+                    if (priceMax) priceMax.value = '';
+                    filterState.priceMin = '';
+                    filterState.priceMax = '';
+                } else {
+                    // It's a price type
+                    document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(p => {
+                        p.classList.remove('active');
+                    });
+                    document.querySelector('.filter-pill[data-filter="price"][data-value=""]').classList.add('active');
+                    filterState.isPaid = '';
+                }
+                ajaxFilter();
+            }
+        });
+    });
+    
+    // AJAX filter function
+    function ajaxFilter() {
+        // Show loading overlay
+        const loadingOverlay = document.getElementById('loading-overlay');
+        loadingOverlay.classList.add('active');
+        
+        // Create URL with filter parameters
+        let url = 'activites.php';
+        const params = [];
+        
+        if (filterState.search) params.push(`search=${encodeURIComponent(filterState.search)}`);
+        if (filterState.category) params.push(`category=${encodeURIComponent(filterState.category)}`);
+        if (filterState.isPaid) params.push(`price=${encodeURIComponent(filterState.isPaid)}`);
+        if (filterState.location) params.push(`location=${encodeURIComponent(filterState.location)}`);
+        if (filterState.priceMin) params.push(`price_min=${encodeURIComponent(filterState.priceMin)}`);
+        if (filterState.priceMax) params.push(`price_max=${encodeURIComponent(filterState.priceMax)}`);
+        
+        if (params.length > 0) {
+            url += '?' + params.join('&');
+        }
+        
+        // Update URL without refreshing page
+        window.history.pushState({ path: url }, '', url);
+        
+        // Set the AJAX header
+        const headers = new Headers();
+        headers.append('X-Requested-With', 'XMLHttpRequest');
+        
+        // Use fetch to get updated content
+        fetch(url, { headers })
+            .then(response => response.json())
+            .then(data => {
+                // Update the activities grid
+                const activitiesGrid = document.getElementById('activities-grid');
+                if (activitiesGrid && data.html) {
+                    activitiesGrid.innerHTML = data.html;
+                    
+                    // Add animation to new cards
+                    const cards = activitiesGrid.querySelectorAll('.card');
+                    cards.forEach((card, index) => {
+                        card.style.animationDelay = `${0.1 + (index % 3) * 0.1}s`;
+                    });
+                    
+                    // Initialize event listeners for new elements
+                    initializeCardListeners();
+                }
+                
+                // Hide loading after a minimum display time
+                setTimeout(() => {
+                    loadingOverlay.classList.remove('active');
+                }, 500);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                loadingOverlay.classList.remove('active');
+                showNotification('Une erreur est survenue lors du filtrage des activités.', 'error');
+            });
+    }
+    
+    // Initialize card event listeners
+    function initializeCardListeners() {
+        // Make activity cards clickable
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Don't navigate if clicking on add-to-cart button or tag
+                if (e.target.closest('.add-to-cart-button') || e.target.closest('.tags')) {
+                    return;
+                }
+                
+                const activityId = this.getAttribute('data-id');
+                if (activityId) {
+                    window.location.href = 'activite.php?id=' + activityId;
+                }
+            });
+        });
+        
+// Make tags clickable
+document.querySelectorAll('.tags').forEach(tag => {
+    tag.addEventListener('click', function(e) {
+        e.stopPropagation(); // Prevent the card click event
+        
+        const tagName = this.getAttribute('data-tag');
+        if (tagName) {
+            // First update the filter state
+            if (tagName === 'gratuit' || tagName === 'payant') {
+                filterState.isPaid = tagName;
+                // Update price filter pills
+                document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(p => {
+                    p.classList.remove('active');
+                });
+                const pill = document.querySelector(`.filter-pill[data-filter="price"][data-value="${tagName}"]`);
+                if (pill) pill.classList.add('active');
+            } else if (tagName === 'interieur' || tagName === 'exterieur') {
+                filterState.location = tagName;
+                // Update location filter pills
+                document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(p => {
+                    p.classList.remove('active');
+                });
+                const pill = document.querySelector(`.filter-pill[data-filter="location"][data-value="${tagName}"]`);
+                if (pill) pill.classList.add('active');
+            } else {
+                filterState.category = tagName;
+                // Check the corresponding checkbox
+                const checkbox = document.querySelector(`input[id="cat_${tagName}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    updateCategoryFilter();
+                    return; // updateCategoryFilter already calls ajaxFilter
+                }
+            }
             
             // Apply filters
             ajaxFilter();
         }
-        
-        function updateSelectedCategoriesDisplay(categories) {
-            // Get or create container
-            let container = document.querySelector('.selected-categories');
-            if (!container) {
-                container = document.createElement('div');
-                container.className = 'selected-categories';
-                document.querySelector('.category-checkboxes').after(container);
-            }
-            
-            // Clear container
-            container.innerHTML = '';
-            
-            // Add tag for each selected category
-            categories.forEach(category => {
-                const tag = document.createElement('div');
-                tag.className = 'selected-category';
-                tag.innerHTML = `
-                    ${ucfirst(category.replace('_', ' '))}
-                    <i class="fa-solid fa-xmark" data-category="${category}"></i>
-                `;
-                container.appendChild(tag);
-                
-                // Add click handler
-                tag.querySelector('i').addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    // Uncheck the corresponding checkbox
-                    document.querySelector(`input[value="${this.dataset.category}"]`).checked = false;
-                    updateCategoryFilter();
-                });
-            });
-            
-            // Show/hide based on categories
-            if (categories.length > 0) {
-                container.style.display = 'flex';
-            } else {
-                container.style.display = 'none';
-            }
-        }
-        
-        // Helper function for capitalizing first letter
-        function ucfirst(string) {
-            return string.charAt(0).toUpperCase() + string.slice(1);
-        }
-        
-        // Location filter pills
-        document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(pill => {
-            pill.addEventListener('click', function() {
-                // Update active state
-                document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(p => {
-                    p.classList.remove('active');
-                });
-                this.classList.add('active');
-                
-                // Update filter state
-                filterState.location = this.getAttribute('data-value');
-                ajaxFilter();
-            });
-        });
-        
-        // Price range filter
-        const priceMin = document.getElementById('price-min');
-        const priceMax = document.getElementById('price-max');
-        const applyPriceButton = document.getElementById('apply-price');
-        
-        if (applyPriceButton) {
-            applyPriceButton.addEventListener('click', function() {
-                filterState.priceMin = priceMin.value;
-                filterState.priceMax = priceMax.value;
-                
-                // Clear price pill filters
-                document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(p => {
-                    p.classList.remove('active');
-                });
-                document.querySelector('.filter-pill[data-filter="price"][data-value=""]').classList.add('active');
-                filterState.isPaid = '';
-                
-                ajaxFilter();
-            });
-        }
-        
-        // Reset button
-        const resetButton = document.getElementById('reset-filters');
-        if (resetButton) {
-            resetButton.addEventListener('click', function() {
-                // Reset all filter inputs
-                if (searchInput) searchInput.value = '';
-                if (priceMin) priceMin.value = '';
-                if (priceMax) priceMax.value = '';
-                
-                // Reset filter pills
-                document.querySelectorAll('.filter-pill').forEach(pill => {
-                    pill.classList.remove('active');
-                });
-                document.querySelectorAll('.filter-pill[data-value=""]').forEach(pill => {
-                    pill.classList.add('active');
-                });
-                
-                // Reset category checkboxes
-                document.querySelectorAll('.category-checkbox input').forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-                
-                // Clear selected categories display
-                const selectedCategoriesContainer = document.querySelector('.selected-categories');
-                if (selectedCategoriesContainer) {
-                    selectedCategoriesContainer.innerHTML = '';
-                    selectedCategoriesContainer.style.display = 'none';
-                }
-                
-                // Reset filter state
-                filterState = {
-                    search: '',
-                    category: '',
-                    priceMin: '',
-                    priceMax: '',
-                    isPaid: '',
-                    location: ''
-                };
-                
-                // Apply filters
-                ajaxFilter();
-            });
-        }
-        
-        // Active filter tags
-        document.querySelectorAll('.active-filter-tag').forEach(tag => {
-            tag.addEventListener('click', function() {
-                // Identify which filter to remove
-                if (this.querySelector('i.fa-magnifying-glass')) {
-                    if (searchInput) searchInput.value = '';
-                    filterState.search = '';
-                    ajaxFilter();
-                } else if (this.classList.contains('category')) {
-                    // Get the category to remove
-                    const categoryToRemove = this.getAttribute('data-category');
-                    
-                    // Update checkboxes if they exist
-                    const checkbox = document.querySelector(`.category-checkbox input[value="${categoryToRemove}"]`);
-                    if (checkbox) {
-                        checkbox.checked = false;
-                        updateCategoryFilter();
-                    } else {
-                        // If direct URL navigation, update filter state by removing this category
-                        const categories = filterState.category.split(',');
-                        const filteredCategories = categories.filter(cat => cat !== categoryToRemove);
-                        filterState.category = filteredCategories.join(',');
-                        ajaxFilter();
-                    }
-                } else if (this.querySelector('i.fa-location-dot')) {
-                    // Reset location pills
-                    document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(p => {
-                        p.classList.remove('active');
-                    });
-                    document.querySelector('.filter-pill[data-filter="location"][data-value=""]').classList.add('active');
-                    filterState.location = '';
-                    ajaxFilter();
-                } else if (this.querySelector('i.fa-euro-sign')) {
-                    // Check if this is price range or price type
-                    const text = this.textContent.trim();
-                    if (text.includes('à')) {
-                        // It's a price range
-                        if (priceMin) priceMin.value = '';
-                        if (priceMax) priceMax.value = '';
-                        filterState.priceMin = '';
-                        filterState.priceMax = '';
-                    } else {
-                        // It's a price type
-                        document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(p => {
-                            p.classList.remove('active');
-                        });
-                        document.querySelector('.filter-pill[data-filter="price"][data-value=""]').classList.add('active');
-                        filterState.isPaid = '';
-                    }
-                    ajaxFilter();
-                }
-            });
-        });
-        
-        // AJAX filter function
-        function ajaxFilter() {
-            // Show loading overlay
-            const loadingOverlay = document.getElementById('loading-overlay');
-            loadingOverlay.classList.add('active');
-            
-            // Create URL with filter parameters
-            let url = 'activites.php';
-            const params = [];
-            
-            if (filterState.search) params.push(`search=${encodeURIComponent(filterState.search)}`);
-            if (filterState.category) params.push(`category=${encodeURIComponent(filterState.category)}`);
-            if (filterState.isPaid) params.push(`price=${encodeURIComponent(filterState.isPaid)}`);
-            if (filterState.location) params.push(`location=${encodeURIComponent(filterState.location)}`);
-            if (filterState.priceMin) params.push(`price_min=${encodeURIComponent(filterState.priceMin)}`);
-            if (filterState.priceMax) params.push(`price_max=${encodeURIComponent(filterState.priceMax)}`);
-            
-            if (params.length > 0) {
-                url += '?' + params.join('&');
-            }
-            
-            // Update URL without refreshing page
-            window.history.pushState({ path: url }, '', url);
-            
-            // Set the AJAX header
-            const headers = new Headers();
-            headers.append('X-Requested-With', 'XMLHttpRequest');
-            
-            // Use fetch to get updated content
-            fetch(url, { headers })
-                .then(response => response.json())
-                .then(data => {
-                    // Update the activities grid
-                    const activitiesGrid = document.getElementById('activities-grid');
-                    if (activitiesGrid && data.html) {
-                        activitiesGrid.innerHTML = data.html;
-                        
-                        // Add animation to new cards
-                        const cards = activitiesGrid.querySelectorAll('.card');
-                        cards.forEach((card, index) => {
-                            card.style.animationDelay = `${0.1 + (index % 3) * 0.1}s`;
-                        });
-                        
-                        // Initialize event listeners for new elements
-                        initializeCardListeners();
-                    }
-                    
-                    // Hide loading after a minimum display time
-                    setTimeout(() => {
-                        loadingOverlay.classList.remove('active');
-                    }, 500);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    loadingOverlay.classList.remove('active');
-                    showNotification('Une erreur est survenue lors du filtrage des activités.', 'error');
-                });
-        }
-        
-        // Initialize card event listeners
-        function initializeCardListeners() {
-            // Make activity cards clickable
-            document.querySelectorAll('.card').forEach(card => {
-                card.addEventListener('click', function(e) {
-                    // Don't navigate if clicking on add-to-cart button or tag
-                    if (e.target.closest('.add-to-cart-button') || e.target.closest('.tags')) {
-                        return;
-                    }
-                    
-                    const activityId = this.getAttribute('data-id');
-                    if (activityId) {
-                        window.location.href = 'activite.php?id=' + activityId;
-                    }
-                });
-            });
-            
-            // Make tags clickable
-            document.querySelectorAll('.tags').forEach(tag => {
-                tag.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Prevent the card click event
-                    
-                    const tagName = this.getAttribute('data-tag');
-                    if (tagName) {
-                        // Determine which filter to use based on tag type
-                        if (tagName === 'gratuit' || tagName === 'payant') {
-                            window.location.href = 'activites.php?price=' + encodeURIComponent(tagName);
-                        } else if (tagName === 'interieur' || tagName === 'exterieur') {
-                            window.location.href = 'activites.php?location=' + encodeURIComponent(tagName);
-                        } else {
-                            window.location.href = 'activites.php?category=' + encodeURIComponent(tagName);
-                        }
-                    }
-                });
-            });
-            
-            // Add to cart functionality
-            document.querySelectorAll('.add-to-cart-button').forEach(button => {
-                button.addEventListener('click', function(event) {
-                    event.stopPropagation(); // Prevent card click event
-                    
-                    const id = this.getAttribute('data-id');
-                    const titre = this.getAttribute('data-title');
-                    const prix = parseFloat(this.getAttribute('data-price'));
-                    const image = this.getAttribute('data-image');
-                    const periode = this.getAttribute('data-period');
-                    const tagsStr = this.getAttribute('data-tags');
-                    const tags = tagsStr ? tagsStr.split(',') : [];
-                    
-                    // Add to cart
-                    addToCart({
-                        id: id,
-                        titre: titre,
-                        prix: prix,
-                        image: image,
-                        periode: periode,
-                        tags: tags
-                    });
-                });
-            });
-        }
-        
-        // Initialize all listeners
-        initializeCardListeners();
-        
-        // Initialize selected categories display on page load
-        if (filterState.category) {
-            updateSelectedCategoriesDisplay(filterState.category.split(','));
-        }
-        
-        // Function to add to cart
-        function addToCart(item) {
-            // Get current cart
-            const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
-            
-            // Check if item is already in cart
-            const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
-            
-            // If item not in cart, add it
-            if (existingItemIndex === -1) {
-                cart.push(item);
-                localStorage.setItem('synapse-cart', JSON.stringify(cart));
-                updateCartCount();
-                showNotification('Activité ajoutée au panier !', 'success');
-            } else {
-                showNotification('Cette activité est déjà dans votre panier.', 'info');
-            }
-        }
-        
-        // Update cart count
-        function updateCartCount() {
-            const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
-            const cartCount = document.getElementById('panier-count');
-            if (cartCount) {
-                cartCount.textContent = cart.length;
-            }
-        }
-        
-        // Show notification
-        function showNotification(message, type = 'success') {
-            // Remove existing notifications
-            const existingNotifications = document.querySelectorAll('.notification');
-            existingNotifications.forEach(notification => {
-                notification.remove();
-            });
-            
-            // Create notification
-            const notification = document.createElement('div');
-            notification.classList.add('notification', type);
-            
-            // Add icon
-            let icon = 'fa-circle-check';
-            if (type === 'info') {
-                icon = 'fa-circle-info';
-            } else if (type === 'error') {
-                icon = 'fa-circle-exclamation';
-            }
-            
-            notification.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
-            
-            // Add to document
-            document.body.appendChild(notification);
-            
-            // Auto-hide notification
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 3000);
-        }
-        
-        // Scroll to top functionality
-        const scrollTopButton = document.getElementById('scroll-top');
-        
-        window.addEventListener('scroll', function() {
-            if (window.pageYOffset > 300) {
-                scrollTopButton.classList.add('visible');
-            } else {
-                scrollTopButton.classList.remove('visible');
-            }
-        });
-        
-        scrollTopButton.addEventListener('click', function() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        });
-        
-        // Create animated particles
-        for (let i = 0; i < 10; i++) {
-            const particle = document.createElement('div');
-            particle.classList.add('particle');
-            
-            // Random size and position
-            const size = Math.random() * 5 + 3;
-            particle.style.width = `${size}px`;
-            particle.style.height = `${size}px`;
-            particle.style.left = `${Math.random() * 100}vw`;
-            particle.style.top = `${Math.random() * 100}vh`;
-            
-            // Random animation
-            particle.style.animationDuration = `${Math.random() * 15 + 10}s`;
-            particle.style.animationDelay = `${Math.random() * 5}s`;
-            
-            // Add to body
-            document.body.appendChild(particle);
-        } 
     });
+});
+        // Add to cart functionality
+        document.querySelectorAll('.add-to-cart-button').forEach(button => {
+            button.addEventListener('click', function(event) {
+                event.stopPropagation(); // Prevent card click event
+                
+                const id = this.getAttribute('data-id');
+                const titre = this.getAttribute('data-title');
+                const prix = parseFloat(this.getAttribute('data-price'));
+                const image = this.getAttribute('data-image');
+                const periode = this.getAttribute('data-period');
+                const tagsStr = this.getAttribute('data-tags');
+                const tags = tagsStr ? tagsStr.split(',') : [];
+                
+                // Add to cart
+                addToCart({
+                    id: id,
+                    titre: titre,
+                    prix: prix,
+                    image: image,
+                    periode: periode,
+                    tags: tags
+                });
+            });
+        });
+    }
+    
+    // Function to add to cart
+    function addToCart(item) {
+        // Get current cart
+        const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+        
+        // Check if item is already in cart
+        const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
+        
+        // If item not in cart, add it
+        if (existingItemIndex === -1) {
+            cart.push(item);
+            localStorage.setItem('synapse-cart', JSON.stringify(cart));
+            updateCartCount();
+            showNotification('Activité ajoutée au panier !', 'success');
+        } else {
+            showNotification('Cette activité est déjà dans votre panier.', 'info');
+        }
+    }
+    
+    // Update cart count
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+        const cartCount = document.getElementById('panier-count');
+        if (cartCount) {
+            cartCount.textContent = cart.length;
+        }
+    }
+    
+    // Show notification
+    function showNotification(message, type = 'success') {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notification => {
+            notification.remove();
+        });
+        
+        // Create notification
+        const notification = document.createElement('div');
+        notification.classList.add('notification', type);
+        
+        // Add icon
+        let icon = 'fa-circle-check';
+        if (type === 'info') {
+            icon = 'fa-circle-info';
+        } else if (type === 'error') {
+            icon = 'fa-circle-exclamation';
+        }
+        
+        notification.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
+        
+        // Add to document
+        document.body.appendChild(notification);
+        
+        // Auto-hide notification
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
+    
+    // Scroll to top functionality
+    const scrollTopButton = document.getElementById('scroll-top');
+    
+    window.addEventListener('scroll', function() {
+        if (window.pageYOffset > 300) {
+            scrollTopButton.classList.add('visible');
+        } else {
+            scrollTopButton.classList.remove('visible');
+        }
+    });
+    
+    scrollTopButton.addEventListener('click', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+    
+    // Initialize all listeners
+    initializeCardListeners();
+});
     </script>
 </body>
 </html>
