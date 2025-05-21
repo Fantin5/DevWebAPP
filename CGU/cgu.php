@@ -58,7 +58,7 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
             
             // Content
             $mail->isHTML(true);
-            $mail->Subject = 'Contact depuis FAQ: ' . $subject;
+            $mail->Subject = 'Contact depuis cgu: ' . $subject;
             
             $mail->Body = '
             <html>
@@ -74,7 +74,7 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
             <body>
                 <div class="container">
                     <div class="header">
-                        <h2>Message de contact depuis la FAQ</h2>
+                        <h2>Message de contact depuis la cgu</h2>
                     </div>
                     <div class="content">
                         <p><strong>De:</strong> ' . $user_first_name . ' ' . $user_name . ' (' . $user_email . ')</p>
@@ -83,7 +83,7 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
                         <p>' . nl2br($message) . '</p>
                     </div>
                     <div class="footer">
-                        <p>Ce message a été envoyé depuis le formulaire de contact de la FAQ Synapse.</p>
+                        <p>Ce message a été envoyé depuis le formulaire de contact de la cgu Synapse.</p>
                     </div>
                 </div>
             </body>
@@ -109,8 +109,8 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synapse.FAQ</title>
-    <link rel="stylesheet" href="faq.css">
+    <title>Synapse.cgu</title>
+    <link rel="stylesheet" href="cgu.css">
     <!-- Font Awesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -119,48 +119,48 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
     
     <!-- Page content container with title -->
     <div class="page-container">
-        <div class="faq-page-title">
-            <h1>Synapse FAQ</h1>
+        <div class="cgu-page-title">
+            <h1>Synapse cgu</h1>
         </div>
         
-        <!-- Contenu FAQ with accordion style -->
-        <section class="faq">
-            <div class="faq-item">
+        <!-- Contenu cgu with accordion style -->
+        <section class="cgu">
+            <div class="cgu-item">
                 <h2 class="question">Qu'est-ce que Synapse ?</h2>
                 <p class="answer">Synapse est une plateforme qui met en relation des particuliers et des professionnels pour organiser, promouvoir et participer à des activités de tout type : sportives, culturelles, musicales, etc.</p>
             </div>
             
-            <div class="faq-item">
+            <div class="cgu-item">
                 <h2 class="question">Qui peut créer une activité ?</h2>
                 <p class="answer">Tout le monde peut créer une activité, que vous soyez un particulier passionné ou un professionnel. Il suffit de créer un compte et de remplir les informations nécessaires.</p>
             </div>
             
-            <div class="faq-item">
+            <div class="cgu-item">
                 <h2 class="question">Est-ce que je peux limiter le nombre de participants ?</h2>
                 <p class="answer">Oui, chaque activité peut avoir un nombre de places limité. Une fois la limite atteinte, les utilisateurs peuvent s'inscrire sur une liste d'attente.</p>
             </div>
             
-            <div class="faq-item">
+            <div class="cgu-item">
                 <h2 class="question">Puis-je organiser une activité privée ?</h2>
                 <p class="answer">Absolument. Lors de la création, vous pouvez choisir de rendre l'activité privée, accessible uniquement via invitation ou lien direct.</p>
             </div>
             
-            <div class="faq-item">
+            <div class="cgu-item">
                 <h2 class="question">Comment trouver une activité qui m'intéresse ?</h2>
                 <p class="answer">Vous pouvez utiliser notre moteur de recherche avec filtres (type d'activité, lieu, date, etc.) pour trouver rapidement ce qui vous correspond.</p>
             </div>
             
-            <div class="faq-item">
+            <div class="cgu-item">
                 <h2 class="question">Est-il possible de se désinscrire d'une activité ?</h2>
                 <p class="answer">Oui, vous pouvez vous désinscrire à tout moment depuis votre espace personnel, sauf si une politique d'annulation spécifique a été définie par l'organisateur.</p>
             </div>
             
-            <div class="faq-item">
+            <div class="cgu-item">
                 <h2 class="question">L'inscription aux activités est-elle gratuite ?</h2>
                 <p class="answer">Certaines activités sont gratuites, d'autres sont payantes selon les choix de l'organisateur. Toutes les informations sont indiquées avant l'inscription.</p>
             </div>
             
-            <div class="faq-item">
+            <div class="cgu-item">
                 <h2 class="question">Comment puis-je contacter l'organisateur ?</h2>
                 <p class="answer">Une fois inscrit(e), vous aurez accès à une messagerie ou aux coordonnées de l'organisateur pour toute question ou demande spécifique.</p>
             </div>
@@ -170,7 +170,7 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
         <?php if ($is_logged_in): ?>
             <section class="contact-section">
                 <h2 class="contact-title">Vous avez d'autres questions ?</h2>
-                <p class="contact-description">Nous vous répondrons par email et si votre question est pertinente, nous pourrons l'ajouter à notre base de données FAQ.</p>
+                <p class="contact-description">Nous vous répondrons par email et si votre question est pertinente, nous pourrons l'ajouter à notre base de données cgu.</p>
                 <?php if (!empty($message_text)): ?>
                     <div class="<?php echo $message_status; ?>-message">
                         <?php echo $message_text; ?>
@@ -199,6 +199,6 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
     <?php include '../TEMPLATE/footer.php'; ?>
     
     <!-- Add the JavaScript file for interactivity -->
-    <script src="faq.js"></script>
+    <script src="cgu.js"></script>
 </body>
 </html>

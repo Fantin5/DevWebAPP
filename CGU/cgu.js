@@ -1,10 +1,10 @@
-// faq.js - Adds interactivity to the FAQ page
+// cgu.js - Adds interactivity to the cgu page
 document.addEventListener('DOMContentLoaded', function() {
-    // Get all FAQ items
-    const faqItems = document.querySelectorAll('.faq-item');
+    // Get all cgu items
+    const cguItems = document.querySelectorAll('.cgu-item');
     
     // Add number spans to questions and set up click events
-    faqItems.forEach((item, index) => {
+    cguItems.forEach((item, index) => {
         const question = item.querySelector('.question');
         const questionText = question.textContent;
         
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add click event to toggle accordion
         question.addEventListener('click', () => {
             // Close all other items
-            faqItems.forEach(otherItem => {
+            cguItems.forEach(otherItem => {
                 if (otherItem !== item && otherItem.classList.contains('active')) {
                     otherItem.classList.remove('active');
                 }
@@ -47,9 +47,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Open the first FAQ item by default
-    if (faqItems.length > 0) {
-        faqItems[0].classList.add('active');
+    // Open the first cgu item by default
+    if (cguItems.length > 0) {
+        cguItems[0].classList.add('active');
     }
     
     // Add icons to form labels
