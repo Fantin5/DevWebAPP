@@ -120,49 +120,60 @@ if (isset($_POST['submit_contact']) && $is_logged_in) {
     <!-- Page content container with title -->
     <div class="page-container">
         <div class="cgu-page-title">
-            <h1>Synapse cgu</h1>
+            <h1>Synapse CGU</h1>
         </div>
         
         <!-- Contenu cgu with accordion style -->
         <section class="cgu">
             <div class="cgu-item">
-                <h2 class="question">Qu'est-ce que Synapse ?</h2>
-                <p class="answer">Synapse est une plateforme qui met en relation des particuliers et des professionnels pour organiser, promouvoir et participer à des activités de tout type : sportives, culturelles, musicales, etc.</p>
+                <h2 class="question">1. Objet des CGU</h2>
+                <p class="answer">Les présentes Conditions Générales d’Utilisation régissent l’accès et l’utilisation de la plateforme Synapse, une solution en ligne permettant aux utilisateurs de trouver des terrains de sport et de se connecter avec d’autres joueurs. En utilisant le site ou l’application, vous acceptez de respecter ces conditions.</p>
             </div>
             
             <div class="cgu-item">
-                <h2 class="question">Qui peut créer une activité ?</h2>
-                <p class="answer">Tout le monde peut créer une activité, que vous soyez un particulier passionné ou un professionnel. Il suffit de créer un compte et de remplir les informations nécessaires.</p>
+                <h2 class="question">2. Définitions</h2>
+                <p class="answer">• Utilisateur : Toute personne inscrite ou non inscrite accédant à la plateforme.
+                                  • Plateforme : Le site web Synapse.
+                                  • Contenu : Toutes les informations, données, textes, graphiques, vidéos et autres éléments disponibles sur la plateforme.</p>
             </div>
             
             <div class="cgu-item">
-                <h2 class="question">Est-ce que je peux limiter le nombre de participants ?</h2>
-                <p class="answer">Oui, chaque activité peut avoir un nombre de places limité. Une fois la limite atteinte, les utilisateurs peuvent s'inscrire sur une liste d'attente.</p>
+                <h2 class="question">3. Accès à la plateforme</h2>
+                <p class="answer">• L’accès est ouvert à toute personne disposant d’une connexion Internet.
+                                  • Certaines fonctionnalités nécessitent la création d’un compte utilisateur.</p>
             </div>
             
             <div class="cgu-item">
-                <h2 class="question">Puis-je organiser une activité privée ?</h2>
-                <p class="answer">Absolument. Lors de la création, vous pouvez choisir de rendre l'activité privée, accessible uniquement via invitation ou lien direct.</p>
+                <h2 class="question">4. Création d’un compte utilisateur</h2>
+                <p class="answer">Pour utiliser pleinement la plateforme, vous devez :
+                                    • Remplir le formulaire d’inscription en fournissant des informations exactes et à jour.
+                                    • Accepter les présentes CGU.
+                                    • Conserver la confidentialité de vos identifiants.</p>
             </div>
             
             <div class="cgu-item">
-                <h2 class="question">Comment trouver une activité qui m'intéresse ?</h2>
-                <p class="answer">Vous pouvez utiliser notre moteur de recherche avec filtres (type d'activité, lieu, date, etc.) pour trouver rapidement ce qui vous correspond.</p>
+                <h2 class="question">5. Utilisation de la plateforme</h2>
+                <p class="answer">En utilisant FindYourCourt, vous vous engagez à :
+                                    • Respecter les lois et réglementations en vigueur.
+                                    • Ne pas utiliser la plateforme à des fins frauduleuses ou illégales.
+                                    • Fournir des informations véridiques concernant votre profil et vos activités.</p>
             </div>
             
             <div class="cgu-item">
-                <h2 class="question">Est-il possible de se désinscrire d'une activité ?</h2>
-                <p class="answer">Oui, vous pouvez vous désinscrire à tout moment depuis votre espace personnel, sauf si une politique d'annulation spécifique a été définie par l'organisateur.</p>
+                <h2 class="question">6. Propriété intellectuelle</h2>
+                <p class="answer">Tous les contenus de la plateforme, y compris les textes, logos, images, et codes informatiques, sont protégés par les lois sur la propriété intellectuelle. Toute reproduction, distribution ou modification non autorisée est interdite.</p>
             </div>
             
             <div class="cgu-item">
-                <h2 class="question">L'inscription aux activités est-elle gratuite ?</h2>
-                <p class="answer">Certaines activités sont gratuites, d'autres sont payantes selon les choix de l'organisateur. Toutes les informations sont indiquées avant l'inscription.</p>
+                <h2 class="question">7. Confidentialité et données personnelles</h2>
+                <p class="answer">Synapse s’engage à protéger vos données et à ne pas les vendre à des tiers sans consentement.</p>
             </div>
             
             <div class="cgu-item">
-                <h2 class="question">Comment puis-je contacter l'organisateur ?</h2>
-                <p class="answer">Une fois inscrit(e), vous aurez accès à une messagerie ou aux coordonnées de l'organisateur pour toute question ou demande spécifique.</p>
+                <h2 class="question">8. Responsabilité de Synapse</h2>
+                <p class="answer">Synapse met tout en œuvre pour assurer un fonctionnement optimal, mais ne peut garantir une disponibilité sans interruption ni l’absence d’erreurs. Synapse décline toute responsabilité en cas de :
+                                    • Mauvaise utilisation par les utilisateurs.
+                                    • Pannes temporaires ou maintenance technique.</p>
             </div>
         </section>
         
