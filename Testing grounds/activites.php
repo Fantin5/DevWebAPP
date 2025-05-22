@@ -1,90 +1,117 @@
 <?php
-ob_start(); // Start output buffering to prevent header issues
+session_start();
 
-// Configuration de la base de données
+// Database configuration
 $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "activity";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) die("Échec de la connexion: " . $conn->connect_error);
 
-// Build query based on filters
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Now that we have the connection, require tag setup and initialize TagManager
+require_once 'tag_setup.php';
+$tagManager = new TagManager($conn);
+$tagDefinitions = $tagManager->getAllTags();
+
+// Initialize search parameters
 $where_clauses = [];
 $params = [];
 $types = "";
 
-// Search filter
-if (!empty($_GET['search'])) {
-    $search = '%' . trim($_GET['search']) . '%';
-    $where_clauses[] = "(a.titre LIKE ? OR a.description LIKE ?)";
-    $params[] = $search;
-    $params[] = $search;
-    $types .= "ss";
-}
-
-// Category filter
-if (!empty($_GET['category'])) {
-  $categories = explode(',', trim($_GET['category']));
-  $categoryWhereClauses = [];
-  
-  foreach ($categories as $category) {
-      $categoryWhereClauses[] = "EXISTS (SELECT 1 FROM tags t WHERE t.activite_id = a.id AND t.nom_tag = ?)";
-      $params[] = $category;
-      $types .= "s";
-  }
-  
-  if (!empty($categoryWhereClauses)) {
-      $where_clauses[] = "(" . implode(" OR ", $categoryWhereClauses) . ")";
-  }
-}
-
-// Location filter (indoor/outdoor)
-if (!empty($_GET['location'])) {
-    $location = trim($_GET['location']);
-    $where_clauses[] = "EXISTS (SELECT 1 FROM tags t WHERE t.activite_id = a.id AND t.nom_tag = ?)";
-    $params[] = $location;
+// Handle single tag parameter (from main page clicks)
+if (isset($_GET['tag']) && !empty($_GET['tag'])) {
+    $singleTag = $_GET['tag'];
+    $where_clauses[] = "EXISTS (
+        SELECT 1 FROM activity_tags at2 
+        JOIN tag_definitions td2 ON at2.tag_definition_id = td2.id 
+        WHERE at2.activity_id = a.id AND td2.name = ?
+    )";
+    $params[] = $singleTag;
     $types .= "s";
 }
 
-// Price filter (free/paid)
-if (!empty($_GET['price'])) {
-    $price = trim($_GET['price']);
-    $where_clauses[] = $price === 'gratuit' ? "a.prix = 0" : "a.prix > 0";
+// Handle multiple tag filters
+if (isset($_GET['tags']) && is_array($_GET['tags'])) {
+    $tagPlaceholders = str_repeat('?,', count($_GET['tags']));
+    $tagPlaceholders = rtrim($tagPlaceholders, ',');
+    
+    $where_clauses[] = "EXISTS (
+        SELECT 1 FROM activity_tags at2 
+        JOIN tag_definitions td2 ON at2.tag_definition_id = td2.id 
+        WHERE at2.activity_id = a.id AND td2.name IN ($tagPlaceholders)
+    )";
+    
+    foreach ($_GET['tags'] as $tag) {
+        $params[] = $tag;
+        $types .= "s";
+    }
 }
 
-// Price range filters
-if (isset($_GET['price_min']) && $_GET['price_min'] !== '') {
+// Handle search query
+if (isset($_GET['search']) && !empty($_GET['search'])) {
+    $searchTerm = '%' . $_GET['search'] . '%';
+    $where_clauses[] = "(a.titre LIKE ? OR a.description LIKE ?)";
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $types .= "ss";
+}
+
+// Handle price range filter
+if (!empty($_GET['min_price'])) {
     $where_clauses[] = "a.prix >= ?";
-    $params[] = floatval($_GET['price_min']);
+    $params[] = floatval($_GET['min_price']);
     $types .= "d";
 }
 
-if (isset($_GET['price_max']) && $_GET['price_max'] !== '') {
+if (!empty($_GET['max_price'])) {
     $where_clauses[] = "a.prix <= ?";
-    $params[] = floatval($_GET['price_max']);
+    $params[] = floatval($_GET['max_price']);
     $types .= "d";
 }
 
-// Build the SQL query
-$sql = "SELECT a.*, 
-        (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags,
+// Handle price type filter (gratuit/payant)
+if (isset($_GET['price_type']) && !empty($_GET['price_type'])) {
+    if ($_GET['price_type'] === 'gratuit') {
+        $where_clauses[] = "a.prix = 0";
+    } elseif ($_GET['price_type'] === 'payant') {
+        $where_clauses[] = "a.prix > 0";
+    }
+}
+
+// Add output buffering to prevent header issues
+ob_start();
+
+// Build the main query
+$sql = "SELECT DISTINCT a.*, 
+        GROUP_CONCAT(DISTINCT td.name) AS tags,
+        GROUP_CONCAT(DISTINCT td.display_name SEPARATOR '|') AS tag_display_names,
         DATEDIFF(STR_TO_DATE(SUBSTRING_INDEX(date_ou_periode, ' - ', -1), '%d/%m/%Y'), NOW()) as days_remaining
-        FROM activites a";
+        FROM activites a 
+        LEFT JOIN activity_tags at ON a.id = at.activity_id
+        LEFT JOIN tag_definitions td ON at.tag_definition_id = td.id";
 
 if (!empty($where_clauses)) {
     $sql .= " WHERE " . implode(" AND ", $where_clauses);
 }
 
-$sql .= " ORDER BY date_creation DESC";
+$sql .= " GROUP BY a.id ORDER BY a.date_creation DESC";
 
 // Prepare and execute the query
-$stmt = $conn->prepare($sql);
 if (!empty($params)) {
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$params);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    $result = $conn->query($sql);
 }
-$stmt->execute();
-$result = $stmt->get_result();
 
 // Helper functions
 function getStars($rating) {
@@ -101,14 +128,18 @@ function getStars($rating) {
 }
 
 function getTagClass($tag) {
-    $tagClasses = [
-        'art' => 'primary', 'cuisine' => 'secondary', 'bien_etre' => 'accent',
-        'creativite' => 'primary', 'sport' => 'secondary', 'exterieur' => 'accent',
-        'interieur' => 'secondary', 'gratuit' => 'accent', 'ecologie' => 'primary',
-        'randonnee' => 'accent', 'jardinage' => 'primary', 'meditation' => 'secondary',
-        'artisanat' => 'accent'
-    ];
-    return isset($tagClasses[$tag]) ? $tagClasses[$tag] : '';
+    global $tagDefinitions;
+    return isset($tagDefinitions[$tag]) ? $tagDefinitions[$tag]['class'] : 'primary';
+}
+
+function getTagDisplayName($tag, $tagDisplayNames = null, $index = null) {
+    global $tagDefinitions;
+    
+    if ($tagDisplayNames && $index !== null && isset($tagDisplayNames[$index])) {
+        return $tagDisplayNames[$index];
+    }
+    
+    return isset($tagDefinitions[$tag]) ? $tagDefinitions[$tag]['display_name'] : ucfirst(str_replace('_', ' ', $tag));
 }
 
 function isEndingSoon($activity) {
@@ -144,22 +175,13 @@ function getDaysRemaining($activity) {
     return null;
 }
 
-// Get all available tags for the filter dropdown
-$tagsSql = "SELECT DISTINCT nom_tag FROM tags ORDER BY nom_tag";
-$tagsResult = $conn->query($tagsSql);
-$availableTags = [];
-while ($tagRow = $tagsResult->fetch_assoc()) {
-    $availableTags[] = $tagRow['nom_tag'];
-}
-
-// Check if this is an AJAX request and return only the necessary HTML
+// Check if this is an AJAX request
 if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
     
-    ob_clean(); // Clear output buffer
+    ob_clean();
     header('Content-Type: application/json');
     
-    // Generate activities HTML
     $activitiesHtml = '';
     
     if ($result->num_rows > 0) {
@@ -168,30 +190,26 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
             $isEnding = isEndingSoon($row);
             $daysRemaining = $isEnding ? getDaysRemaining($row) : null;
             $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
+            $tagDisplayNames = $row["tag_display_names"] ? explode('|', $row["tag_display_names"]) : [];
             $isPaid = $row["prix"] > 0;
             
-            $activitiesHtml .= '<div class="card" data-id="' . $row['id'] . '">';
-            $activitiesHtml .= '<div class="content">';
+            $activitiesHtml .= '<div class="activity-card" 
+                data-id="' . $row['id'] . '"
+                data-price="' . $row['prix'] . '"
+                data-rating="' . $randomRating . '"
+                data-date-creation="' . $row['date_creation'] . '">';
             
-            // Image container
-            $activitiesHtml .= '<div class="image-container">';
+            $activitiesHtml .= '<div class="card-image">';
             $activitiesHtml .= '<img src="' . htmlspecialchars($row["image_url"] ?: 'nature-placeholder.jpg') . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
-            $activitiesHtml .= '</div>';
             
-            // Price tag
             if ($isPaid) {
-                $activitiesHtml .= '<div class="price-tag">';
-                $activitiesHtml .= '<i class="fa-solid fa-euro-sign"></i> ' . number_format($row["prix"], 2) . ' €';
-                $activitiesHtml .= '</div>';
+                $activitiesHtml .= '<div class="price-badge">' . number_format($row["prix"], 2) . ' €</div>';
             } else {
-                $activitiesHtml .= '<div class="price-tag free">';
-                $activitiesHtml .= '<i class="fa-solid fa-gift"></i> Gratuit';
-                $activitiesHtml .= '</div>';
+                $activitiesHtml .= '<div class="price-badge free">Gratuit</div>';
             }
             
-            // Last chance badge
             if ($isEnding) {
-                $activitiesHtml .= '<div class="last-chance-badge"><i class="fa-solid fa-clock"></i> ';
+                $activitiesHtml .= '<div class="urgency-badge">';
                 if ($daysRemaining == 0) {
                     $activitiesHtml .= 'Dernier jour !';
                 } else if ($daysRemaining == 1) {
@@ -201,54 +219,49 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
                 }
                 $activitiesHtml .= '</div>';
             }
+            $activitiesHtml .= '</div>';
             
-            // Tags
-            $activitiesHtml .= '<div class="tag">';
-            $displayedTags = 0;
-            foreach ($tagList as $tag) {
-                if ($displayedTags < 2) {
-                    $tagClass = getTagClass($tag);
-                    $activitiesHtml .= '<span class="tags ' . $tagClass . '" data-tag="' . $tag . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
-                    $displayedTags++;
-                }
-            }
-            $activitiesHtml .= '</div></div>';
-            
-            // Info
-            $activitiesHtml .= '<div class="info">';
+            $activitiesHtml .= '<div class="card-content">';
             $activitiesHtml .= '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
             
             if ($row["date_ou_periode"]) {
-                $activitiesHtml .= '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
+                $activitiesHtml .= '<p class="activity-period">' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
             }
             
+            $activitiesHtml .= '<div class="activity-tags">';
+            $displayedTags = 0;
+            foreach ($tagList as $index => $tag) {
+                if ($displayedTags < 3 && $tag !== 'gratuit' && $tag !== 'payant') {
+                    $displayName = getTagDisplayName($tag, $tagDisplayNames, $index);
+                    $activitiesHtml .= '<span class="activity-tag">' . htmlspecialchars($displayName) . '</span>';
+                    $displayedTags++;
+                }
+            }
             $activitiesHtml .= '</div>';
             
-            // Actions
-            $activitiesHtml .= '<div class="actions">';
-            $activitiesHtml .= '<div class="rating">' . getStars($randomRating) . '</div>';
-            
-            $activitiesHtml .= '<button class="add-to-cart-button" data-id="' . $row['id'] . '" 
+            $activitiesHtml .= '<div class="card-footer">';
+            $activitiesHtml .= '<div class="activity-rating">' . getStars($randomRating) . '</div>';
+            $activitiesHtml .= '<button class="add-to-cart-btn" data-id="' . $row['id'] . '" 
                     data-title="' . htmlspecialchars($row['titre']) . '" 
                     data-price="' . $row['prix'] . '" 
                     data-image="' . htmlspecialchars($row['image_url'] ?: 'nature-placeholder.jpg') . '" 
                     data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
                     data-tags="' . htmlspecialchars($row['tags']) . '">
-                    <i class="fa-solid fa-cart-shopping"></i> Ajouter
+                    Ajouter
                 </button>';
-            
+            $activitiesHtml .= '</div>';
             $activitiesHtml .= '</div>';
             $activitiesHtml .= '</div>';
         }
     } else {
-        $activitiesHtml .= '<div class="no-results">';
-        $activitiesHtml .= '<i class="fa-solid fa-filter-circle-xmark"></i>';
-        $activitiesHtml .= '<h3>Aucune activité ne correspond à vos critères</h3>';
-        $activitiesHtml .= '<p>Essayez d\'ajuster vos filtres pour trouver des activités qui vous conviennent.</p>';
-        $activitiesHtml .= '</div>';
+        $activitiesHtml .= '<div class="no-results">
+            <i class="fa-solid fa-search"></i>
+            <h3>Aucune activité trouvée</h3>
+            <p>Essayez d\'ajuster vos filtres pour trouver des activités qui vous conviennent.</p>
+        </div>';
     }
     
-    echo json_encode(['html' => $activitiesHtml]);
+    echo json_encode(['html' => $activitiesHtml, 'count' => $result->num_rows]);
     exit;
 }
 ?>
@@ -258,1706 +271,1279 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Découvrez nos activités | Synapse</title>
+    <title>Recherche d'activités | Synapse</title>
     <link rel="stylesheet" href="main.css" />
     <link rel="stylesheet" href="../TEMPLATE/teteaupied.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     <style>
-        /* Fix for the circle under footer */
-        .particle {
-            position: fixed !important;
-            z-index: -5 !important; /* Lower z-index to keep behind content */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        .floating-leaf {
-            z-index: -5 !important; /* Lower z-index for floating leaves */
+
+        /* Nature-inspired variables */
+        :root {
+            --primary-color: #3c8c5c;
+            --primary-light: #61b980;
+            --primary-dark: #275e3e;
+            --secondary-color: #946b2d;
+            --secondary-light: #c89e52;
+            --accent-color: #e9c46a;
+            --bg-gradient: linear-gradient(135deg, #f8fff9 0%, #f0f7f2 100%);
         }
-        
-        .leaf-animation-container {
-            pointer-events: none; /* Allow clicking through leaves */
-            z-index: -4;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-        
+
+        /* Enhanced body background */
         body {
+            background: var(--bg-gradient);
             position: relative;
             overflow-x: hidden;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(69, 161, 99, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(233, 196, 106, 0.1) 0%, transparent 50%);
         }
-        
-        main, .page-wrapper {
-            flex: 1;
-            position: relative;
-            z-index: 1; /* Higher than background elements */
-        }
-        
-        footer {
-            position: relative;
-            z-index: 10;
-        }
-        
-        /* Enhanced Page styles */
-        .page-wrapper {
-            padding: 30px 20px 60px;
-            min-height: 100vh;
-            background: linear-gradient(135deg, rgba(228, 216, 200, 0.8) 0%, rgba(215, 225, 210, 0.8) 100%);
-            position: relative;
-        }
-        
-        .page-title-container {
-            text-align: center;
-            margin-bottom: 40px;
-            position: relative;
-            animation: fadeIn 1s ease-out;
-            z-index: 2;
-        }
-        
-        .page-title {
-            font-size: 42px;
-            color: var(--text-dark);
-            margin-bottom: 10px;
-            font-family: 'Georgia', serif;
-            position: relative;
-            display: inline-block;
-        }
-        
-        .page-title::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 3px;
-            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
-            border-radius: 2px;
-            animation: expandWidth 1.5s forwards 0.5s;
-        }
-        
-        @keyframes expandWidth {
-            to { width: 80px; }
-        }
-        
-        .page-subtitle {
-            font-size: 18px;
-            color: #555;
-            max-width: 800px;
-            margin: 25px auto 0;
-            opacity: 0;
-            animation: fadeIn 1s forwards 0.8s;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Enhanced Filter section */
-        .filter-section {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 20px;
-            margin-bottom: 40px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-            position: relative;
+
+        /* Enhanced leaf animation styles */
+        .leaf-animation-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
             overflow: hidden;
-            animation: slideUp 1s forwards;
-            z-index: 2;
         }
-        
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .filter-section:hover {
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-        
-        .filter-section h2 {
-            color: var(--primary-color);
-            margin-bottom: 25px;
-            font-size: 28px;
-            text-align: center;
-            position: relative;
-            font-family: var(--font-accent);
-        }
-        
-        .filter-section h2::after {
-            content: '';
+
+        .floating-leaf {
             position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 50px;
-            height: 2px;
-            background: linear-gradient(to right, var(--primary-color), var(--primary-light));
-            border-radius: 2px;
+            width: 80px;
+            height: 80px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.9;
+            pointer-events: none;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+            z-index: 1;
         }
-        
-        /* Search & filter elements */
+
+        .leaf-1 {
+            top: 10%;
+            left: 5%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%2344b174" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/></svg>');
+            animation: floatLeaf1 20s infinite linear;
+            transform-origin: center;
+        }
+
+        .leaf-2 {
+            top: 70%;
+            right: 10%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%233d8c5e" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/></svg>');
+            animation: floatLeaf2 25s infinite linear;
+            transform-origin: center;
+        }
+
+        .leaf-3 {
+            bottom: 20%;
+            left: 15%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23e9a23c" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/></svg>');
+            animation: floatLeaf3 22s infinite linear;
+            transform-origin: center;
+        }
+
+        .leaf-4 {
+            top: 40%;
+            right: 25%;
+            width: 70px;
+            height: 70px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%2361b980" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/></svg>');
+            animation: floatLeaf4 28s infinite linear;
+            transform-origin: center;
+        }
+
+        .leaf-5 {
+            top: 85%;
+            left: 35%;
+            width: 65px;
+            height: 65px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23d4943e" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/></svg>');
+            animation: floatLeaf5 24s infinite linear;
+            transform-origin: center;
+        }
+
+        @keyframes floatLeaf1 {
+            0% { transform: translateY(-100%) translateX(-100%) rotate(0deg) scale(1); opacity: 0; }
+            10% { opacity: 0.9; }
+            50% { transform: translateY(50vh) translateX(50vw) rotate(360deg) scale(1.2); }
+            90% { opacity: 0.9; }
+            100% { transform: translateY(100vh) translateX(100vw) rotate(720deg) scale(1); opacity: 0; }
+        }
+
+        @keyframes floatLeaf2 {
+            0% { transform: translateY(-100%) translateX(100%) rotate(180deg) scale(1); opacity: 0; }
+            10% { opacity: 0.9; }
+            50% { transform: translateY(50vh) translateX(-50vw) rotate(-180deg) scale(1.1); }
+            90% { opacity: 0.9; }
+            100% { transform: translateY(100vh) translateX(-100vw) rotate(-540deg) scale(1); opacity: 0; }
+        }
+
+        @keyframes floatLeaf3 {
+            0% { transform: translateY(100%) translateX(-50%) rotate(-90deg) scale(1); opacity: 0; }
+            10% { opacity: 0.9; }
+            50% { transform: translateY(-50vh) translateX(25vw) rotate(180deg) scale(1.2); }
+            90% { opacity: 0.9; }
+            100% { transform: translateY(-100vh) translateX(50vw) rotate(450deg) scale(1); opacity: 0; }
+        }
+
+        @keyframes floatLeaf4 {
+            0% { transform: translateY(-50vh) translateX(50vw) rotate(45deg) scale(1); opacity: 0; }
+            10% { opacity: 0.9; }
+            50% { transform: translateY(75vh) translateX(-25vw) rotate(360deg) scale(1.15); }
+            90% { opacity: 0.9; }
+            100% { transform: translateY(150vh) translateX(-50vw) rotate(675deg) scale(1); opacity: 0; }
+        }
+
+        @keyframes floatLeaf5 {
+            0% { transform: translateY(0) translateX(100vw) rotate(-145deg) scale(1); opacity: 0; }
+            10% { opacity: 0.9; }
+            50% { transform: translateY(-50vh) translateX(-50vw) rotate(45deg) scale(1.1); }
+            90% { opacity: 0.9; }
+            100% { transform: translateY(-100vh) translateX(-100vw) rotate(215deg) scale(1); opacity: 0; }
+        }
+
+        /* Add decorative vines */
+        .vine-decoration {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .vine-top-left {
+            top: 0;
+            left: 0;
+            width: 200px;
+            height: 300px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%233c8c5c" d="M6.5,6C7.47,6 8.37,6.5 9.11,7.38C9.66,6.93 10.35,6.5 11,6.5C11.65,6.5 12.34,6.93 12.89,7.38C13.63,6.5 14.53,6 15.5,6C18,6 20,9.36 20,13.5C20,17.64 18,21 15.5,21C14.53,21 13.63,20.5 12.89,19.62C12.34,20.07 11.65,20.5 11,20.5C10.35,20.5 9.66,20.07 9.11,19.62C8.37,20.5 7.47,21 6.5,21C4,21 2,17.64 2,13.5C2,9.36 4,6 6.5,6Z"/></svg>');
+            opacity: 0.1;
+            transform: rotate(-45deg) scale(2);
+        }
+
+        .vine-bottom-right {
+            bottom: 0;
+            right: 0;
+            width: 250px;
+            height: 350px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%233c8c5c" d="M6.5,6C7.47,6 8.37,6.5 9.11,7.38C9.66,6.93 10.35,6.5 11,6.5C11.65,6.5 12.34,6.93 12.89,7.38C13.63,6.5 14.53,6 15.5,6C18,6 20,9.36 20,13.5C20,17.64 18,21 15.5,21C14.53,21 13.63,20.5 12.89,19.62C12.34,20.07 11.65,20.5 11,20.5C10.35,20.5 9.66,20.07 9.11,19.62C8.37,20.5 7.47,21 6.5,21C4,21 2,17.64 2,13.5C2,9.36 4,6 6.5,6Z"/></svg>');
+            opacity: 0.1;
+            transform: rotate(135deg) scale(2.5);
+        }
+
+        /* Enhanced container styling */
         .search-container {
             position: relative;
-            margin-bottom: 25px;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
         }
-        
-        .search-container i {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #828977;
-            font-size: 18px;
-            transition: all 0.3s ease;
+
+        /* Enhanced filters section */
+        .filters-section {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
         }
-        
+
+        .filters-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .search-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .search-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2d5a3d;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-header p {
+            font-size: 1.1rem;
+            color: #6b7280;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-bar {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
         .search-input {
             width: 100%;
-            padding: 18px 20px 18px 50px;
-            border: 1px solid rgba(130, 137, 119, 0.3);
-            border-radius: 50px;
-            font-size: 16px;
-            background-color: rgba(255, 255, 255, 0.7);
+            padding: 1rem 1rem 1rem 3rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
             transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            background: #fafafa;
         }
-        
+
         .search-input:focus {
             outline: none;
-            border-color: var(--primary-color);
-            background-color: white;
-            box-shadow: 0 0 0 3px rgba(69, 161, 99, 0.2), 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-color: #45a163;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(69, 161, 99, 0.1);
         }
-        
-        .search-input:focus + i {
-            color: var(--primary-color);
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 1.1rem;
         }
-        
-        /* Filter pills */
+
+        .filter-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
         .filter-pills {
             display: flex;
-            gap: 10px;
             flex-wrap: wrap;
-            margin: 20px 0;
+            gap: 0.75rem;
         }
-        
+
         .filter-pill {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #6b7280;
             cursor: pointer;
-            padding: 10px 20px;
-            border-radius: 50px;
-            background: white;
-            color: #555;
-            font-weight: 500;
             transition: all 0.3s ease;
-            border: 1px solid rgba(130, 137, 119, 0.2);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+            font-size: 0.9rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 0.5rem;
+            backdrop-filter: blur(5px);
         }
-        
+
         .filter-pill:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            border-color: #45a163;
+            color: #45a163;
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 8px 20px rgba(69, 161, 99, 0.15);
         }
-        
+
         .filter-pill.active {
-            background: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border-color: transparent;
             color: white;
-            border-color: var(--primary-color);
         }
-        
-        .filter-pill i {
-            font-size: 14px;
-            opacity: 0.7;
-        }
-        
-        /* Filter form elements */
-        .filters {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
-            position: relative;
-        }
-        
-        .filter-group label {
-            display: block;
-            margin-bottom: 10px;
-            color: #555;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .filter-select {
-            width: 100%;
-            padding: 16px 18px;
-            border: 1px solid rgba(130, 137, 119, 0.3);
-            border-radius: 12px;
-            background-color: rgba(255, 255, 255, 0.7);
-            font-size: 15px;
-            color: #333;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-            appearance: none;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23828977" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
-            background-repeat: no-repeat;
-            background-position: right 15px center;
-            background-size: 16px;
-        }
-        
-        .filter-select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            background-color: white;
-            box-shadow: 0 0 0 3px rgba(69, 161, 99, 0.2), 0 3px 10px rgba(0, 0, 0, 0.05);
-        }
-        
-        /* Price inputs */
-        .price-inputs {
+
+        .price-range {
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin-top: 10px;
+            gap: 1rem;
+            margin-top: 0.75rem;
         }
-        
-        .price-input-group {
-            flex: 1;
-            position: relative;
-        }
-        
+
         .price-input {
-            width: 100%;
-            padding: 12px 40px 12px 15px;
-            border: 1px solid rgba(130, 137, 119, 0.3);
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
             border-radius: 8px;
-            font-size: 15px;
-            transition: all 0.3s ease;
-            background-color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
         }
-        
+
         .price-input:focus {
             outline: none;
-            border-color: var(--primary-color);
-            background-color: white;
-            box-shadow: 0 0 0 3px rgba(69, 161, 99, 0.2);
+            border-color: #45a163;
         }
-        
-        .price-input-group::after {
-            content: '€';
-            position: absolute;
-            right: 15px;
-            bottom: 12px;
-            color: #666;
+
+        .price-separator {
+            color: #6b7280;
             font-weight: 500;
         }
-        
-        .price-between {
-            font-size: 18px;
-            color: #666;
-            margin-top: 25px;
-        }
-        
-        .price-apply-button,
-        .reset-button {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+
+        .filter-button {
+            background: var(--primary-color);
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 0.75rem 1.5rem;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
-            margin-top: 20px;
             transition: all 0.3s ease;
-            display: block;
-            width: 100%;
-            position: relative;
-            overflow: hidden;
+            font-size: 0.9rem;
         }
-        
-        .price-apply-button::before,
-        .reset-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
-            transform: skewX(-25deg);
-            transition: left 0.5s ease;
+
+        .filter-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
         }
-        
-        .price-apply-button:hover,
-        .reset-button:hover {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(39, 94, 62, 0.2);
-        }
-        
-        .price-apply-button:hover::before,
-        .reset-button:hover::before {
-            left: 100%;
-        }
-        
-        .reset-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .reset-button i {
-            transition: transform 0.3s ease;
-        }
-        
-        .reset-button:hover i {
-            transform: rotate(180deg);
-        }
-        
-        /* Active filter tags */
-        .active-filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        .active-filter-tag {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 30px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-            animation: tagPop 0.5s ease-out;
-        }
-        
-        @keyframes tagPop {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
-        .active-filter-tag:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-        }
-        
-        .active-filter-tag i.fa-xmark {
-            font-size: 12px;
-            margin-left: 5px;
-        }
-        
-        .active-filter-tag.price {
-            background-color: var(--secondary-color);
-        }
-        
-        .active-filter-tag.location {
-            background-color: var(--accent-color);
-            color: #333;
-        }
-        
-        /* Activities grid */
-        .activities-container {
-            width: 95%;
-            max-width: 1200px;
-            margin: 40px auto 60px;
-            position: relative;
-            z-index: 2;
-        }
-        
-        .activities-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 30px;
-            position: relative;
-            animation: fadeIn 1s forwards;
-        }
-        
-        /* Card styling */
-        .card {
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            transition: all 0.5s cubic-bezier(0.215, 0.61, 0.355, 1);
-            height: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            position: relative;
-            z-index: 1;
-            transform-style: preserve-3d;
-            cursor: pointer;
-            animation: cardAppear 0.6s ease-out forwards;
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        
-        @keyframes cardAppear {
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .card:nth-child(3n+1) { animation-delay: 0.1s; }
-        .card:nth-child(3n+2) { animation-delay: 0.2s; }
-        .card:nth-child(3n+3) { animation-delay: 0.3s; }
-        
-        .card:hover {
-            transform: translateY(-15px) rotateY(5deg);
-            box-shadow: -10px 20px 40px rgba(0, 0, 0, 0.15);
-        }
-        
-        .image-container {
-            height: 220px;
-            min-height: 220px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        
-        .card:hover img {
-            transform: scale(1.1);
-        }
-        
-        /* Price tag and Last chance badge */
-        .price-tag {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: linear-gradient(135deg, rgba(148, 107, 45, 0.9) 0%, rgba(97, 70, 30, 0.9) 100%);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            z-index: 10;
-            transition: all 0.3s ease;
-        }
-        
-        .price-tag.free {
-            background: linear-gradient(135deg, rgba(69, 161, 99, 0.9) 0%, rgba(39, 94, 62, 0.9) 100%);
-        }
-        
-        .card:hover .price-tag {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        }
-        
-        .last-chance-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.9) 0%, rgba(192, 57, 43, 0.9) 100%);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 30px;
-            font-size: 13px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            z-index: 10;
-            animation: pulseBadge 2s infinite;
-        }
-        
-        @keyframes pulseBadge {
-            0% { transform: scale(1); box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3); }
-            50% { transform: scale(1.05); box-shadow: 0 5px 20px rgba(231, 76, 60, 0.5); }
-            100% { transform: scale(1); box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3); }
-        }
-        
-        /* Tags and content */
-        .tag {
-            position: absolute;
-            bottom: 15px;
-            left: 15px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            z-index: 2;
-            max-width: calc(100% - 30px);
-        }
-        
-        .tags {
-            background-color: rgba(60, 140, 92, 0.9);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-size: 12px;
-            font-weight: 600;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(5px);
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            letter-spacing: 0.5px;
-            cursor: pointer;
-        }
-        
-        .tags:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-        }
-        
-        .tags.accent {
-            background-color: rgba(233, 196, 106, 0.9);
-            color: var(--text-dark);
-        }
-        
-        .tags.secondary {
-            background-color: rgba(148, 107, 45, 0.9);
-            color: white;
-        }
-        
-        .info {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 25px;
-            position: relative;
-        }
-        
-        .card h3 {
-            font-size: 20px;
-            line-height: 1.4;
-            margin: 0 0 15px 0;
-            color: var(--text-dark);
-            font-weight: 700;
-            transition: color 0.3s ease;
-            min-height: 60px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            font-family: var(--font-accent);
-        }
-        
-        .card:hover h3 {
-            color: var(--primary-color);
-        }
-        
-        .period {
-            color: #666;
-            margin: 0 0 15px 0;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background-color: rgba(248, 249, 250, 0.6);
-            padding: 10px 18px;
-            border-radius: 30px;
-            width: fit-content;
-            transition: all 0.3s ease;
-        }
-        
-        .card:hover .period {
-            background-color: rgba(69, 161, 99, 0.1);
-            box-shadow: 0 3px 15px rgba(69, 161, 99, 0.1);
-        }
-        
-        .actions {
-            margin-top: auto;
-            padding: 20px 25px;
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
+
+        .results-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: rgba(248, 249, 250, 0.6);
+            margin-bottom: 1.5rem;
         }
-        
-        .rating {
-            color: #f1c40f;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+
+        .results-count {
+            color: #6b7280;
+            font-size: 0.95rem;
         }
-        
-        .stars i {
-            filter: drop-shadow(0 2px 4px rgba(241, 196, 15, 0.4));
-        }
-        
-        .card:hover .stars i {
-            animation: starPulse 0.8s ease-in-out;
-        }
-        
-        @keyframes starPulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-        
-        .add-to-cart-button {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 20px;
-            border-radius: 50px;
+
+        .sort-dropdown {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            color: #374151;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.4s ease;
-            border: none;
-            box-shadow: 0 8px 20px rgba(39, 94, 62, 0.3);
-            position: relative;
-            overflow: hidden;
+            font-size: 0.9rem;
         }
-        
-        .add-to-cart-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
+
+        .activities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Enhanced activity cards */
+        .activity-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.4s ease;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-image {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .card-image img {
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
-            transform: skewX(-25deg);
-            transition: left 0.7s ease;
+            object-fit: cover;
+            transition: transform 0.3s ease;
         }
-        
-        .add-to-cart-button:hover {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
-            transform: translateY(-5px);
-            box-shadow: 0 12px 25px rgba(39, 94, 62, 0.4);
+
+        .activity-card:hover .card-image img {
+            transform: scale(1.05);
         }
-        
-        .add-to-cart-button:hover::before {
-            left: 100%;
+
+        .price-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(45, 90, 61, 0.9);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            backdrop-filter: blur(8px);
         }
-        
-        /* No results message */
+
+        .price-badge.free {
+            background: rgba(69, 161, 99, 0.9);
+        }
+
+        .activity-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .activity-tag {
+            background: var(--primary-light);
+            color: white;
+            padding: 0.35rem 0.75rem;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .activity-tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(69, 161, 99, 0.2);
+        }
+
+        .urgency-badge {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            backdrop-filter: blur(8px);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .card-content h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .activity-period {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .activity-period::before {
+            content: '📅';
+            font-size: 0.8rem;
+        }
+
+        .activity-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .activity-tag {
+            background: var(--primary-light);
+            color: white;
+            padding: 0.35rem 0.75rem;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .activity-tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(69, 161, 99, 0.2);
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .activity-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #fbbf24;
+            font-size: 0.9rem;
+        }
+
+        .rating-value {
+            color: #6b7280;
+            font-size: 0.85rem;
+            margin-left: 0.25rem;
+        }
+
+        .add-to-cart-btn {
+            background: #45a163;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .add-to-cart-btn:hover {
+            background: #369953;
+            transform: translateY(-1px);
+        }
+
         .no-results {
             text-align: center;
-            padding: 60px 30px;
-            background-color: rgba(255, 255, 255, 0.7);
-            border-radius: 20px;
-            box-shadow: var(--shadow-sm);
-            grid-column: 1/-1;
-            animation: fadeIn 0.8s ease;
+            padding: 4rem 2rem;
+            grid-column: 1 / -1;
         }
-        
+
         .no-results i {
-            font-size: 64px;
-            color: #828977;
-            margin-bottom: 25px;
-            opacity: 0.5;
+            font-size: 4rem;
+            color: #d1d5db;
+            margin-bottom: 1rem;
         }
-        
-        /* Loading overlay */
+
+        .no-results h3 {
+            font-size: 1.5rem;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .no-results p {
+            color: #6b7280;
+        }
+
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(5px);
-            z-index: 9999;
+            background: rgba(255, 255, 255, 0.9);
             display: flex;
             justify-content: center;
             align-items: center;
+            z-index: 9999;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
         }
-        
+
         .loading-overlay.active {
             opacity: 1;
             pointer-events: all;
         }
-        
-        .synapse-loader {
-            width: 100px;
-            height: 100px;
-            position: relative;
-            animation: float 2s infinite ease-in-out alternate;
-        }
-        
-        .synapse-loader svg {
-            width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 5px 15px rgba(69, 161, 99, 0.3));
-            transition: all 0.3s ease;
-        }
-        
-        .synapse-loader svg path {
-            fill: var(--primary-color);
-            opacity: 0.9;
-        }
-        
-        @keyframes float {
-            0% { transform: translateY(-10px) rotate(-5deg); }
-            100% { transform: translateY(10px) rotate(5deg); }
-        }
-        
-        .loading-text {
-            margin-top: 20px;
-            font-size: 26px;
-            color: var(--primary-color);
-            font-weight: 700;
-            letter-spacing: 3px;
-            position: relative;
-            text-shadow: 0 2px 10px rgba(69, 161, 99, 0.2);
-            animation: pulse 2s infinite alternate;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 0.7; transform: scale(0.98); }
-            100% { opacity: 1; transform: scale(1.02); }
-        }
-        
-        /* Scroll to top button */
-        .scroll-top-button {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
+
+        .loading-spinner {
             width: 60px;
             height: 60px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #45a163;
             border-radius: 50%;
-            background-color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            cursor: pointer;
-            z-index: 900;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.4s ease;
-            overflow: hidden;
-            border: 1px solid rgba(69, 161, 99, 0.1);
+            animation: spin 1s linear infinite;
         }
-        
-        .scroll-top-button.visible {
-            opacity: 1;
-            transform: translateY(0);
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        
-        .scroll-top-button:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-        }
-        
-        /* Notification */
+
         .notification {
             position: fixed;
-            top: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 15px 25px;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            top: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
             font-weight: 600;
             z-index: 1000;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            transform: translateX(-50%) translateY(-20px);
-            animation: notificationFadeIn 0.5s forwards;
-            backdrop-filter: blur(10px);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
         }
-        
-        @keyframes notificationFadeIn {
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .notification.show {
+            transform: translateX(0);
         }
-        
-        .notification.success { background-color: rgba(69, 161, 99, 0.9); color: white; }
-        .notification.info { background-color: rgba(52, 152, 219, 0.9); color: white; }
-        .notification.error { background-color: rgba(231, 76, 60, 0.9); color: white; }
-        
-        /* Category checkboxes */
-        .category-checkboxes {
+
+        .notification.success {
+            background: #10b981;
+        }
+
+        .notification.error {
+            background: #ef4444;
+        }
+
+        .notification.info {
+            background: #3b82f6;
+        }
+
+        .active-filters {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 5px;
+            gap: 0.5rem;
+            margin-top: 1rem;
         }
-        
-        .category-checkbox {
-            display: flex;
-            align-items: center;
-            background: white;
-            padding: 8px 15px;
-            border-radius: 30px;
-            transition: all 0.3s;
-            border: 1px solid rgba(130, 137, 119, 0.2);
-            cursor: pointer;
-            box-shadow: 0 3px 5px rgba(0,0,0,0.05);
-            will-change: transform;
-            transform: translateZ(0);
-        }
-        
-        .category-checkbox:hover {
-            background-color: rgba(69, 161, 99, 0.1);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 10px rgba(0,0,0,0.08);
-        }
-        
-        .category-checkbox input {
-            display: none;
-        }
-        
-        .category-checkbox label {
-            margin: 0;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .category-checkbox input:checked + label {
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-        
-        .category-checkbox input:checked + label::before {
-            content: '•';
-            margin-right: 5px;
-            color: var(--primary-color);
-        }
-        
-        .selected-categories {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 15px;
-        }
-        
-        .selected-category {
-            background-color: var(--primary-color);
+
+        .active-filter {
+            background: #45a163;
             color: white;
-            padding: 5px 12px;
+            padding: 0.5rem 1rem;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 0.5rem;
+        }
+
+        .remove-filter {
             cursor: pointer;
-            animation: tagPop 0.5s ease-out;
-            box-shadow: 0 3px 8px rgba(69, 161, 99, 0.2);
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
         }
-        
-        .selected-category i {
-            font-size: 10px;
-            transition: transform 0.2s ease;
+
+        .remove-filter:hover {
+            opacity: 1;
         }
-        
-        .selected-category:hover i {
-            transform: scale(1.2);
+
+        .clear-filters-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
         }
-        
-        /* Media queries */
-        @media (max-width: 992px) {
-            .filters { flex-direction: column; }
-            .filter-group { min-width: 100%; }
+
+        .clear-filters-btn:hover {
+            background: #dc2626;
         }
-        
+
         @media (max-width: 768px) {
-            .activities-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-            .page-title { font-size: 32px; }
-            .filter-section { padding: 20px; }
-            .category-checkboxes { gap: 6px; }
-            .category-checkbox { padding: 6px 12px; }
-        }
-        
-        @media (max-width: 576px) {
-            .search-input, .filter-select { padding: 12px 15px; font-size: 14px; }
-            .search-input { padding-left: 40px; }
-            .filter-pills { gap: 5px; }
-            .filter-pill { padding: 8px 15px; font-size: 13px; }
-            .category-checkbox label { font-size: 12px; }
+            .search-container {
+                padding: 1rem;
+            }
+
+            .search-header h1 {
+                font-size: 2rem;
+            }
+
+            .filters-section {
+                padding: 1.5rem;
+            }
+
+            .activities-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .results-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .filter-pills {
+                gap: 0.5rem;
+            }
+
+            .filter-pill {
+                font-size: 0.85rem;
+                padding: 0.4rem 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
     <?php include '../TEMPLATE/Nouveauhead.php'; ob_end_flush(); ?>
 
-    <div class="page-wrapper">
-        <!-- Floating leaf animation elements -->
-        <div class="leaf-animation-container">
-            <div class="floating-leaf leaf-1"></div>
-            <div class="floating-leaf leaf-3"></div>
-            <div class="floating-leaf leaf-5"></div>
-            <div class="floating-leaf leaf-7"></div>
-        </div>
-        
-        <div class="page-title-container">
-            <h1 class="page-title">Découvrez Nos Activités</h1>
-            <p class="page-subtitle">Explorez notre sélection d'expériences uniques et trouvez l'activité parfaite pour vous.</p>
+    <div class="leaf-animation-container">
+        <div class="floating-leaf leaf-1"></div>
+        <div class="floating-leaf leaf-2"></div>
+        <div class="floating-leaf leaf-3"></div>
+        <div class="floating-leaf leaf-4"></div>
+        <div class="floating-leaf leaf-5"></div>
+    </div>
+
+    <div class="vine-decoration vine-top-left"></div>
+    <div class="vine-decoration vine-bottom-right"></div>
+
+    <div class="search-container">
+        <div class="search-header">
+            <h1>Recherche d'activités</h1>
+            <p>Trouvez l'activité parfaite parmi notre sélection d'expériences uniques</p>
         </div>
 
-        <!-- Filter Section -->
-        <div id="filter-section" class="filter-section">
-            <h2>Filtrer les activités</h2>
-            
-            <div class="filter-container">
-                <div class="search-container">
-                    <input type="search" placeholder="Rechercher une activité..." id="search-input" class="search-input" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </div>
-                
-                <!-- Quick Filter Pills -->
-                <div class="filter-pills">
-                    <div class="filter-pill<?php echo !isset($_GET['price']) || $_GET['price'] === '' ? ' active' : ''; ?>" data-filter="price" data-value="">
-                        <i class="fa-solid fa-tag"></i> Tous les prix
-                    </div>
-                    <div class="filter-pill<?php echo isset($_GET['price']) && $_GET['price'] === 'gratuit' ? ' active' : ''; ?>" data-filter="price" data-value="gratuit">
-                        <i class="fa-solid fa-gift"></i> Gratuit
-                    </div>
-                    <div class="filter-pill<?php echo isset($_GET['price']) && $_GET['price'] === 'payant' ? ' active' : ''; ?>" data-filter="price" data-value="payant">
-                        <i class="fa-solid fa-euro-sign"></i> Payant
-                    </div>
-                    <div class="filter-pill<?php echo !isset($_GET['location']) || $_GET['location'] === '' ? ' active' : ''; ?>" data-filter="location" data-value="">
-                        <i class="fa-solid fa-location-dot"></i> Tous les lieux
-                    </div>
-                    <div class="filter-pill<?php echo isset($_GET['location']) && $_GET['location'] === 'interieur' ? ' active' : ''; ?>" data-filter="location" data-value="interieur">
-                        <i class="fa-solid fa-house"></i> Intérieur
-                    </div>
-                    <div class="filter-pill<?php echo isset($_GET['location']) && $_GET['location'] === 'exterieur' ? ' active' : ''; ?>" data-filter="location" data-value="exterieur">
-                        <i class="fa-solid fa-tree"></i> Extérieur
-                    </div>
-                </div>
-                
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>Catégories</label>
-                        <div class="category-checkboxes">
-                            <?php
-                            foreach($availableTags as $tag) {
-                                if ($tag !== 'interieur' && $tag !== 'exterieur' && $tag !== 'gratuit') {
-                                    $checked = isset($_GET['category']) && (strpos($_GET['category'], $tag) !== false) ? ' checked' : '';
-                                    echo '<div class="category-checkbox">
-                                        <input type="checkbox" id="cat_' . htmlspecialchars($tag) . '" name="category[]" value="' . htmlspecialchars($tag) . '"' . $checked . '>
-                                        <label for="cat_' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</label>
-                                    </div>';
-                                }
-                            }
-                            ?>
-                        </div>
-                    </div>
-                    
-                    <!-- Price Inputs -->
-                    <div class="filter-group">
-                        <label>Fourchette de prix</label>
-                        <div class="price-inputs">
-                            <div class="price-input-group">
-                                <input type="number" min="0" max="999" placeholder="Min" class="price-input" id="price-min" value="<?php echo isset($_GET['price_min']) ? htmlspecialchars($_GET['price_min']) : ''; ?>">
-                            </div>
-                            <div class="price-between">à</div>
-                            <div class="price-input-group">
-                                <input type="number" min="0" max="999" placeholder="Max" class="price-input" id="price-max" value="<?php echo isset($_GET['price_max']) ? htmlspecialchars($_GET['price_max']) : ''; ?>">
-                            </div>
-                        </div>
-                        <button id="apply-price" class="price-apply-button">Appliquer</button>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <button id="reset-filters" class="reset-button">
-                            <i class="fa-solid fa-rotate"></i> Réinitialiser
-                        </button>
-                    </div>
-                </div>
-                
-
+        <div class="filters-section">
+            <div class="search-bar">
+                <i class="fa-solid fa-search search-icon"></i>
+                <input type="text" class="search-input" id="search-input" 
+                       placeholder="Rechercher une activité..." 
+                       value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
             </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Catégories</label>
+                <div class="filter-pills" id="category-pills">
+                    <?php foreach ($tagDefinitions as $tagName => $tagInfo): ?>
+                        <?php if (!in_array($tagName, ['gratuit', 'payant'])): ?>
+                            <div class="filter-pill category-pill 
+                                <?php echo (isset($_GET['tag']) && $_GET['tag'] === $tagName) || 
+                                          (isset($_GET['tags']) && in_array($tagName, $_GET['tags'])) ? 'active' : ''; ?>"
+                                 data-tag="<?php echo htmlspecialchars($tagName); ?>">
+                                <i class="fa-solid fa-tag"></i>
+                                <?php echo htmlspecialchars($tagInfo['display_name']); ?>
+                            </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Type de prix</label>
+                <div class="filter-pills">
+                    <div class="filter-pill price-type-pill <?php echo (isset($_GET['price_type']) && $_GET['price_type'] === 'gratuit') ? 'active' : ''; ?>" 
+                         data-type="gratuit">
+                        <i class="fa-solid fa-gift"></i>
+                        Gratuit
+                    </div>
+                    <div class="filter-pill price-type-pill <?php echo (isset($_GET['price_type']) && $_GET['price_type'] === 'payant') ? 'active' : ''; ?>" 
+                         data-type="payant">
+                        <i class="fa-solid fa-euro-sign"></i>
+                        Payant
+                    </div>
+                    <div class="filter-pill price-type-pill <?php echo (!isset($_GET['price_type']) || empty($_GET['price_type'])) ? 'active' : ''; ?>" 
+                         data-type="">
+                        <i class="fa-solid fa-list"></i>
+                        Tous
+                    </div>
+                </div>
+                <div class="price-range">
+                    <input type="number" class="price-input" id="min-price" placeholder="Prix min" 
+                           value="<?php echo htmlspecialchars($_GET['min_price'] ?? ''); ?>">
+                    <span class="price-separator">à</span>
+                    <input type="number" class="price-input" id="max-price" placeholder="Prix max" 
+                           value="<?php echo htmlspecialchars($_GET['max_price'] ?? ''); ?>">
+                    <button type="button" id="apply-price" class="filter-button">Appliquer</button>
+                </div>
+            </div>
+
+            <div class="active-filters" id="active-filters"></div>
         </div>
 
-        <!-- Activities Display -->
-        <div class="activities-container">
-            <div class="activities-grid" id="activities-grid">
-                <?php 
-                if ($result->num_rows > 0) {
-                    while($row = $result->fetch_assoc()) {
-                        $randomRating = (($row['id'] * 7) % 21 + 30) / 10;
-                        $isEnding = isEndingSoon($row);
-                        $daysRemaining = $isEnding ? getDaysRemaining($row) : null;
-                        $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
-                        $isPaid = $row["prix"] > 0;
-                        
-                        echo '<div class="card" data-id="' . $row['id'] . '">';
-                        echo '<div class="content">';
-                        
-                        // Image
-                        echo '<div class="image-container">';
-                        if ($row["image_url"]) {
-                            echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
+        <div class="results-header">
+            <div class="results-count" id="results-count">
+                <?php echo $result->num_rows; ?> activité(s) trouvée(s)
+            </div>
+            <select class="sort-dropdown" id="sort-dropdown">
+                <option value="date">Plus récentes</option>
+                <option value="price_asc">Prix croissant</option>
+                <option value="price_desc">Prix décroissant</option>
+                <option value="rating">Mieux notées</option>
+            </select>
+        </div>
+
+        <div class="activities-grid" id="activities-grid">
+            <?php 
+            if ($result->num_rows > 0) {
+                while($row = $result->fetch_assoc()) {
+                    $randomRating = (($row['id'] * 7) % 21 + 30) / 10;
+                    $isEnding = isEndingSoon($row);
+                    $daysRemaining = $isEnding ? getDaysRemaining($row) : null;
+                    $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
+                    $tagDisplayNames = $row["tag_display_names"] ? explode('|', $row["tag_display_names"]) : [];
+                    $isPaid = $row["prix"] > 0;
+                    
+                    echo '<div class="activity-card" 
+                        data-id="' . $row['id'] . '"
+                        data-price="' . $row['prix'] . '"
+                        data-rating="' . $randomRating . '"
+                        data-date-creation="' . $row['date_creation'] . '">';
+                    
+                    echo '<div class="card-image">';
+                    echo '<img src="' . htmlspecialchars($row["image_url"] ?: 'nature-placeholder.jpg') . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
+                    
+                    if ($isPaid) {
+                        echo '<div class="price-badge">' . number_format($row["prix"], 2) . ' €</div>';
+                    } else {
+                        echo '<div class="price-badge free">Gratuit</div>';
+                    }
+                    
+                    if ($isEnding) {
+                        echo '<div class="urgency-badge">';
+                        if ($daysRemaining == 0) {
+                            echo 'Dernier jour !';
+                        } else if ($daysRemaining == 1) {
+                            echo 'Termine demain !';
                         } else {
-                            echo '<img src="nature-placeholder.jpg" alt="placeholder" />';
+                            echo 'Plus que ' . $daysRemaining . ' jours !';
                         }
-                        echo '</div>';
-                        
-                        // Price tag
-                        if ($isPaid) {
-                            echo '<div class="price-tag">';
-                            echo '<i class="fa-solid fa-euro-sign"></i> ' . number_format($row["prix"], 2) . ' €';
-                            echo '</div>';
-                        } else {
-                            echo '<div class="price-tag free">';
-                            echo '<i class="fa-solid fa-gift"></i> Gratuit';
-                            echo '</div>';
-                        }
-                        
-                        // Last chance badge
-                        if ($isEnding) {
-                            echo '<div class="last-chance-badge"><i class="fa-solid fa-clock"></i> ';
-                            if ($daysRemaining == 0) {
-                                echo 'Dernier jour !';
-                            } else if ($daysRemaining == 1) {
-                                echo 'Termine demain !';
-                            } else {
-                                echo 'Plus que ' . $daysRemaining . ' jours !';
-                            }
-                            echo '</div>';
-                        }
-                        
-                        // Tags
-                        echo '<div class="tag">';
-                        $displayedTags = 0;
-                        foreach ($tagList as $tag) {
-                            if ($displayedTags < 2) {
-                                $tagClass = getTagClass($tag);
-                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
-                                $displayedTags++;
-                            }
-                        }
-                        echo '</div></div>';
-                        
-                        // Info section
-                        echo '<div class="info">';
-                        echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
-                        
-                        if ($row["date_ou_periode"]) {
-                            echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
-                        }
-                        
-                        echo '</div>';
-                        
-                        // Actions
-                        echo '<div class="actions">';
-                        echo '<div class="rating">' . getStars($randomRating) . '</div>';
-                        
-                        echo '<button class="add-to-cart-button" data-id="' . $row['id'] . '" 
-                                data-title="' . htmlspecialchars($row['titre']) . '" 
-                                data-price="' . $row['prix'] . '" 
-                                data-image="' . htmlspecialchars($row['image_url'] ? $row['image_url'] : 'nature-placeholder.jpg') . '" 
-                                data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
-                                data-tags="' . htmlspecialchars($row['tags']) . '">
-                                <i class="fa-solid fa-cart-shopping"></i> Ajouter
-                              </button>';
-                        
-                        echo '</div>';
                         echo '</div>';
                     }
-                } else {
-                    echo '<div class="no-results">';
-                    echo '<i class="fa-solid fa-filter-circle-xmark"></i>';
-                    echo '<h3>Aucune activité ne correspond à vos critères</h3>';
-                    echo '<p>Essayez d\'ajuster vos filtres pour trouver des activités qui vous conviennent.</p>';
+                    echo '</div>';
+                    
+                    echo '<div class="card-content">';
+                    echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
+                    
+                    if ($row["date_ou_periode"]) {
+                        echo '<p class="activity-period">' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
+                    }
+                    
+                    echo '<div class="activity-tags">';
+                    $displayedTags = 0;
+                    foreach ($tagList as $index => $tag) {
+                        if ($displayedTags < 3 && $tag !== 'gratuit' && $tag !== 'payant') {
+                            $displayName = getTagDisplayName($tag, $tagDisplayNames, $index);
+                            echo '<span class="activity-tag">' . htmlspecialchars($displayName) . '</span>';
+                            $displayedTags++;
+                        }
+                    }
+                    echo '</div>';
+                    
+                    echo '<div class="card-footer">';
+                    echo '<div class="activity-rating">' . getStars($randomRating) . '</div>';
+                    echo '<button class="add-to-cart-btn" data-id="' . $row['id'] . '" 
+                        data-title="' . htmlspecialchars($row['titre']) . '" 
+                        data-price="' . $row['prix'] . '" 
+                        data-image="' . htmlspecialchars($row['image_url'] ?: 'nature-placeholder.jpg') . '" 
+                        data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
+                        data-tags="' . htmlspecialchars($row['tags']) . '">
+                        Ajouter
+                        </button>';
+                    echo '</div>';
+                    echo '</div>';
                     echo '</div>';
                 }
-                ?>
-            </div>
+            } else {
+                echo '<div class="no-results">
+                    <i class="fa-solid fa-search"></i>
+                    <h3>Aucune activité trouvée</h3>
+                    <p>Essayez d\'ajuster vos filtres pour trouver des activités qui vous conviennent.</p>
+                </div>';
+            }
+            ?>
         </div>
+    </div>
 
-        <!-- Scroll to top button -->
-        <div class="scroll-top-button" id="scroll-top">
-            <i class="fa-solid fa-arrow-up"></i>
-        </div>
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
     </div>
 
     <?php include '../TEMPLATE/footer.php'; ?>
 
-    <!-- Loading overlay -->
-    <div class="loading-overlay" id="loading-overlay">
-        <div class="loading-animation">
-            <div class="synapse-loader">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-                    <!-- Natural leaf SVG -->
-                    <path d="M50,5c0,0-40,25-40,55c0,10,5,20,15,25c5-15,15-25,25-25c-15-10-20-30,0-55" />
-                    <path d="M50,5c0,0,40,25,40,55c0,10-5,20-15,25c-5-15-15-25-25-25c15-10,20-30,0-55" />
-                </svg>
-            </div>
-            <div class="loading-text">SYNAPSE</div>
-        </div>
-    </div>
-
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the cart if it doesn't exist
-    if (!localStorage.getItem('synapse-cart')) {
-        localStorage.setItem('synapse-cart', JSON.stringify([]));
-    }
-    
-    // Update cart count
-    updateCartCount();
-    
-    // Create a filter state object
-    let filterState = {
-        search: document.getElementById('search-input').value || '',
-        category: '',
-        priceMin: document.getElementById('price-min').value || '',
-        priceMax: document.getElementById('price-max').value || '',
-        isPaid: '',
-        location: ''
-    };
-    
-    // Process URL parameters on page load
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    // Handle price parameter from URL
-    if (urlParams.has('price')) {
-        const priceValue = urlParams.get('price');
-        filterState.isPaid = priceValue;
-        
-        // Update the corresponding filter pill
-        document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(pill => {
-            pill.classList.remove('active');
-        });
-        const activePricePill = document.querySelector(`.filter-pill[data-filter="price"][data-value="${priceValue}"]`);
-        if (activePricePill) {
-            activePricePill.classList.add('active');
+        // Initialize cart
+        if (!localStorage.getItem('synapse-cart')) {
+            localStorage.setItem('synapse-cart', JSON.stringify([]));
         }
-    }
-    
-    // Handle location parameter from URL
-    if (urlParams.has('location')) {
-        const locationValue = urlParams.get('location');
-        filterState.location = locationValue;
+        updateCartCount();
+
+        // Filter state
+        let filterState = {
+            search: document.getElementById('search-input').value || '',
+            categories: getActiveCategoriesFromURL(),
+            priceType: getUrlParam('price_type') || '',
+            minPrice: document.getElementById('min-price').value || '',
+            maxPrice: document.getElementById('max-price').value || ''
+        };
+
+        // Update active filters display
+        updateActiveFiltersDisplay();
+
+        // Search input with debounce
+        const searchInput = document.getElementById('search-input');
+        let searchTimeout;
         
-        // Update the corresponding filter pill
-        document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(pill => {
-            pill.classList.remove('active');
-        });
-        const activeLocationPill = document.querySelector(`.filter-pill[data-filter="location"][data-value="${locationValue}"]`);
-        if (activeLocationPill) {
-            activeLocationPill.classList.add('active');
-        }
-    }
-    
-    // Handle category parameter from URL
-    if (urlParams.has('category')) {
-        const categories = urlParams.get('category').split(',');
-        filterState.category = categories.join(',');
-        
-        // Check the corresponding checkboxes
-        categories.forEach(cat => {
-            const checkbox = document.querySelector(`input[id="cat_${cat}"]`);
-            if (checkbox) checkbox.checked = true;
-        });
-        
-        // Update selected categories display
-        updateSelectedCategoriesDisplay(categories);
-    }
-    
-    // Search input with debounce
-    const searchInput = document.getElementById('search-input');
-    let searchTimeout;
-    
-    if (searchInput) {
         searchInput.addEventListener('input', function() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 filterState.search = this.value.trim();
-                ajaxFilter();
+                applyFilters();
             }, 300);
         });
-        
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                clearTimeout(searchTimeout);
-                filterState.search = this.value.trim();
-                ajaxFilter();
+
+        // Category pills
+        document.querySelectorAll('.category-pill').forEach(pill => {
+            pill.addEventListener('click', function() {
+                const tag = this.getAttribute('data-tag');
+                
+                if (this.classList.contains('active')) {
+                    // Remove from active categories
+                    filterState.categories = filterState.categories.filter(cat => cat !== tag);
+                    this.classList.remove('active');
+                } else {
+                    // Add to active categories
+                    filterState.categories.push(tag);
+                    this.classList.add('active');
+                }
+                
+                applyFilters();
+            });
+        });
+
+        // Price type pills
+        document.querySelectorAll('.price-type-pill').forEach(pill => {
+            pill.addEventListener('click', function() {
+                document.querySelectorAll('.price-type-pill').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                
+                filterState.priceType = this.getAttribute('data-type');
+                applyFilters();
+            });
+        });
+
+        // Price range
+        document.getElementById('apply-price').addEventListener('click', function() {
+            const minPrice = document.getElementById('min-price').value;
+            const maxPrice = document.getElementById('max-price').value;
+            
+            // Validate price inputs
+            if ((minPrice && isNaN(minPrice)) || (maxPrice && isNaN(maxPrice))) {
+                showNotification('Veuillez entrer des prix valides', 'error');
+                return;
+            }
+            
+            if (minPrice && maxPrice && parseFloat(minPrice) > parseFloat(maxPrice)) {
+                showNotification('Le prix minimum ne peut pas être supérieur au prix maximum', 'error');
+                return;
+            }
+            
+            filterState.minPrice = minPrice;
+            filterState.maxPrice = maxPrice;
+            applyFilters();
+        });
+
+        // Activity cards click
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.activity-card') && !e.target.closest('.add-to-cart-btn')) {
+                const card = e.target.closest('.activity-card');
+                const activityId = card.getAttribute('data-id');
+                if (activityId) {
+                    window.location.href = 'activite.php?id=' + activityId;
+                }
             }
         });
-    }
-    
-    // Price filter pills
-    document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(pill => {
-        pill.addEventListener('click', function() {
-            // Update active state
-            document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(p => {
-                p.classList.remove('active');
-            });
-            this.classList.add('active');
-            
-            // Update filter state
-            filterState.isPaid = this.getAttribute('data-value');
-            
-            // Clear price min/max
-            document.getElementById('price-min').value = '';
-            document.getElementById('price-max').value = '';
-            filterState.priceMin = '';
-            filterState.priceMax = '';
-            
-            ajaxFilter();
-        });
-    });
-    
-    // Category filters
-    document.querySelectorAll('.category-checkbox input').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            updateCategoryFilter();
-        });
-    });
-    
-    function updateCategoryFilter() {
-        // Get all checked category checkboxes
-        const checkedCategories = Array.from(
-            document.querySelectorAll('.category-checkbox input:checked')
-        ).map(cb => cb.value);
-        
-        // Update filter state
-        filterState.category = checkedCategories.join(',');
-        
-        // Update selected categories display
-        updateSelectedCategoriesDisplay(checkedCategories);
-        
-        // Apply filters
-        ajaxFilter();
-    }
-    
-    function updateSelectedCategoriesDisplay(categories) {
-        // Get or create container
-        let container = document.querySelector('.selected-categories');
-        if (!container) {
-            container = document.createElement('div');
-            container.className = 'selected-categories';
-            document.querySelector('.category-checkboxes').after(container);
-        }
-        
-        // Clear container
-        container.innerHTML = '';
-        
-        // Add tag for each selected category
-        categories.forEach(category => {
-            const tag = document.createElement('div');
-            tag.className = 'selected-category';
-            tag.innerHTML = `
-                ${ucfirst(category.replace('_', ' '))}
-                <i class="fa-solid fa-xmark" data-category="${category}"></i>
-            `;
-            container.appendChild(tag);
-            
-            // Add click handler
-            tag.querySelector('i').addEventListener('click', function(e) {
+
+        // Add to cart buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.add-to-cart-btn')) {
                 e.stopPropagation();
-                // Uncheck the corresponding checkbox
-                document.querySelector(`input[value="${this.dataset.category}"]`).checked = false;
-                updateCategoryFilter();
-            });
-        });
-        
-        // Show/hide based on categories
-        if (categories.length > 0) {
-            container.style.display = 'flex';
-        } else {
-            container.style.display = 'none';
-        }
-    }
-    
-    // Helper function for capitalizing first letter
-    function ucfirst(string) {
-        return string.charAt(0).toUpperCase() + string.slice(1);
-    }
-    
-    // Location filter pills
-    document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(pill => {
-        pill.addEventListener('click', function() {
-            // Update active state
-            document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(p => {
-                p.classList.remove('active');
-            });
-            this.classList.add('active');
-            
-            // Update filter state
-            filterState.location = this.getAttribute('data-value');
-            ajaxFilter();
-        });
-    });
-    
-    // Price range filter
-    const priceMin = document.getElementById('price-min');
-    const priceMax = document.getElementById('price-max');
-    const applyPriceButton = document.getElementById('apply-price');
-    
-    if (applyPriceButton) {
-        applyPriceButton.addEventListener('click', function() {
-            filterState.priceMin = priceMin.value;
-            filterState.priceMax = priceMax.value;
-            
-            // Clear price pill filters
-            document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(p => {
-                p.classList.remove('active');
-            });
-            document.querySelector('.filter-pill[data-filter="price"][data-value=""]').classList.add('active');
-            filterState.isPaid = '';
-            
-            ajaxFilter();
-        });
-    }
-    
-    // Reset button
-    const resetButton = document.getElementById('reset-filters');
-    if (resetButton) {
-        resetButton.addEventListener('click', function() {
-            // Reset all filter inputs
-            if (searchInput) searchInput.value = '';
-            if (priceMin) priceMin.value = '';
-            if (priceMax) priceMax.value = '';
-            
-            // Reset filter pills
-            document.querySelectorAll('.filter-pill').forEach(pill => {
-                pill.classList.remove('active');
-            });
-            document.querySelectorAll('.filter-pill[data-value=""]').forEach(pill => {
-                pill.classList.add('active');
-            });
-            
-            // Reset category checkboxes
-            document.querySelectorAll('.category-checkbox input').forEach(checkbox => {
-                checkbox.checked = false;
-            });
-            
-            // Clear selected categories display
-            const selectedCategoriesContainer = document.querySelector('.selected-categories');
-            if (selectedCategoriesContainer) {
-                selectedCategoriesContainer.innerHTML = '';
-                selectedCategoriesContainer.style.display = 'none';
-            }
-            
-            // Reset filter state
-            filterState = {
-                search: '',
-                category: '',
-                priceMin: '',
-                priceMax: '',
-                isPaid: '',
-                location: ''
-            };
-            
-            // Apply filters
-            ajaxFilter();
-        });
-    }
-    
-    // Active filter tags
-    document.querySelectorAll('.active-filter-tag').forEach(tag => {
-        tag.addEventListener('click', function() {
-            // Identify which filter to remove
-            if (this.querySelector('i.fa-magnifying-glass')) {
-                if (searchInput) searchInput.value = '';
-                filterState.search = '';
-                ajaxFilter();
-            } else if (this.classList.contains('category')) {
-                // Get the category to remove
-                const categoryToRemove = this.getAttribute('data-category');
+                const button = e.target.closest('.add-to-cart-btn');
                 
-                // Update checkboxes if they exist
-                const checkbox = document.querySelector(`.category-checkbox input[value="${categoryToRemove}"]`);
-                if (checkbox) {
-                    checkbox.checked = false;
-                    updateCategoryFilter();
-                } else {
-                    // If direct URL navigation, update filter state by removing this category
-                    const categories = filterState.category.split(',');
-                    const filteredCategories = categories.filter(cat => cat !== categoryToRemove);
-                    filterState.category = filteredCategories.join(',');
-                    ajaxFilter();
-                }
-            } else if (this.querySelector('i.fa-location-dot')) {
-                // Reset location pills
-                document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(p => {
-                    p.classList.remove('active');
-                });
-                document.querySelector('.filter-pill[data-filter="location"][data-value=""]').classList.add('active');
-                filterState.location = '';
-                ajaxFilter();
-            } else if (this.querySelector('i.fa-euro-sign')) {
-                // Check if this is price range or price type
-                const text = this.textContent.trim();
-                if (text.includes('à')) {
-                    // It's a price range
-                    if (priceMin) priceMin.value = '';
-                    if (priceMax) priceMax.value = '';
-                    filterState.priceMin = '';
-                    filterState.priceMax = '';
-                } else {
-                    // It's a price type
-                    document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(p => {
-                        p.classList.remove('active');
-                    });
-                    document.querySelector('.filter-pill[data-filter="price"][data-value=""]').classList.add('active');
-                    filterState.isPaid = '';
-                }
-                ajaxFilter();
+                const item = {
+                    id: button.getAttribute('data-id'),
+                    titre: button.getAttribute('data-title'),
+                    prix: parseFloat(button.getAttribute('data-price')),
+                    image: button.getAttribute('data-image'),
+                    periode: button.getAttribute('data-period'),
+                    tags: button.getAttribute('data-tags') ? button.getAttribute('data-tags').split(',') : []
+                };
+                
+                addToCart(item);
             }
         });
-    });
-    
-    // AJAX filter function
-    function ajaxFilter() {
-        // Show loading overlay
-        const loadingOverlay = document.getElementById('loading-overlay');
-        loadingOverlay.classList.add('active');
-        
-        // Create URL with filter parameters
-        let url = 'activites.php';
-        const params = [];
-        
-        if (filterState.search) params.push(`search=${encodeURIComponent(filterState.search)}`);
-        if (filterState.category) params.push(`category=${encodeURIComponent(filterState.category)}`);
-        if (filterState.isPaid) params.push(`price=${encodeURIComponent(filterState.isPaid)}`);
-        if (filterState.location) params.push(`location=${encodeURIComponent(filterState.location)}`);
-        if (filterState.priceMin) params.push(`price_min=${encodeURIComponent(filterState.priceMin)}`);
-        if (filterState.priceMax) params.push(`price_max=${encodeURIComponent(filterState.priceMax)}`);
-        
-        if (params.length > 0) {
-            url += '?' + params.join('&');
+
+        function getActiveCategoriesFromURL() {
+            const singleTag = getUrlParam('tag');
+            const multipleTags = getUrlParam('tags');
+            
+            if (singleTag) {
+                return [singleTag];
+            } else if (multipleTags) {
+                return multipleTags.split(',');
+            }
+            return [];
         }
-        
-        // Update URL without refreshing page
-        window.history.pushState({ path: url }, '', url);
-        
-        // Set the AJAX header
-        const headers = new Headers();
-        headers.append('X-Requested-With', 'XMLHttpRequest');
-        
-        // Use fetch to get updated content
-        fetch(url, { headers })
-            .then(response => response.json())
+
+        function getUrlParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Replace the existing filter handlers with this improved version
+        function applyFilters() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            loadingOverlay.classList.add('active');
+
+            // Build URL parameters
+            const params = new URLSearchParams();
+
+            // Only add non-empty filters
+            if (filterState.search.trim()) {
+                params.append('search', filterState.search.trim());
+            }
+            
+            if (filterState.categories.length > 0) {
+                filterState.categories.forEach(cat => params.append('tags[]', cat));
+            }
+            
+            if (filterState.priceType) {
+                params.append('price_type', filterState.priceType);
+            }
+            
+            // Only add price range if both values are valid numbers
+            const minPrice = parseFloat(filterState.minPrice);
+            const maxPrice = parseFloat(filterState.maxPrice);
+            
+            if (!isNaN(minPrice) && minPrice >= 0) {
+                params.append('min_price', minPrice);
+            }
+            
+            if (!isNaN(maxPrice) && maxPrice >= 0) {
+                params.append('max_price', maxPrice);
+            }
+
+            // Build URL
+            let url = 'activites.php';
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+
+            // Update URL without page reload
+            window.history.pushState({ path: url }, '', url);
+
+            // AJAX request with error handling
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
-                // Update the activities grid
-                const activitiesGrid = document.getElementById('activities-grid');
-                if (activitiesGrid && data.html) {
-                    activitiesGrid.innerHTML = data.html;
-                    
-                    // Add animation to new cards
-                    const cards = activitiesGrid.querySelectorAll('.card');
-                    cards.forEach((card, index) => {
-                        card.style.animationDelay = `${0.1 + (index % 3) * 0.1}s`;
-                    });
-                    
-                    // Initialize event listeners for new elements
-                    initializeCardListeners();
-                }
+                document.getElementById('activities-grid').innerHTML = data.html;
+                document.getElementById('results-count').textContent = data.count + ' activité(s) trouvée(s)';
+                updateActiveFiltersDisplay();
                 
-                // Hide loading after a minimum display time
                 setTimeout(() => {
                     loadingOverlay.classList.remove('active');
-                }, 500);
+                }, 300);
             })
             .catch(error => {
                 console.error('Error:', error);
                 loadingOverlay.classList.remove('active');
-                showNotification('Une erreur est survenue lors du filtrage des activités.', 'error');
+                showNotification('Erreur lors du filtrage', 'error');
             });
-    }
-    
-    // Initialize card event listeners
-    function initializeCardListeners() {
-        // Make activity cards clickable
-        document.querySelectorAll('.card').forEach(card => {
-            card.addEventListener('click', function(e) {
-                // Don't navigate if clicking on add-to-cart button or tag
-                if (e.target.closest('.add-to-cart-button') || e.target.closest('.tags')) {
-                    return;
-                }
-                
-                const activityId = this.getAttribute('data-id');
-                if (activityId) {
-                    window.location.href = 'activite.php?id=' + activityId;
-                }
-            });
-        });
-        
-// Make tags clickable
-document.querySelectorAll('.tags').forEach(tag => {
-    tag.addEventListener('click', function(e) {
-        e.stopPropagation(); // Prevent the card click event
-        
-        const tagName = this.getAttribute('data-tag');
-        if (tagName) {
-            // First update the filter state
-            if (tagName === 'gratuit' || tagName === 'payant') {
-                filterState.isPaid = tagName;
-                // Update price filter pills
-                document.querySelectorAll('.filter-pill[data-filter="price"]').forEach(p => {
-                    p.classList.remove('active');
-                });
-                const pill = document.querySelector(`.filter-pill[data-filter="price"][data-value="${tagName}"]`);
-                if (pill) pill.classList.add('active');
-            } else if (tagName === 'interieur' || tagName === 'exterieur') {
-                filterState.location = tagName;
-                // Update location filter pills
-                document.querySelectorAll('.filter-pill[data-filter="location"]').forEach(p => {
-                    p.classList.remove('active');
-                });
-                const pill = document.querySelector(`.filter-pill[data-filter="location"][data-value="${tagName}"]`);
-                if (pill) pill.classList.add('active');
-            } else {
-                filterState.category = tagName;
-                // Check the corresponding checkbox
-                const checkbox = document.querySelector(`input[id="cat_${tagName}"]`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                    updateCategoryFilter();
-                    return; // updateCategoryFilter already calls ajaxFilter
-                }
+        }
+
+        // Improve filter removal functionality
+        function removeFilter(type, value) {
+            switch (type) {
+                case 'search':
+                    filterState.search = '';
+                    document.getElementById('search-input').value = '';
+                    break;
+                    
+                case 'category':
+                    filterState.categories = filterState.categories.filter(cat => cat !== value);
+                    const categoryPill = document.querySelector(`.category-pill[data-tag="${value}"]`);
+                    if (categoryPill) {
+                        categoryPill.classList.remove('active');
+                    }
+                    break;
+                    
+                case 'price_type':
+                    filterState.priceType = '';
+                    document.querySelectorAll('.price-type-pill').forEach(p => p.classList.remove('active'));
+                    document.querySelector('.price-type-pill[data-type=""]').classList.add('active');
+                    break;
+                    
+                case 'price_range':
+                    filterState.minPrice = '';
+                    filterState.maxPrice = '';
+                    document.getElementById('min-price').value = '';
+                    document.getElementById('max-price').value = '';
+                    break;
             }
-            
-            // Apply filters
-            ajaxFilter();
+            applyFilters();
         }
-    });
-});
-        // Add to cart functionality
-        document.querySelectorAll('.add-to-cart-button').forEach(button => {
-            button.addEventListener('click', function(event) {
-                event.stopPropagation(); // Prevent card click event
-                
-                const id = this.getAttribute('data-id');
-                const titre = this.getAttribute('data-title');
-                const prix = parseFloat(this.getAttribute('data-price'));
-                const image = this.getAttribute('data-image');
-                const periode = this.getAttribute('data-period');
-                const tagsStr = this.getAttribute('data-tags');
-                const tags = tagsStr ? tagsStr.split(',') : [];
-                
-                // Add to cart
-                addToCart({
-                    id: id,
-                    titre: titre,
-                    prix: prix,
-                    image: image,
-                    periode: periode,
-                    tags: tags
+
+        function updateActiveFiltersDisplay() {
+            const container = document.getElementById('active-filters');
+            container.innerHTML = '';
+
+            const filters = [];
+
+            if (filterState.search) {
+                filters.push({ type: 'search', text: `"${filterState.search}"`, icon: 'fa-search' });
+            }
+
+            if (filterState.categories.length > 0) {
+                filterState.categories.forEach(cat => {
+                    const displayName = getTagDisplayName(cat);
+                    filters.push({ type: 'category', text: displayName, data: cat, icon: 'fa-tag' });
+                });
+            }
+
+            if (filterState.priceType) {
+                const priceText = filterState.priceType === 'gratuit' ? 'Gratuit' : 'Payant';
+                filters.push({ type: 'price_type', text: priceText, icon: 'fa-euro-sign' });
+            }
+
+            if (filterState.minPrice || filterState.maxPrice) {
+                const min = filterState.minPrice || '0';
+                const max = filterState.maxPrice || '∞';
+                filters.push({ type: 'price_range', text: `${min}€ - ${max}€`, icon: 'fa-euro-sign' });
+            }
+
+            filters.forEach(filter => {
+                const filterElement = document.createElement('div');
+                filterElement.className = 'active-filter';
+                filterElement.innerHTML = `
+                    <i class="fa-solid ${filter.icon}"></i>
+                    ${filter.text}
+                    <i class="fa-solid fa-times remove-filter" data-type="${filter.type}" data-value="${filter.data || ''}"></i>
+                `;
+                container.appendChild(filterElement);
+            });
+
+            if (filters.length > 0) {
+                const clearButton = document.createElement('button');
+                clearButton.className = 'clear-filters-btn';
+                clearButton.innerHTML = '<i class="fa-solid fa-times"></i> Tout effacer';
+                clearButton.onclick = clearAllFilters;
+                container.appendChild(clearButton);
+            }
+
+            // Add event listeners for remove buttons
+            container.querySelectorAll('.remove-filter').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const type = this.getAttribute('data-type');
+                    const value = this.getAttribute('data-value');
+                    removeFilter(type, value);
                 });
             });
-        });
-    }
-    
-    // Function to add to cart
-    function addToCart(item) {
-        // Get current cart
-        const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
-        
-        // Check if item is already in cart
-        const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
-        
-        // If item not in cart, add it
-        if (existingItemIndex === -1) {
-            cart.push(item);
-            localStorage.setItem('synapse-cart', JSON.stringify(cart));
-            updateCartCount();
-            showNotification('Activité ajoutée au panier !', 'success');
-        } else {
-            showNotification('Cette activité est déjà dans votre panier.', 'info');
         }
-    }
-    
-    // Update cart count
-    function updateCartCount() {
-        const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
-        const cartCount = document.getElementById('panier-count');
-        if (cartCount) {
-            cartCount.textContent = cart.length;
+
+        function clearAllFilters() {
+            filterState = {
+                search: '',
+                categories: [],
+                priceType: '',
+                minPrice: '',
+                maxPrice: ''
+            };
+
+            document.getElementById('search-input').value = '';
+            document.getElementById('min-price').value = '';
+            document.getElementById('max-price').value = '';
+            
+            document.querySelectorAll('.filter-pill').forEach(pill => pill.classList.remove('active'));
+            document.querySelector('.price-type-pill[data-type=""]').classList.add('active');
+
+            applyFilters();
         }
-    }
-    
-    // Show notification
-    function showNotification(message, type = 'success') {
-        // Remove existing notifications
-        const existingNotifications = document.querySelectorAll('.notification');
-        existingNotifications.forEach(notification => {
-            notification.remove();
-        });
-        
-        // Create notification
-        const notification = document.createElement('div');
-        notification.classList.add('notification', type);
-        
-        // Add icon
-        let icon = 'fa-circle-check';
-        if (type === 'info') {
-            icon = 'fa-circle-info';
-        } else if (type === 'error') {
-            icon = 'fa-circle-exclamation';
+
+        function getTagDisplayName(tag) {
+            const tagDefinitions = <?php echo json_encode($tagDefinitions); ?>;
+            return tagDefinitions[tag] ? tagDefinitions[tag].display_name : tag;
         }
-        
-        notification.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
-        
-        // Add to document
-        document.body.appendChild(notification);
-        
-        // Auto-hide notification
-        setTimeout(() => {
-            notification.style.opacity = '0';
+
+        function addToCart(item) {
+            const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+            const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
+            
+            if (existingItemIndex === -1) {
+                cart.push(item);
+                localStorage.setItem('synapse-cart', JSON.stringify(cart));
+                updateCartCount();
+                showNotification('Activité ajoutée au panier !', 'success');
+            } else {
+                showNotification('Cette activité est déjà dans votre panier.', 'info');
+            }
+        }
+
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+            const cartCount = document.getElementById('panier-count');
+            if (cartCount) {
+                cartCount.textContent = cart.length;
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(n => n.remove());
+
+            const notification = document.createElement('div');
+            notification.classList.add('notification', type);
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
             setTimeout(() => {
-                notification.remove();
-            }, 500);
-        }, 3000);
-    }
-    
-    // Scroll to top functionality
-    const scrollTopButton = document.getElementById('scroll-top');
-    
-    window.addEventListener('scroll', function() {
-        if (window.pageYOffset > 300) {
-            scrollTopButton.classList.add('visible');
-        } else {
-            scrollTopButton.classList.remove('visible');
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
         }
-    });
-    
-    scrollTopButton.addEventListener('click', function() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
+
+        // Add sort dropdown handler
+        document.getElementById('sort-dropdown').addEventListener('change', function() {
+            const activities = Array.from(document.querySelectorAll('.activity-card'));
+            const container = document.getElementById('activities-grid');
+            
+            activities.sort((a, b) => {
+                switch(this.value) {
+                    case 'date':
+                        // Sort by date_creation (newest first)
+                        const dateA = new Date(a.dataset.dateCreation || 0);
+                        const dateB = new Date(b.dataset.dateCreation || 0);
+                        return dateB - dateA;
+                    
+                    case 'price_asc':
+                        // Sort by price (lowest first) 
+                        return parseFloat(a.dataset.price || 0) - parseFloat(b.dataset.price || 0);
+                        
+                    case 'price_desc':
+                        // Sort by price (highest first)
+                        return parseFloat(b.dataset.price || 0) - parseFloat(a.dataset.price || 0);
+                        
+                    case 'rating':
+                        // Sort by rating (highest first)
+                        return parseFloat(b.dataset.rating || 0) - parseFloat(a.dataset.rating || 0);
+                }
+            });
+            
+            // Clear and re-append sorted activities
+            container.innerHTML = '';
+            activities.forEach(activity => container.appendChild(activity));
         });
     });
-    
-    // Initialize all listeners
-    initializeCardListeners();
-});
     </script>
 </body>
 </html>
-<!-- heloo -->

@@ -8,6 +8,31 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header('Location: ../Connexion-Inscription/login_form.php');
     exit();
 }
+
+// Configuration de la base de données
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "activity";
+
+// Créer une connexion
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Vérifier la connexion
+if ($conn->connect_error) {
+    die("Échec de la connexion à la base de données: " . $conn->connect_error);
+}
+
+// Récupérer les tags depuis la base de données
+$sql = "SELECT * FROM tag_definitions ORDER BY display_name ASC";
+$result = $conn->query($sql);
+$tags = [];
+
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        $tags[] = $row;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -151,121 +176,17 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
               <div class="form-group">
                 <label>Tags (sélectionnez au moins un)</label>
                 <div class="tags-container">
+                  <?php foreach ($tags as $tag): ?>
                   <div class="tag-option">
                     <input
                       type="checkbox"
-                      id="interieur"
+                      id="<?php echo htmlspecialchars($tag['name']); ?>"
                       name="tags[]"
-                      value="interieur"
+                      value="<?php echo htmlspecialchars($tag['name']); ?>"
                     />
-                    <label for="interieur">Intérieur</label>
+                    <label for="<?php echo htmlspecialchars($tag['name']); ?>"><?php echo htmlspecialchars($tag['display_name']); ?></label>
                   </div>
-
-                  <div class="tag-option">
-                    <input
-                      type="checkbox"
-                      id="exterieur"
-                      name="tags[]"
-                      value="exterieur"
-                    />
-                    <label for="exterieur">Extérieur</label>
-                  </div>
-
-                  <div class="tag-option">
-                    <input type="checkbox" id="art" name="tags[]" value="art" />
-                    <label for="art">Art</label>
-                  </div>
-
-                  <div class="tag-option">
-                    <input
-                      type="checkbox"
-                      id="cuisine"
-                      name="tags[]"
-                      value="cuisine"
-                    />
-                    <label for="cuisine">Cuisine</label>
-                  </div>
-
-                  <div class="tag-option">
-                    <input
-                      type="checkbox"
-                      id="sport"
-                      name="tags[]"
-                      value="sport"
-                    />
-                    <label for="sport">Sport</label>
-                  </div>
-
-                  <div class="tag-option">
-                    <input
-                      type="checkbox"
-                      id="bien_etre"
-                      name="tags[]"
-                      value="bien_etre"
-                    />
-                    <label for="bien_etre">Bien-être</label>
-                  </div>
-
-                  <div class="tag-option">
-                    <input
-                      type="checkbox"
-                      id="creativite"
-                      name="tags[]"
-                      value="creativite"
-                    />
-                    <label for="creativite">Créativité</label>
-                  </div>
-
-                  <!-- Nouveaux tags -->
-                  <div class="tag-option">
-                    <input
-                      type="checkbox"
-                      id="ecologie"
-                      name="tags[]"
-                      value="ecologie"
-                    />
-                    <label for="ecologie">Écologie</label>
-                  </div>
-
-                  <div class="tag-option">
-                    <input
-                      type="checkbox"
-                      id="randonnee"
-                      name="tags[]"
-                      value="randonnee"
-                    />
-                    <label for="randonnee">Randonnée</label>
-                  </div>
-
-                  <div class="tag-option">
-                    <input
-                      type="checkbox"
-                      id="jardinage"
-                      name="tags[]"
-                      value="jardinage"
-                    />
-                    <label for="jardinage">Jardinage</label>
-                  </div>
-
-                  <div class="tag-option">
-                    <input
-                      type="checkbox"
-                      id="meditation"
-                      name="tags[]"
-                      value="meditation"
-                    />
-                    <label for="meditation">Méditation</label>
-                  </div>
-
-                  <div class="tag-option">
-                    <input
-                      type="checkbox"
-                      id="artisanat"
-                      name="tags[]"
-                      value="artisanat"
-                    />
-                    <label for="artisanat">Artisanat</label>
-                  </div>
+                  <?php endforeach; ?>
                 </div>
               </div>
             </div>
@@ -379,5 +300,10 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="brainjenis.js"></script>
+    
+    <?php
+    // Fermer la connexion à la base de données
+    $conn->close();
+    ?>
   </body>
 </html>

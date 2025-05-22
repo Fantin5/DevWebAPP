@@ -1,5 +1,4 @@
 <?php
-// Démarrer la session
 session_start();
 
 // Configuration de la base de données
@@ -19,6 +18,11 @@ if ($conn->connect_error) {
     die("Échec de la connexion à la base de données: " . $conn->connect_error);
 }
 
+// Now that we have the connection, require tag setup and initialize TagManager
+require_once 'tag_setup.php';
+$tagManager = new TagManager($conn);
+$tagDefinitions = $tagManager->getAllTags();
+
 // Vérifier si un ID d'activité est fourni
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     // Rediriger vers la page principale si aucun ID valide n'est fourni
@@ -28,11 +32,32 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 
 $activity_id = $_GET['id'];
 
-// Récupérer les détails de l'activité
+// Récupérer les définitions de tags depuis la base de données
+$tagDefinitions = [];
+$tagDefinitionsSql = "SELECT * FROM tag_definitions";
+$tagDefinitionsResult = $conn->query($tagDefinitionsSql);
+
+if ($tagDefinitionsResult && $tagDefinitionsResult->num_rows > 0) {
+    $tagClasses = ['primary', 'secondary', 'accent']; // Classes CSS alternées
+    $i = 0;
+    while($tagRow = $tagDefinitionsResult->fetch_assoc()) {
+        $tagDefinitions[$tagRow['name']] = [
+            'display_name' => $tagRow['display_name'],
+            'class' => $tagClasses[$i % count($tagClasses)] // Assigner une classe cycliquement
+        ];
+        $i++;
+    }
+}
+
+// Updated activity query
 $sql = "SELECT a.*, 
-        (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags
+        GROUP_CONCAT(td.name) AS tags,
+        GROUP_CONCAT(td.display_name SEPARATOR '|') AS tag_display_names
         FROM activites a 
-        WHERE a.id = ?";
+        LEFT JOIN activity_tags at ON a.id = at.activity_id
+        LEFT JOIN tag_definitions td ON at.tag_definition_id = td.id
+        WHERE a.id = ?
+        GROUP BY a.id";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $activity_id);
@@ -100,42 +125,93 @@ if (preg_match('/<!--CREATOR:([^-]+)-->/', $activity["description"], $matches)) 
     }
 }
 
-// Fetch similar activities based on tags
+// Enhanced similar activities logic - fetch activities with most tags in common
 $similar_activities = [];
 if ($activity["tags"]) {
-    $tags = explode(',', $activity["tags"]);
-    $tagPlaceholders = implode(',', array_fill(0, count($tags), '?'));
+    $currentTags = explode(',', $activity["tags"]);
     
+    // Build a complex query to find activities with the most tags in common
     $similarSql = "SELECT a.*, 
-                  (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags
+                  GROUP_CONCAT(td.name) AS tags,
+                  GROUP_CONCAT(td.display_name SEPARATOR '|') AS tag_display_names,
+                  COUNT(CASE WHEN td.name IN (" . str_repeat('?,', count($currentTags) - 1) . "?) THEN 1 END) AS common_tags_count
                   FROM activites a 
-                  JOIN tags t ON a.id = t.activite_id
-                  WHERE t.nom_tag IN ($tagPlaceholders) 
-                  AND a.id != ?
+                  LEFT JOIN activity_tags at ON a.id = at.activity_id
+                  LEFT JOIN tag_definitions td ON at.tag_definition_id = td.id
+                  WHERE a.id != ?
                   GROUP BY a.id
-                  ORDER BY COUNT(DISTINCT t.nom_tag) DESC
-                  LIMIT 3";
+                  HAVING common_tags_count > 0
+                  ORDER BY common_tags_count DESC, RAND()
+                  LIMIT 4";
     
     $similarStmt = $conn->prepare($similarSql);
     
-    // Prepare parameters: all tags followed by the activity ID to exclude
-    $params = $tags;
-    $params[] = $activity_id;
+    // Create array of parameters (current tags + activity_id)
+    $params = array_merge($currentTags, [$activity_id]);
     
-    // Create types string (s for each tag, i for the activity ID)
-    $types = str_repeat("s", count($tags)) . "i";
+    // Create types string - 's' for each tag plus 'i' for activity_id
+    $types = str_repeat('s', count($currentTags)) . 'i';
     
+    // Bind parameters
     $similarStmt->bind_param($types, ...$params);
     $similarStmt->execute();
     $similarResult = $similarStmt->get_result();
     
+    $maxCommonTags = 0;
+    $mostSimilarId = null; // Add this variable to track the first activity with max tags
+
     while ($row = $similarResult->fetch_assoc()) {
+        if ($maxCommonTags === 0) {
+            $maxCommonTags = $row['common_tags_count']; // First result has the most tags in common
+            $mostSimilarId = $row['id']; // Store the ID of the first activity with max tags
+        }
+        // Only mark as most similar if it's the first one we found with max tags
+        $row['is_most_similar'] = ($row['common_tags_count'] === $maxCommonTags && $row['id'] === $mostSimilarId);
         $similar_activities[] = $row;
     }
+    
+    $similarStmt->close();
+}
+
+// If we don't have enough similar activities, fill with random ones
+if (count($similar_activities) < 4) {
+    $remainingSlots = 4 - count($similar_activities);
+    $existingIds = array_column($similar_activities, 'id');
+    $existingIds[] = $activity_id;
+    
+    $placeholders = str_repeat('?,', count($existingIds));
+    $placeholders = rtrim($placeholders, ',');
+    
+    $randomSql = "SELECT a.*, 
+                  GROUP_CONCAT(td.name) AS tags,
+                  GROUP_CONCAT(td.display_name SEPARATOR '|') AS tag_display_names
+                  FROM activites a 
+                  LEFT JOIN activity_tags at ON a.id = at.activity_id
+                  LEFT JOIN tag_definitions td ON at.tag_definition_id = td.id
+                  WHERE a.id NOT IN ($placeholders)
+                  GROUP BY a.id
+                  ORDER BY RAND()
+                  LIMIT ?";
+    
+    $randomStmt = $conn->prepare($randomSql);
+    $randomParams = array_merge($existingIds, [$remainingSlots]);
+    $randomTypes = str_repeat('i', count($existingIds)) . 'i';
+    $randomStmt->bind_param($randomTypes, ...$randomParams);
+    $randomStmt->execute();
+    $randomResult = $randomStmt->get_result();
+    
+    while ($row = $randomResult->fetch_assoc()) {
+        $row['is_most_similar'] = false;
+        $row['common_tags_count'] = 0;
+        $similar_activities[] = $row;
+    }
+    
+    $randomStmt->close();
 }
 
 // Formater les tags
 $tags = $activity["tags"] ? explode(',', $activity["tags"]) : [];
+$tagDisplayNames = $activity["tag_display_names"] ? explode('|', $activity["tag_display_names"]) : [];
 
 // Générer une note aléatoire pour la démonstration (mais stable pour une activité donnée)
 $randomSeed = $activity_id * 13; // Use activity ID as seed for consistency
@@ -167,25 +243,15 @@ function getStars($rating) {
     return '<span class="stars">' . $stars . '</span> <span class="rating-value">' . number_format($rating, 1) . '</span>';
 }
 
-// Function to determine the CSS class for tags
-function getTagClass($tag) {
-    $tagClasses = [
-        'art' => 'primary',
-        'cuisine' => 'secondary',
-        'bien_etre' => 'accent',
-        'creativite' => 'primary',
-        'sport' => 'secondary',
-        'exterieur' => 'accent',
-        'interieur' => 'secondary',
-        'gratuit' => 'accent',
-        'ecologie' => 'primary',
-        'randonnee' => 'secondary',
-        'jardinage' => 'accent',
-        'meditation' => 'primary',
-        'artisanat' => 'secondary'
-    ];
+// Use TagManager methods for tag handling
+function displayTag($tag, $index = null) {
+    global $tagManager, $tagDisplayNames;
+    $class = $tagManager->getTagClass($tag);
+    $displayName = $tagManager->getTagDisplayName($tag, $tagDisplayNames, $index);
     
-    return isset($tagClasses[$tag]) ? $tagClasses[$tag] : '';
+    echo '<div class="activity-tag ' . $class . '" data-tag="' . htmlspecialchars($tag) . '">';
+    echo '<i class="fa-solid fa-tag"></i> ' . htmlspecialchars($displayName);
+    echo '</div>';
 }
 
 // Formater le prix
@@ -1138,7 +1204,7 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             line-height: 1.6;
         }
         
-        /* New Similar Activities section */
+        /* Enhanced Similar Activities section */
         .similar-activities {
             margin-top: 60px;
             padding-top: 40px;
@@ -1163,11 +1229,49 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             height: 100%;
             border: 1px solid rgba(230, 230, 230, 0.5);
             cursor: pointer;
+            position: relative;
         }
         
         .similar-card:hover {
             transform: translateY(-10px) scale(1.02);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Most similar card highlighting */
+        .similar-card.most-similar {
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 15px 35px rgba(60, 140, 92, 0.2);
+        }
+        
+        .similar-card.most-similar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary-color), var(--primary-light));
+            z-index: 2;
+        }
+        
+        .similar-card.most-similar::after {
+            content: '★ Très similaire';
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            z-index: 3;
+            box-shadow: 0 5px 15px rgba(60, 140, 92, 0.3);
+        }
+        
+        .similar-card.most-similar:hover {
+            transform: translateY(-12px) scale(1.05);
+            box-shadow: 0 25px 45px rgba(60, 140, 92, 0.25);
         }
         
         .similar-image {
@@ -1226,6 +1330,10 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             color: var(--primary-color);
         }
         
+        .similar-card.most-similar .similar-title {
+            color: var(--primary-dark);
+        }
+        
         .similar-period {
             color: #666;
             font-size: 14px;
@@ -1246,6 +1354,19 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             display: flex;
             align-items: center;
             gap: 5px;
+        }
+        
+        .similar-tags-count {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            z-index: 2;
         }
         
         /* New notification */
@@ -1634,23 +1755,35 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                     </div>
                     
                     <div class="activity-tags">
-                        <?php foreach ($tags as $tag): ?>
-                            <div class="activity-tag <?php echo getTagClass($tag); ?>">
-                                <i class="fa-solid fa-tag"></i>
-                                <?php echo ucfirst(str_replace('_', ' ', $tag)); ?>
-                            </div>
-                        <?php endforeach; ?>
-                        
-                        <?php if ($isPaid): ?>
-                            <div class="activity-tag">
-                                <i class="fa-solid fa-euro-sign"></i> Payant
-                            </div>
-                        <?php else: ?>
-                            <div class="activity-tag accent">
-                                <i class="fa-solid fa-gift"></i> Gratuit
-                            </div>
-                        <?php endif; ?>
-                    </div>
+    <?php 
+    // Check if we already have a payment tag in the database tags
+    $hasPaymentTag = false;
+    foreach ($tags as $index => $tag) {
+        if ($tag === 'gratuit' || $tag === 'payant') {
+            $hasPaymentTag = true;
+            break;
+        }
+    }
+    
+    // Display all tags from database
+    foreach ($tags as $index => $tag): 
+        displayTag($tag, $index);
+    endforeach; ?>
+    
+    <?php 
+    // Only add payment tag if not already in database tags
+    if (!$hasPaymentTag): 
+        if ($isPaid): ?>
+            <div class="activity-tag">
+                <i class="fa-solid fa-euro-sign"></i> Payant
+            </div>
+        <?php else: ?>
+            <div class="activity-tag accent">
+                <i class="fa-solid fa-gift"></i> Gratuit
+            </div>
+        <?php endif; 
+    endif; ?>
+</div>
                 </div>
             </div>
             
@@ -1722,7 +1855,7 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                         </div>
                     </div>
                     
-                    <!-- Similar Activities -->
+                    <!-- Enhanced Similar Activities -->
                     <?php if (!empty($similar_activities)): ?>
                     <div class="similar-activities">
                         <h2>Activités similaires</h2>
@@ -1730,8 +1863,11 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                             <?php foreach ($similar_activities as $similar): 
                                 $similarRating = (($similar['id'] * 7) % 21 + 30) / 10; // Rating between 3.0 and 5.0
                                 $isPaid = $similar["prix"] > 0;
+                                $similarTags = $similar["tags"] ? explode(',', $similar["tags"]) : [];
+                                $similarTagDisplayNames = $similar["tag_display_names"] ? explode('|', $similar["tag_display_names"]) : [];
+                                $isMostSimilar = isset($similar['is_most_similar']) && $similar['is_most_similar'];
                             ?>
-                            <div class="similar-card" data-id="<?php echo $similar['id']; ?>">
+                            <div class="similar-card <?php echo $isMostSimilar ? 'most-similar' : ''; ?>" data-id="<?php echo $similar['id']; ?>">
                                 <div class="similar-image">
                                     <?php if ($similar["image_url"]): ?>
                                         <img src="<?php echo htmlspecialchars($similar["image_url"]); ?>" alt="<?php echo htmlspecialchars($similar["titre"]); ?>">
@@ -1743,6 +1879,10 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                                         <div class="similar-tag"><?php echo number_format($similar["prix"], 2); ?> €</div>
                                     <?php else: ?>
                                         <div class="similar-tag free">Gratuit</div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (isset($similar['common_tags_count']) && $similar['common_tags_count'] > 0): ?>
+                                        <div class="similar-tags-count"><?php echo $similar['common_tags_count']; ?> tag(s) en commun</div>
                                     <?php endif; ?>
                                 </div>
                                 <div class="similar-content">
@@ -1929,24 +2069,10 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             // Make activity tags clickable - redirect to activites.php with filter
             document.querySelectorAll('.activity-tag').forEach(tag => {
                 tag.addEventListener('click', function() {
-                    const tagText = this.textContent.trim();
-                    let filterUrl = 'activites.php?';
-                    
-                    if (tagText === 'Gratuit') {
-                        filterUrl += 'price=gratuit';
-                    } else if (tagText === 'Payant') {
-                        filterUrl += 'price=payant';
-                    } else if (tagText === 'Intérieur') {
-                        filterUrl += 'location=interieur';
-                    } else if (tagText === 'Extérieur') {
-                        filterUrl += 'location=exterieur';
-                    } else {
-                        // Convert tag name to match database tag format
-                        const tagName = tagText.toLowerCase().replace(' ', '_');
-                        filterUrl += 'category=' + tagName;
+                    const tagData = this.getAttribute('data-tag');
+                    if (tagData) {
+                        window.location.href = 'activites.php?tag=' + encodeURIComponent(tagData);
                     }
-                    
-                    window.location.href = filterUrl;
                 });
             });
             
@@ -2072,8 +2198,4 @@ if (isset($user_stmt)) {
     $user_stmt->close();
 }
 $user_conn->close();
-
-if (isset($similarStmt)) {
-    $similarStmt->close();
-}
 ?>

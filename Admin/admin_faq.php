@@ -119,6 +119,23 @@ if(isset($_GET['action']) && isset($_GET['id'])) {
             $status_type = "error";
         }
     }
+    elseif($action === 'reapprove') {
+        // Show approval form for rejected questions
+        $update_query = "UPDATE faq_questions SET 
+                        status = 'pending',
+                        admin_id = NULL,
+                        answer = NULL,
+                        updated_at = NOW() 
+                        WHERE id = ?";
+        
+        $stmt = $conn->prepare($update_query);
+        $stmt->bind_param("i", $id);
+        
+        if($stmt->execute()) {
+            header("Location: admin_faq.php?success=pending");
+            exit();
+        }
+    }
 }
 
 // Récupérer les messages en fonction du statut filtré
@@ -478,7 +495,7 @@ if(isset($_GET['success'])) {
                         </div>
                         
                         <div class="question-content">
-                            <?php echo nl2br(htmlspecialchars($question['question'])); ?>
+                            <?php echo nl2br(htmlspecialchars_decode($question['question'])); ?>
                         </div>
                         
                         <div class="question-user">
@@ -525,6 +542,17 @@ if(isset($_GET['success'])) {
                                         <i class="fas fa-eye"></i> Rendre publique
                                     </a>
                                 <?php endif; ?>
+                            <?php elseif($question['status'] === 'rejected'): ?>
+                                <a href="admin_faq.php?action=reapprove&id=<?php echo $question['id']; ?>" 
+                                   class="btn btn-approve"
+                                   onclick="return confirm('Êtes-vous sûr de vouloir réapprouver cette question?')">
+                                    <i class="fas fa-undo"></i> Réapprouver
+                                </a>
+                                <a href="admin_faq.php?action=reapprove&id=<?php echo $question['id']; ?>" 
+                                   class="btn btn-approve"
+                                   onclick="return confirm('Voulez-vous réexaminer cette question?')">
+                                    <i class="fas fa-redo"></i> Réexaminer
+                                </a>
                             <?php endif; ?>
                             
                             <a href="admin_faq.php?action=delete&id=<?php echo $question['id']; ?>" 

@@ -30,7 +30,94 @@ document.addEventListener('DOMContentLoaded', function() {
     const prixContainer = document.getElementById('prix-container');
     
     let cropper; // Variable pour stocker l'instance de cropper
-    
+    let tagDefinitions = {}; // Variable pour stocker les définitions de tags
+
+    // Improved tag initialization
+    async function initializeTags() {
+        try {
+            const response = await fetch('get_tags.php');
+            tagDefinitions = await response.json();
+            await setupTagSelectors();
+            setupTagValidation();
+        } catch (error) {
+            console.error('Error fetching tags:', error);
+            showError('Erreur lors du chargement des tags');
+        }
+    }
+
+    function setupTagSelectors() {
+        const tagContainer = document.querySelector('.tags-container');
+        if (!tagContainer) return;
+
+        // Clear existing tags
+        tagContainer.innerHTML = '';
+
+        // Add tags sorted by display name
+        Object.entries(tagDefinitions)
+            .sort(([,a], [,b]) => a.display_name.localeCompare(b.display_name))
+            .forEach(([tagName, tagInfo]) => {
+                if (tagName !== 'interieur' && tagName !== 'exterieur' && 
+                    tagName !== 'gratuit' && tagName !== 'payant') {
+                    const tagElement = createTagElement(tagName, tagInfo);
+                    tagContainer.appendChild(tagElement);
+                }
+            });
+    }
+
+    function setupTagValidation() {
+        const form = document.getElementById('activity-form');
+        const existingValidation = form.onsubmit;
+
+        form.onsubmit = function(e) {
+            const selectedTags = Array.from(document.querySelectorAll('input[name="tags[]"]:checked'))
+                .map(input => input.value);
+
+            if (selectedTags.length === 0) {
+                e.preventDefault();
+                showError('Veuillez sélectionner au moins un tag');
+                return false;
+            }
+
+            // Add payment tag based on radio selection
+            const paymentTag = gratuitRadio.checked ? 'gratuit' : 'payant';
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'tags[]';
+            hiddenInput.value = paymentTag;
+            this.appendChild(hiddenInput);
+
+            return existingValidation ? existingValidation.call(this, e) : true;
+        };
+    }
+
+    function createTagElement(tagName, tagInfo) {
+        const div = document.createElement('div');
+        div.className = 'tag-item';
+        
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = `tag_${tagName}`;
+        input.name = 'tags[]';
+        input.value = tagName;
+
+        const label = document.createElement('label');
+        label.htmlFor = `tag_${tagName}`;
+        label.className = tagInfo.class || 'primary';
+        label.innerHTML = `<i class="fa-solid fa-tag"></i> ${tagInfo.display_name}`;
+
+        div.appendChild(input);
+        div.appendChild(label);
+        return div;
+    }
+
+    function showError(message) {
+        // Add error display logic here
+        alert(message);
+    }
+
+    // Initialize tags
+    initializeTags();
+
     // Gestion de l'upload par glisser-déposer
     uploadZone.addEventListener('dragover', function(e) {
         e.preventDefault();

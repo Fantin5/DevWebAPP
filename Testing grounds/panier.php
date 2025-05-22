@@ -65,5 +65,19 @@
     ?>
 
     <script src="panier.js"></script>
+    <script>
+    // Pass tag definitions from PHP to JavaScript
+    const tagDefinitions = <?php 
+        echo json_encode($tagDefinitions);
+    ?>;
+
+    // Updated function in panier.js
+    function getTagInfo(tagName) {
+        return tagDefinitions[tagName] || {
+            display_name: tagName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            class: 'primary'
+        };
+    }
+    </script>
   </body>
 </html>

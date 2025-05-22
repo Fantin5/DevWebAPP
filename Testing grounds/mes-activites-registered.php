@@ -1,39 +1,56 @@
 <?php
 session_start();
-// Check if user is logged in, redirect if not
-if(!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ../Connexion-Inscription/login_form.php');
-    exit();
-}
 
-// Configuration de la base de données
+// Database configuration
 $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "activity";
 
-// Créer une connexion
+// Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Vérifier la connexion
+// Check connection
 if ($conn->connect_error) {
-    die("Échec de la connexion à la base de données: " . $conn->connect_error);
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Now that we have the connection, require tag setup and initialize TagManager
+require_once 'tag_setup.php';
+$tagManager = new TagManager($conn);
+$tagDefinitions = $tagManager->getAllTags();
+
+// Verify user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../Connexion-Inscription/login_form.php");
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+// Récupérer les définitions de tags depuis la base de données
+$tagClasses = ['primary', 'secondary', 'accent']; // Classes CSS alternées
+$i = 0;
+foreach ($tagDefinitions as $name => $definition) {
+    $tagDefinitions[$name]['class'] = $tagClasses[$i % count($tagClasses)];
+    $i++;
 }
 
 // Variables pour les messages
 $successMessage = '';
 $errorMessage = '';
 
-// Get current user ID
-$user_id = $_SESSION['user_id'];
-
-// Récupérer les activités achetées par l'utilisateur
+// Updated activity query
 $sql = "SELECT a.*, 
-        (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags,
+        GROUP_CONCAT(td.name) AS tags,
+        GROUP_CONCAT(td.display_name SEPARATOR '|') AS tag_display_names,
         aa.date_achat
         FROM activites a 
+        LEFT JOIN activity_tags at ON a.id = at.activity_id
+        LEFT JOIN tag_definitions td ON at.tag_definition_id = td.id
         JOIN activites_achats aa ON a.id = aa.activite_id
         WHERE aa.user_id = ?
+        GROUP BY a.id
         ORDER BY aa.date_achat DESC";
 
 $stmt = $conn->prepare($sql);
@@ -67,25 +84,25 @@ function getStars($rating) {
     return '<span class="stars">' . $stars . '</span> <span class="rating-value">' . number_format($rating, 1) . '</span>';
 }
 
-// Function to determine the CSS class for tags
+// Function to determine the CSS class for tags using database definitions
 function getTagClass($tag) {
-    $tagClasses = [
-        'art' => 'primary',
-        'cuisine' => 'secondary',
-        'bien_etre' => 'accent',
-        'creativite' => 'primary',
-        'sport' => 'secondary',
-        'exterieur' => 'accent',
-        'interieur' => 'secondary',
-        'gratuit' => 'accent',
-        'ecologie' => 'primary',
-        'randonnee' => 'secondary',
-        'jardinage' => 'accent',
-        'meditation' => 'primary',
-        'artisanat' => 'secondary'
-    ];
+    global $tagDefinitions;
     
-    return isset($tagClasses[$tag]) ? $tagClasses[$tag] : '';
+    // Use the assigned class from tag_definitions
+    return isset($tagDefinitions[$tag]) ? $tagDefinitions[$tag]['class'] : 'primary';
+}
+
+// Function to get the display name for a tag using database definitions
+function getTagDisplayName($tag, $tagDisplayNames = null, $index = null) {
+    global $tagDefinitions;
+    
+    // First try to get from the display names array (from SQL query)
+    if ($tagDisplayNames && $index !== null && isset($tagDisplayNames[$index])) {
+        return $tagDisplayNames[$index];
+    }
+    
+    // Otherwise use the tag definitions
+    return isset($tagDefinitions[$tag]) ? $tagDefinitions[$tag]['display_name'] : ucfirst(str_replace('_', ' ', $tag));
 }
 ?>
 
@@ -339,6 +356,11 @@ function getTagClass($tag) {
           color: white;
       }
       
+      .tags.primary {
+          background-color: rgba(60, 140, 92, 0.9);
+          color: white;
+      }
+      
       /* Info section - reduced padding */
       .info {
           flex-grow: 1;
@@ -464,6 +486,7 @@ function getTagClass($tag) {
           justify-content: center;
           gap: 20px;
           margin-bottom: 40px;
+          flex-wrap: wrap;
       }
       
       .tab-button {
@@ -480,6 +503,24 @@ function getTagClass($tag) {
           box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
           border: none;
           text-decoration: none;
+          position: relative;
+          overflow: hidden;
+      }
+      
+      .tab-button::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, 
+              rgba(255, 255, 255, 0) 0%, 
+              rgba(69, 161, 99, 0.1) 50%, 
+              rgba(255, 255, 255, 0) 100%);
+          transform: skewX(-25deg);
+          transition: left 0.5s ease;
+          z-index: -1;
       }
       
       .tab-button.active {
@@ -492,6 +533,10 @@ function getTagClass($tag) {
           background-color: rgba(255, 255, 255, 0.9);
           transform: translateY(-3px);
           box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      }
+      
+      .tab-button:hover::before {
+          left: 100%;
       }
       
       /* Responsive */
@@ -508,6 +553,7 @@ function getTagClass($tag) {
           
           .tab-button {
               width: 100%;
+              max-width: 300px;
               justify-content: center;
           }
       }
@@ -583,6 +629,9 @@ function getTagClass($tag) {
         <a href="mes-activites-registered.php" class="tab-button active">
           <i class="fa-solid fa-calendar-check"></i> Activités inscrites
         </a>
+        <a href="activites.php" class="tab-button">
+          <i class="fa-solid fa-compass"></i> Explorer les activités
+        </a>
       </div>
 
       <div class="activities-grid">
@@ -599,6 +648,7 @@ function getTagClass($tag) {
                 
                 // Liste des tags
                 $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
+                $tagDisplayNames = $row["tag_display_names"] ? explode('|', $row["tag_display_names"]) : [];
                 
                 // Type de prix
                 $isPaid = $row["prix"] > 0;
@@ -626,13 +676,14 @@ function getTagClass($tag) {
                     echo '</div>';
                 }
                 
-                // Tags
+                // Tags - show up to 2 tags with display names
                 echo '<div class="tag">';
                 $displayedTags = 0;
-                foreach ($tagList as $tag) {
-                    if ($displayedTags < 2) {
+                foreach ($tagList as $index => $tag) {
+                    if ($displayedTags < 2 && $tag !== 'gratuit' && $tag !== 'payant') {
                         $tagClass = getTagClass($tag);
-                        echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
+                        $displayName = getTagDisplayName($tag, $tagDisplayNames, $index);
+                        echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . htmlspecialchars($displayName) . '</span>';
                         $displayedTags++;
                     }
                 }
@@ -670,7 +721,7 @@ function getTagClass($tag) {
             echo '<i class="fa-solid fa-calendar-xmark"></i>';
             echo '<h3>Vous n\'êtes inscrit à aucune activité</h3>';
             echo '<p>Explorez notre catalogue d\'activités et inscrivez-vous à celles qui vous intéressent.</p>';
-            echo '<a href="main.php" class="create-button" style="margin-top: 20px;">';
+            echo '<a href="activites.php" class="create-button" style="margin-top: 20px;">';
             echo '<i class="fa-solid fa-compass"></i> <span>Explorer les activités</span>';
             echo '</a>';
             echo '</div>';
@@ -754,5 +805,6 @@ function getTagClass($tag) {
 </html>
 
 <?php
+$stmt->close();
 $conn->close();
 ?>

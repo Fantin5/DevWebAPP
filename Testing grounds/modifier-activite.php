@@ -16,6 +16,8 @@ if ($conn->connect_error) {
     die("Échec de la connexion à la base de données: " . $conn->connect_error);
 }
 
+require_once 'tag_setup.php';
+
 // Variables pour les messages
 $successMessage = '';
 $errorMessage = '';
@@ -32,25 +34,22 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 
 $activity_id = $_GET['id'];
 
-// Liste des tags disponibles
-$available_tags = [
-    'art', 'cuisine', 'bien_etre', 'creativite', 'sport', 
-    'exterieur', 'interieur', 'gratuit', 'ecologie', 
-    'randonnee', 'jardinage', 'meditation', 'artisanat'
-];
+$tagManager = new TagManager($conn);
+$tagDefinitions = $tagManager->getAllTags();
 
 // Récupérer les détails de l'activité avant modification
 $sql = "SELECT a.*, 
-        (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags
+        GROUP_CONCAT(td.name) AS tags
         FROM activites a 
-        WHERE a.id = ?";
+        LEFT JOIN activity_tags at ON a.id = at.activity_id
+        LEFT JOIN tag_definitions td ON at.tag_definition_id = td.id
+        WHERE a.id = ?
+        GROUP BY a.id";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $activity_id);
 $stmt->execute();
 $result = $stmt->get_result();
-
-// Vérifier si l'activité existe
 if ($result->num_rows === 0) {
     // Rediriger vers la page mes activités si l'activité n'existe pas
     header("Location: mes-activites.php");
@@ -141,31 +140,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt = $conn->prepare($sql_update);
             $stmt->bind_param("sssdi", $titre, $description, $date_ou_periode, $prix, $activity_id);
         }
-        
+
         if ($stmt->execute()) {
-            // Supprimer les anciens tags
-            $sql_delete_tags = "DELETE FROM tags WHERE activite_id = ?";
-            $stmt_tags_delete = $conn->prepare($sql_delete_tags);
-            $stmt_tags_delete->bind_param("i", $activity_id);
-            $stmt_tags_delete->execute();
-            $stmt_tags_delete->close();
-            
-            // Ajouter les nouveaux tags
-            if (!empty($selected_tags)) {
-                $sql_add_tag = "INSERT INTO tags (activite_id, nom_tag) VALUES (?, ?)";
-                $stmt_tags = $conn->prepare($sql_add_tag);
-                
-                foreach ($selected_tags as $tag) {
-                    $stmt_tags->bind_param("is", $activity_id, $tag);
-                    $stmt_tags->execute();
-                }
-                
-                $stmt_tags->close();
-            }
-            
+            $tagManager->updateActivityTags($activity_id, $selected_tags);
             $successMessage = "L'activité a été mise à jour avec succès.";
-            
-            // Redirection immédiate, sans délai et sans message
             header("Location: mes-activites.php");
             exit();
         } else {
@@ -182,26 +160,20 @@ if (!empty($activity['tags'])) {
     $current_tags = explode(',', $activity['tags']);
 }
 
-// Function pour déterminer la classe CSS pour les tags
-// Cette fonction est locale à ce fichier
-function getTagStyleClass($tag) {
-    $tagClasses = [
-        'art' => 'primary',
-        'cuisine' => 'secondary',
-        'bien_etre' => 'accent',
-        'creativite' => 'primary',
-        'sport' => 'secondary',
-        'exterieur' => 'accent',
-        'interieur' => 'secondary',
-        'gratuit' => 'accent',
-        'ecologie' => 'primary',
-        'randonnee' => 'secondary',
-        'jardinage' => 'accent',
-        'meditation' => 'primary',
-        'artisanat' => 'secondary'
-    ];
+// Function to determine the CSS class for tags using database definitions (consistent with other pages)
+function getTagClass($tag) {
+    global $tagDefinitions;
     
-    return isset($tagClasses[$tag]) ? $tagClasses[$tag] : '';
+    // Use the assigned class from tag_definitions
+    return isset($tagDefinitions[$tag]) ? $tagDefinitions[$tag]['class'] : 'primary';
+}
+
+// Function to get the display name for a tag using database definitions (consistent with other pages)
+function getTagDisplayName($tag) {
+    global $tagDefinitions;
+    
+    // Use the display name from tag_definitions
+    return isset($tagDefinitions[$tag]) ? $tagDefinitions[$tag]['display_name'] : ucfirst(str_replace('_', ' ', $tag));
 }
 ?>
 
@@ -290,7 +262,6 @@ function getTagStyleClass($tag) {
         }
         
         .price-input::before {
-            content: "€";
             position: absolute;
             left: 12px;
             top: 12px;
@@ -864,14 +835,22 @@ function getTagStyleClass($tag) {
                     <p>Sélectionnez les tags qui décrivent le mieux votre activité :</p>
                     
                     <div class="tags-container">
-                        <?php foreach ($available_tags as $tag): ?>
+                        <?php 
+                        // Récupérer tous les tags avec leurs informations depuis la base de données (consistent with other pages)
+                        foreach ($tagDefinitions as $tag_name => $tag_data): 
+                            $display_name = $tag_data['display_name'];
+                            $style_class = $tag_data['class'];
+                            $is_checked = in_array($tag_name, $current_tags);
+                        ?>
                             <div class="tag-item">
-                                <input type="checkbox" id="tag-<?php echo $tag; ?>" name="tags[]" value="<?php echo $tag; ?>" <?php echo in_array($tag, $current_tags) ? 'checked' : ''; ?>>
-                                <label for="tag-<?php echo $tag; ?>" class="<?php echo getTagStyleClass($tag); ?>">
-                                    <i class="fa-solid fa-tag"></i> <?php echo ucfirst(str_replace('_', ' ', $tag)); ?>
+                                <input type="checkbox" id="tag-<?php echo $tag_name; ?>" name="tags[]" value="<?php echo $tag_name; ?>" <?php echo $is_checked ? 'checked' : ''; ?>>
+                                <label for="tag-<?php echo $tag_name; ?>" class="<?php echo $style_class; ?>">
+                                    <i class="fa-solid fa-tag"></i> <?php echo htmlspecialchars($display_name); ?>
                                 </label>
                             </div>
-                        <?php endforeach; ?>
+                        <?php 
+                        endforeach; 
+                        ?>
                     </div>
                 </div>
                 

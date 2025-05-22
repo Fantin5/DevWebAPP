@@ -19,15 +19,37 @@ if ($conn->connect_error) {
 // Définir le titre de la page
 $page_title = "Accueil - Synapse";
 
-// Récupérer les activités depuis la base de données
+// Récupérer toutes les activités avec leurs tags
 $sql = "SELECT a.*, 
-        (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags,
+        GROUP_CONCAT(td.name) AS tags,
+        GROUP_CONCAT(td.display_name SEPARATOR '|') AS tag_display_names,
         DATEDIFF(STR_TO_DATE(SUBSTRING_INDEX(date_ou_periode, ' - ', -1), '%d/%m/%Y'), NOW()) as days_remaining
         FROM activites a 
-        ORDER BY date_creation DESC";
+        LEFT JOIN activity_tags at ON a.id = at.activity_id
+        LEFT JOIN tag_definitions td ON at.tag_definition_id = td.id
+        GROUP BY a.id
+        ORDER BY a.date_creation DESC";
         
 $result = $conn->query($sql);
 
+// Récupérer tous les tag_definitions pour la fonction getTagClass
+$tagDefinitions = [];
+$tagClasses = [
+    'primary', 'secondary', 'accent' // Classes CSS alternées pour différents tags
+];
+
+$tagDefinitionsSql = "SELECT * FROM tag_definitions";
+$tagDefinitionsResult = $conn->query($tagDefinitionsSql);
+if ($tagDefinitionsResult && $tagDefinitionsResult->num_rows > 0) {
+    $i = 0;
+    while($tagRow = $tagDefinitionsResult->fetch_assoc()) {
+        $tagDefinitions[$tagRow['name']] = [
+            'display_name' => $tagRow['display_name'],
+            'class' => $tagClasses[$i % count($tagClasses)] // Assigner une classe cycliquement
+        ];
+        $i++;
+    }
+}
 
 // Fonction pour obtenir les étoiles formatées basées sur la note
 function getStars($rating) {
@@ -57,23 +79,18 @@ function getStars($rating) {
 
 // Function to determine the CSS class for tags
 function getTagClass($tag) {
-    $tagClasses = [
-        'art' => 'primary',
-        'cuisine' => 'secondary',
-        'bien_etre' => 'accent',
-        'creativite' => 'primary',
-        'sport' => 'secondary',
-        'exterieur' => 'accent',
-        'interieur' => 'secondary',
-        'gratuit' => 'accent',
-        'ecologie' => 'primary',
-        'randonnee' => 'accent',
-        'jardinage' => 'primary',
-        'meditation' => 'secondary',
-        'artisanat' => 'accent'
-    ];
+    global $tagDefinitions;
     
-    return isset($tagClasses[$tag]) ? $tagClasses[$tag] : '';
+    // Use the assigned class from tag_definitions
+    return isset($tagDefinitions[$tag]) ? $tagDefinitions[$tag]['class'] : 'primary';
+}
+
+// Function to get the display name for a tag
+function getTagDisplayName($tag) {
+    global $tagDefinitions;
+    
+    // Use the display name from tag_definitions
+    return isset($tagDefinitions[$tag]) ? $tagDefinitions[$tag]['display_name'] : ucfirst(str_replace('_', ' ', $tag));
 }
 
 // Function to check if an activity is ending soon (7 days or less)
@@ -123,6 +140,16 @@ function getDaysRemaining($activity) {
     }
     
     return null;
+}
+
+// Function to check if an activity has a specific tag
+function hasTag($activity, $tagName) {
+    if (empty($activity['tags'])) {
+        return false;
+    }
+    
+    $tagList = explode(',', $activity['tags']);
+    return in_array($tagName, $tagList);
 }
 ?>
 
@@ -275,10 +302,10 @@ include '../TEMPLATE/Nouveauhead.php';
                         $lastChanceCount++;
                         $randomRating = rand(35, 50) / 10;
                         $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
-                        $isPaid = $row["prix"] > 0;
+                        $tagDisplayNames = $row["tag_display_names"] ? explode('|', $row["tag_display_names"]) : [];
                         $daysRemaining = getDaysRemaining($row);
                         
-                        echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; // Added data-id attribute and activity-card class
+                        echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; 
                         echo '<div class="content">';
                         
                         echo '<div class="image-container">';
@@ -301,19 +328,42 @@ include '../TEMPLATE/Nouveauhead.php';
                         echo '</div>';
                         
                         echo '<div class="tag">';
-                        $displayedTags = 0;
-                        foreach ($tagList as $tag) {
-                            if ($displayedTags < 2) {
-                                $tagClass = getTagClass($tag);
-                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
-                                $displayedTags++;
+                        
+                        // Find payment tag position
+                        $paymentTagIndex = -1;
+                        $paymentTag = '';
+                        $normalTags = [];
+                        $normalTagDisplayNames = [];
+                        
+                        for ($i = 0; $i < count($tagList); $i++) {
+                            if ($tagList[$i] === 'gratuit' || $tagList[$i] === 'payant') {
+                                $paymentTagIndex = $i;
+                                $paymentTag = $tagList[$i];
+                            } else {
+                                $normalTags[] = $tagList[$i];
+                                if (isset($tagDisplayNames[$i])) {
+                                    $normalTagDisplayNames[] = $tagDisplayNames[$i];
+                                }
                             }
                         }
                         
-                        if ($isPaid) {
-                            echo '<span class="tags" data-tag="payant">Payant</span>';
-                        } else {
-                            echo '<span class="tags accent" data-tag="gratuit">Gratuit</span>';
+                        // Display up to 2, but prioritize non-payment tags
+                        for ($i = 0; $i < min(count($normalTags), 2); $i++) {
+                            $tag = $normalTags[$i];
+                            $tagClass = getTagClass($tag);
+                            $displayName = isset($normalTagDisplayNames[$i]) ? $normalTagDisplayNames[$i] : getTagDisplayName($tag);
+                            
+                            echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . htmlspecialchars($displayName) . '</span>';
+                        }
+                        
+                        // Add payment status tag
+                        if ($paymentTag) {
+                            $tagClass = getTagClass($paymentTag);
+                            $displayName = isset($tagDisplayNames[$paymentTagIndex]) ? 
+                                $tagDisplayNames[$paymentTagIndex] : 
+                                getTagDisplayName($paymentTag);
+                            
+                            echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($paymentTag) . '">' . htmlspecialchars($displayName) . '</span>';
                         }
                         
                         echo '</div></div>';
@@ -372,79 +422,102 @@ include '../TEMPLATE/Nouveauhead.php';
         
         <div class="activities-slider" id="free-activities-slider">
             <?php
-            // Reset the result pointer
-            if ($result->num_rows > 0) {
-                $result->data_seek(0);
-                $freeCount = 0;
-                
-                while($row = $result->fetch_assoc()) {
-                    if ($row["prix"] == 0 && $freeCount < 6) {
-                        $randomRating = rand(30, 50) / 10;
-                        $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
-                        
-                        echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; // Added data-id attribute and activity-card class
-                        echo '<div class="content">';
-                        
-                        echo '<div class="image-container">';
-                        if ($row["image_url"]) {
-                            echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
-                        } else {
-                            echo '<img src="nature-placeholder.jpg" alt="placeholder" />';
-                        }
-                        echo '</div>';
-                        
-                        echo '<div class="tag">';
-                        $displayedTags = 0;
-                        foreach ($tagList as $tag) {
-                            if ($displayedTags < 2) {
-                                $tagClass = getTagClass($tag);
-                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
-                                $displayedTags++;
-                            }
-                        }
-                        echo '<span class="tags accent" data-tag="gratuit">Gratuit</span>';
-                        echo '</div></div>';
-                        
-                        echo '<div class="info">';
-                        echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
-                        
-                        if ($row["date_ou_periode"]) {
-                            echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
-                        }
-                        
-                        // Add rating to info section
-                        echo '<div class="featured-rating">' . getStars($randomRating) . '</div>';
-                        
-                        echo '</div>';
-                        
-                        echo '<div class="actions">';
-                        
-                        // Full width button
-                        echo '<button class="add-to-cart-button full-width" data-id="' . $row['id'] . '" 
-                            data-title="' . htmlspecialchars($row['titre']) . '" 
-                            data-price="' . $row['prix'] . '" 
-                            data-image="' . htmlspecialchars($row['image_url'] ? $row['image_url'] : 'nature-placeholder.jpg') . '" 
-                            data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
-                            data-tags="' . htmlspecialchars($row['tags']) . '">
-                            <i class="fa-solid fa-cart-shopping"></i> Ajouter au panier
-                            </button>';
-                        
-                        echo '</div>';
-                        
-                        echo '</div>';
-                        
-                        $freeCount++;
+ // Reset the result pointer
+if ($result->num_rows > 0) {
+    $result->data_seek(0);
+    $freeCount = 0;
+    
+    while($row = $result->fetch_assoc()) {
+        // Check if the activity is free by price (not by tag) - this fixes the issue
+        if ($row["prix"] <= 0 && $freeCount < 6) {
+            $freeCount++;
+            $randomRating = rand(30, 50) / 10;
+            $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
+            $tagDisplayNames = $row["tag_display_names"] ? explode('|', $row["tag_display_names"]) : [];
+            
+            echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; 
+            echo '<div class="content">';
+            
+            echo '<div class="image-container">';
+            if ($row["image_url"]) {
+                echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
+            } else {
+                echo '<img src="nature-placeholder.jpg" alt="placeholder" />';
+            }
+            echo '</div>';
+            
+            echo '<div class="tag">';
+            
+            // Find payment tag position and normal tags
+            $paymentTagIndex = -1;
+            $normalTags = [];
+            $normalTagDisplayNames = [];
+            
+            for ($i = 0; $i < count($tagList); $i++) {
+                if ($tagList[$i] === 'gratuit' || $tagList[$i] === 'payant') {
+                    $paymentTagIndex = $i;
+                } else {
+                    $normalTags[] = $tagList[$i];
+                    if (isset($tagDisplayNames[$i])) {
+                        $normalTagDisplayNames[] = $tagDisplayNames[$i];
                     }
                 }
-                
-                if ($freeCount == 0) {
-                    echo '<div class="no-activities" style="min-width: 100%; text-align: center;">';
-                    echo '<i class="fa-regular fa-face-sad-tear"></i>';
-                    echo '<h3>Aucune activité gratuite disponible</h3>';
-                    echo '<p>Revenez bientôt pour découvrir de nouvelles opportunités gratuites !</p>';
-                    echo '</div>';
-                }
             }
+            
+            // Display up to 2 non-payment tags
+            for ($i = 0; $i < min(count($normalTags), 2); $i++) {
+                $tag = $normalTags[$i];
+                $tagClass = getTagClass($tag);
+                $displayName = isset($normalTagDisplayNames[$i]) ? $normalTagDisplayNames[$i] : getTagDisplayName($tag);
+                
+                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . htmlspecialchars($displayName) . '</span>';
+            }
+            
+            // Add the "gratuit" tag
+            $tagClass = getTagClass('gratuit');
+            $displayName = getTagDisplayName('gratuit');
+            echo '<span class="tags ' . $tagClass . '" data-tag="gratuit">' . htmlspecialchars($displayName) . '</span>';
+            
+            echo '</div></div>';
+            
+            echo '<div class="info">';
+            echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
+            
+            if ($row["date_ou_periode"]) {
+                echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
+            }
+            
+            // Add rating to info section
+            echo '<div class="featured-rating">' . getStars($randomRating) . '</div>';
+            
+            echo '</div>';
+            
+            echo '<div class="actions">';
+            
+            // Full width button
+            echo '<button class="add-to-cart-button full-width" data-id="' . $row['id'] . '" 
+                data-title="' . htmlspecialchars($row['titre']) . '" 
+                data-price="' . $row['prix'] . '" 
+                data-image="' . htmlspecialchars($row['image_url'] ? $row['image_url'] : 'nature-placeholder.jpg') . '" 
+                data-period="' . htmlspecialchars($row['date_ou_periode']) . '" 
+                data-tags="' . htmlspecialchars($row['tags']) . '">
+                <i class="fa-solid fa-cart-shopping"></i> Ajouter au panier
+                </button>';
+            
+            echo '</div>';
+            
+            echo '</div>';
+        }
+    }
+    
+    if ($freeCount == 0) {
+        echo '<div class="no-activities" style="min-width: 100%; text-align: center;">';
+        echo '<i class="fa-regular fa-face-sad-tear"></i>';
+        echo '<h3>Aucune activité gratuite disponible</h3>';
+        echo '<p>Revenez bientôt pour découvrir de nouvelles opportunités gratuites !</p>';
+        echo '</div>';
+    }
+}
             ?>
         </div>
         
@@ -497,9 +570,9 @@ include '../TEMPLATE/Nouveauhead.php';
                         $row = $activity['data'];
                         $randomRating = $activity['rating'];
                         $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
-                        $isPaid = $row["prix"] > 0;
+                        $tagDisplayNames = $row["tag_display_names"] ? explode('|', $row["tag_display_names"]) : [];
                         
-                        echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; // Added data-id attribute and activity-card class
+                        echo '<div class="featured-card activity-card" data-id="' . $row['id'] . '">'; 
                         echo '<div class="content">';
                         
                         echo '<div class="image-container">';
@@ -513,19 +586,42 @@ include '../TEMPLATE/Nouveauhead.php';
                         echo '<div class="featured-badge"><i class="fa-solid fa-medal"></i> Top Rated</div>';
                         
                         echo '<div class="tag">';
-                        $displayedTags = 0;
-                        foreach ($tagList as $tag) {
-                            if ($displayedTags < 2) {
-                                $tagClass = getTagClass($tag);
-                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
-                                $displayedTags++;
+                        
+                        // Find payment tag position and normal tags
+                        $paymentTagIndex = -1;
+                        $paymentTag = '';
+                        $normalTags = [];
+                        $normalTagDisplayNames = [];
+                        
+                        for ($i = 0; $i < count($tagList); $i++) {
+                            if ($tagList[$i] === 'gratuit' || $tagList[$i] === 'payant') {
+                                $paymentTagIndex = $i;
+                                $paymentTag = $tagList[$i];
+                            } else {
+                                $normalTags[] = $tagList[$i];
+                                if (isset($tagDisplayNames[$i])) {
+                                    $normalTagDisplayNames[] = $tagDisplayNames[$i];
+                                }
                             }
                         }
                         
-                        if ($isPaid) {
-                            echo '<span class="tags" data-tag="payant">Payant</span>';
-                        } else {
-                            echo '<span class="tags accent" data-tag="gratuit">Gratuit</span>';
+                        // Display up to 2 non-payment tags
+                        for ($i = 0; $i < min(count($normalTags), 2); $i++) {
+                            $tag = $normalTags[$i];
+                            $tagClass = getTagClass($tag);
+                            $displayName = isset($normalTagDisplayNames[$i]) ? $normalTagDisplayNames[$i] : getTagDisplayName($tag);
+                            
+                            echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . htmlspecialchars($displayName) . '</span>';
+                        }
+                        
+                        // Add payment status tag
+                        if ($paymentTag) {
+                            $tagClass = getTagClass($paymentTag);
+                            $displayName = isset($tagDisplayNames[$paymentTagIndex]) ? 
+                                $tagDisplayNames[$paymentTagIndex] : 
+                                getTagDisplayName($paymentTag);
+                            
+                            echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($paymentTag) . '">' . htmlspecialchars($displayName) . '</span>';
                         }
                         
                         echo '</div></div>';
@@ -692,27 +788,49 @@ include '../TEMPLATE/footer.php';
             card.style.cursor = 'pointer';
         });
 
-// Make tags clickable - redirect to activities page with filter
-document.querySelectorAll('.tags').forEach(tag => {
-    tag.addEventListener('click', function(e) {
-        e.stopPropagation(); // Prevent the card click event
-        
-        const tagName = this.getAttribute('data-tag');
-        if (tagName) {
-            // Determine which filter to use based on tag type
-            if (tagName === 'gratuit' || tagName === 'payant') {
-                window.location.href = 'activites.php?price=' + encodeURIComponent(tagName);
-            } else if (tagName === 'interieur' || tagName === 'exterieur') {
-                window.location.href = 'activites.php?location=' + encodeURIComponent(tagName);
-            } else {
-                window.location.href = 'activites.php?category=' + encodeURIComponent(tagName);
-            }
-        }
-    });
-    
-    // Change cursor on hover
-    tag.style.cursor = 'pointer';
-});
+        // Make tags clickable - redirect to activities page with filter
+        document.querySelectorAll('.tags').forEach(tag => {
+            tag.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent the card click event
+                
+                const tagName = this.getAttribute('data-tag');
+                if (tagName) {
+                    // Redirect to activities page with the selected tag
+                    window.location.href = 'activites.php?tag=' + encodeURIComponent(tagName);
+                }
+            });
+            
+            // Add hover styling
+            tag.style.cursor = 'pointer';
+            tag.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+                this.style.transition = 'transform 0.2s ease';
+            });
+            
+            tag.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+
+        // Make activity cards clickable - redirect to activity detail page
+        document.querySelectorAll('.activity-card, .featured-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Don't navigate if clicking on add-to-cart button or tag
+                if (e.target.closest('.add-to-cart-button') || 
+                    e.target.closest('.tags') || 
+                    e.target.closest('.full-width')) {
+                    return;
+                }
+                
+                const activityId = this.getAttribute('data-id');
+                if (activityId) {
+                    window.location.href = 'activite.php?id=' + activityId;
+                }
+            });
+            
+            // Add hover styling
+            card.style.cursor = 'pointer';
+        });
         
         // Ajouter des événements pour les boutons "Ajouter au panier"
         document.querySelectorAll('.add-to-cart-button').forEach(button => {

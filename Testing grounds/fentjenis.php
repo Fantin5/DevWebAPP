@@ -61,8 +61,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     // Gestion du prix
     $prix = 0;
+    $payment_tag = 'gratuit'; // Default to free activity
     if (isset($_POST['type_prix']) && $_POST['type_prix'] == 'payant' && isset($_POST['prix'])) {
         $prix = floatval($_POST['prix']);
+        if ($prix > 0) {
+            $payment_tag = 'payant'; // Set to paid activity
+        }
     }
     
     // Rest of your code for image handling
@@ -120,13 +124,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($conn->query($sql) === TRUE) {
         $activity_id = $conn->insert_id;
         
-        // Gestion des tags
-        if (isset($_POST['tags']) && is_array($_POST['tags'])) {
-            foreach ($_POST['tags'] as $tag) {
-                $tag = $conn->real_escape_string($tag);
-                $sql_tag = "INSERT INTO tags (activite_id, nom_tag) VALUES ($activity_id, '$tag')";
-                $conn->query($sql_tag);
+        // Create an array with all tags, including the payment tag
+        $allTags = isset($_POST['tags']) && is_array($_POST['tags']) ? $_POST['tags'] : [];
+        
+        // Add the payment tag (gratuit or payant)
+        $allTags[] = $payment_tag;
+        
+        // Update tag processing
+        foreach ($allTags as $tag_name) {
+            $tag_name = $conn->real_escape_string($tag_name);
+            
+            // Verify that the tag exists in tag_definitions
+            $checkTagSQL = "SELECT id FROM tag_definitions WHERE name = ?";
+            $stmt = $conn->prepare($checkTagSQL);
+            $stmt->bind_param("s", $tag_name);
+            $stmt->execute();
+            $tagResult = $stmt->get_result();
+            
+            if ($tagResult && $tagResult->num_rows > 0) {
+                $tagRow = $tagResult->fetch_assoc();
+                $tag_definition_id = $tagRow['id'];
+                
+                // Insert into activity_tags
+                $insertTagSQL = "INSERT INTO activity_tags (activity_id, tag_definition_id) VALUES (?, ?)";
+                $stmt = $conn->prepare($insertTagSQL);
+                $stmt->bind_param("ii", $activity_id, $tag_definition_id);
+                $stmt->execute();
             }
+            $stmt->close();
         }
         
         // Send notification to subscribed users about the new activity

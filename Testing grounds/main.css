@@ -1176,14 +1176,14 @@ main {
   font-weight: 600;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(5px);
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid rgba(255, 255, 255, 0.3);
   letter-spacing: 0.5px;
 }
 
 .tags:hover {
-  transform: translateY(-5px) scale(1.05);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .tags.accent {
@@ -1250,6 +1250,16 @@ main {
 
 .period i {
   color: var(--primary-color);
+}
+
+/* Enhanced card interactions */
+.activity-card, .featured-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.activity-card:hover, .featured-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
 }
 
 /* Enhanced Card actions */

@@ -1,23 +1,29 @@
 <?php
 session_start();
-// Check if user is logged in, redirect if not
-if(!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ../Connexion-Inscription/login_form.php');
-    exit();
-}
 
-// Configuration de la base de données
+// Database configuration
 $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "activity";
 
-// Créer une connexion
+// Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Vérifier la connexion
+// Check connection
 if ($conn->connect_error) {
-    die("Échec de la connexion à la base de données: " . $conn->connect_error);
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Now that we have the connection, require tag setup and initialize TagManager
+require_once 'tag_setup.php';
+$tagManager = new TagManager($conn);
+$tagDefinitions = $tagManager->getAllTags();
+
+// Check if user is logged in, redirect if not
+if(!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header('Location: ../Connexion-Inscription/login_form.php');
+    exit();
 }
 
 // Variables pour les messages
@@ -52,11 +58,11 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
         
         if ($isOwner) {
             // Supprimer d'abord les tags associés
-            $sql_delete_tags = "DELETE FROM tags WHERE activite_id = ?";
-            $stmt_tags = $conn->prepare($sql_delete_tags);
-            $stmt_tags->bind_param("i", $id);
-            $stmt_tags->execute();
-            $stmt_tags->close();
+            $sql_delete_tags = "DELETE FROM activity_tags WHERE activity_id = ?";
+            $stmt_tags_delete = $conn->prepare($sql_delete_tags);
+            $stmt_tags_delete->bind_param("i", $id);
+            $stmt_tags_delete->execute();
+            $stmt_tags_delete->close();
             
             // Puis supprimer l'activité
             $sql_delete = "DELETE FROM activites WHERE id = ?";
@@ -78,13 +84,15 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $stmt_check->close();
 }
 
-// Récupérer les activités depuis la base de données
-// Cette requête facilite le filtrage au niveau de la base de données mais nous gardons quand même 
-// la vérification par user_id pour plus de sécurité
+// Récupérer les activités depuis la base de données avec les noms d'affichage des tags
 $sql = "SELECT a.*, 
-        (SELECT GROUP_CONCAT(nom_tag) FROM tags WHERE activite_id = a.id) AS tags
+        GROUP_CONCAT(td.name) AS tags,
+        GROUP_CONCAT(td.display_name SEPARATOR '|') AS tag_display_names
         FROM activites a 
+        LEFT JOIN activity_tags at ON a.id = at.activity_id
+        LEFT JOIN tag_definitions td ON at.tag_definition_id = td.id
         WHERE a.description LIKE '%<!--CREATOR:%' 
+        GROUP BY a.id
         ORDER BY date_creation DESC";
 
 $result = $conn->query($sql);
@@ -115,30 +123,42 @@ function getStars($rating) {
     return '<span class="stars">' . $stars . '</span> <span class="rating-value">' . number_format($rating, 1) . '</span>';
 }
 
-// Function to determine the CSS class for tags
-function getTagClass($tag) {
-    $tagClasses = [
-        'art' => 'primary',
-        'cuisine' => 'secondary',
-        'bien_etre' => 'accent',
-        'creativite' => 'primary',
-        'sport' => 'secondary',
-        'exterieur' => 'accent',
-        'interieur' => 'secondary',
-        'gratuit' => 'accent',
-        'ecologie' => 'primary',
-        'randonnee' => 'secondary',
-        'jardinage' => 'accent',
-        'meditation' => 'primary',
-        'artisanat' => 'secondary'
-    ];
-    
-    return isset($tagClasses[$tag]) ? $tagClasses[$tag] : '';
+// Use TagManager for displaying tags
+function displayActivityTags($tagList, $tagDisplayNames) {
+    global $tagManager;
+    $displayedTags = 0;
+    foreach ($tagList as $index => $tag) {
+        if ($displayedTags < 2 && !in_array($tag, ['gratuit', 'payant'])) {
+            $class = $tagManager->getTagClass($tag);
+            $displayName = $tagManager->getTagDisplayName($tag, $tagDisplayNames, $index);
+            echo '<span class="tags ' . $class . '" data-tag="' . htmlspecialchars($tag) . '">' 
+                . htmlspecialchars($displayName) . '</span>';
+            $displayedTags++;
+        }
+    }
 }
-?>
 
-<?php
-// (PHP code remains the same as in previous answer)
+// Function to determine the CSS class for tags using database definitions
+function getTagClass($tag) {
+    global $tagDefinitions;
+    
+    // Use the assigned class from tag_definitions
+    return isset($tagDefinitions[$tag]) ? $tagDefinitions[$tag]['class'] : 'primary';
+}
+
+// Function to get the display name for a tag using database definitions
+function getTagDisplayName($tag, $tagDisplayNames = null, $index = null) {
+    global $tagDefinitions;
+    
+    if ($tagDisplayNames && $index !== null && isset($tagDisplayNames[$index])) {
+        return $tagDisplayNames[$index];
+    }
+    
+    // Otherwise use the tag definitions
+    return isset($tagDefinitions[$tag]) ? 
+        $tagDefinitions[$tag]['display_name'] : 
+        ucfirst(str_replace('_', ' ', $tag));
+}
 ?>
 
 <!DOCTYPE html>
@@ -192,6 +212,65 @@ function getTagClass($tag) {
           margin: 30px auto 60px;
           position: relative;
           z-index: 2;
+      }
+      
+      /* Navigation tabs */
+      .activities-tabs {
+          display: flex;
+          justify-content: center;
+          gap: 20px;
+          margin-bottom: 40px;
+          flex-wrap: wrap;
+      }
+      
+      .tab-button {
+          padding: 15px 30px;
+          background-color: rgba(255, 255, 255, 0.7);
+          border-radius: 50px;
+          cursor: pointer;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          color: #666;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+          border: none;
+          text-decoration: none;
+          position: relative;
+          overflow: hidden;
+      }
+      
+      .tab-button::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, 
+              rgba(255, 255, 255, 0) 0%, 
+              rgba(69, 161, 99, 0.1) 50%, 
+              rgba(255, 255, 255, 0) 100%);
+          transform: skewX(-25deg);
+          transition: left 0.5s ease;
+          z-index: -1;
+      }
+      
+      .tab-button.active {
+          background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+          color: white;
+          box-shadow: 0 10px 25px rgba(69, 161, 99, 0.3);
+      }
+      
+      .tab-button:hover:not(.active) {
+          background-color: rgba(255, 255, 255, 0.9);
+          transform: translateY(-3px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      }
+      
+      .tab-button:hover::before {
+          left: 100%;
       }
       
       .action-buttons {
@@ -388,6 +467,11 @@ function getTagClass($tag) {
       
       .tags.secondary {
           background-color: rgba(148, 107, 45, 0.9);
+          color: white;
+      }
+      
+      .tags.primary {
+          background-color: rgba(60, 140, 92, 0.9);
           color: white;
       }
       
@@ -611,9 +695,22 @@ function getTagClass($tag) {
           box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
       }
       
+      /* Responsive */
       @media (max-width: 992px) {
           .activities-grid {
               grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          }
+          
+          .activities-tabs {
+              flex-direction: column;
+              align-items: center;
+              gap: 15px;
+          }
+          
+          .tab-button {
+              width: 100%;
+              max-width: 300px;
+              justify-content: center;
           }
       }
       
@@ -651,6 +748,18 @@ function getTagClass($tag) {
         </div>
       <?php endif; ?>
       
+      <div class="activities-tabs">
+        <a href="mes-activites.php" class="tab-button active">
+          <i class="fa-solid fa-pencil"></i> Activités créées
+        </a>
+        <a href="mes-activites-registered.php" class="tab-button">
+          <i class="fa-solid fa-calendar-check"></i> Activités inscrites
+        </a>
+        <a href="activites.php" class="tab-button">
+          <i class="fa-solid fa-compass"></i> Explorer les activités
+        </a>
+      </div>
+      
       <div class="action-buttons">
         <a href="./jenis.php" class="create-button">
           <i class="fa-solid fa-plus"></i> <span>Créer une nouvelle activité</span>
@@ -679,6 +788,7 @@ function getTagClass($tag) {
                         
                         // Liste des tags
                         $tagList = $row["tags"] ? explode(',', $row["tags"]) : [];
+                        $tagDisplayNames = $row["tag_display_names"] ? explode('|', $row["tag_display_names"]) : [];
                         
                         // Type de prix
                         $isPaid = $row["prix"] > 0;
@@ -706,16 +816,9 @@ function getTagClass($tag) {
                             echo '</div>';
                         }
                         
-                        // Tags
+                        // Tags - show up to 2 tags with display names
                         echo '<div class="tag">';
-                        $displayedTags = 0;
-                        foreach ($tagList as $tag) {
-                            if ($displayedTags < 2) {
-                                $tagClass = getTagClass($tag);
-                                echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . ucfirst(str_replace('_', ' ', $tag)) . '</span>';
-                                $displayedTags++;
-                            }
-                        }
+                        displayActivityTags($tagList, $tagDisplayNames);
                         echo '</div></div>';
                         
                         // Info

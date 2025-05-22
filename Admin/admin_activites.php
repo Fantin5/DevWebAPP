@@ -20,6 +20,23 @@ if (!$user_conn) {
     die("Connection to user database failed: " . mysqli_connect_error());
 }
 
+// Handle add tag action
+if(isset($_POST['add_tag'])) {
+    $tag_name = trim(mysqli_real_escape_string($conn, $_POST['tag_name']));
+    $display_name = trim(mysqli_real_escape_string($conn, $_POST['display_name']));
+    
+    if(!empty($tag_name) && !empty($display_name)) {
+        $insert_query = "INSERT INTO tag_definitions (name, display_name) VALUES (?, ?)";
+        $stmt = $conn->prepare($insert_query);
+        $stmt->bind_param("ss", $tag_name, $display_name);
+        
+        if($stmt->execute()) {
+            header("Location: admin_activites.php?success=tag_added");
+            exit();
+        }
+    }
+}
+
 // Handle delete action
 if(isset($_GET['delete']) && !empty($_GET['delete'])) {
     $id = (int)$_GET['delete'];
@@ -77,10 +94,36 @@ $result = $conn->query($activites_query);
         <p class="success">L'activité a été supprimée avec succès.</p>
     <?php endif; ?>
     
+    <?php if(isset($_GET['success']) && $_GET['success'] == 'tag_added'): ?>
+        <p class="success">Le tag a été ajouté avec succès.</p>
+    <?php endif; ?>
+    
     <?php if(isset($error)): ?>
         <p class="error"><?php echo $error; ?></p>
     <?php endif; ?>
     
+    <div class="add-tag-form" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <h3>Ajouter un nouveau tag</h3>
+        <form method="POST" action="" class="tag-form">
+            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                <div>
+                    <label for="tag_name">Nom technique (sans espaces)</label>
+                    <input type="text" id="tag_name" name="tag_name" required 
+                           pattern="[a-z0-9_]+" style="padding: 5px; margin-top: 5px;"
+                           title="Lettres minuscules, chiffres et underscore uniquement">
+                </div>
+                <div>
+                    <label for="display_name">Nom d'affichage</label>
+                    <input type="text" id="display_name" name="display_name" required 
+                           style="padding: 5px; margin-top: 5px;">
+                </div>
+                <button type="submit" name="add_tag" style="padding: 8px 15px; background: #45a163; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Ajouter le tag
+                </button>
+            </div>
+        </form>
+    </div>
+
     <table>
         <thead>
             <tr>
@@ -176,5 +219,23 @@ $result = $conn->query($activites_query);
             <?php endif; ?>
         </tbody>
     </table>
+
+    <script>
+    // Add this JavaScript to automatically format the tag name
+    document.getElementById('tag_name').addEventListener('input', function(e) {
+        this.value = this.value.toLowerCase()
+                              .replace(/\s+/g, '_')
+                              .replace(/[^a-z0-9_]/g, '');
+    });
+
+    // Auto-update display name if empty
+    document.getElementById('tag_name').addEventListener('change', function(e) {
+        const displayInput = document.getElementById('display_name');
+        if(displayInput.value === '') {
+            displayInput.value = this.value.replace(/_/g, ' ')
+                                   .replace(/\b\w/g, l => l.toUpperCase());
+        }
+    });
+    </script>
 </body>
 </html>
