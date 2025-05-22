@@ -31,3 +31,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the page
     initializePage();
 });
+// cvq

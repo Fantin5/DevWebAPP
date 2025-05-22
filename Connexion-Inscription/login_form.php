@@ -338,3 +338,4 @@ Ce lien expirera dans 24 heures.';
    <script src="switch.js"></script>
 </body>
 </html>
+<!-- cvq -->

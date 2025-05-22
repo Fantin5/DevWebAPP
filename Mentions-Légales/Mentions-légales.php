@@ -443,3 +443,4 @@ include_once '../Connexion-Inscription/config.php';
     </script>
 </body>
 </html>
+<!-- cvq -->

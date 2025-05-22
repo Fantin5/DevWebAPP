@@ -17,3 +17,4 @@ document.getElementById('imageInput').addEventListener('change', function(event)
         alert('Please select a valid image.');
     }
 });
+// cvq

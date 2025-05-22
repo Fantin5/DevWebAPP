@@ -210,3 +210,4 @@ Ce lien expirera dans 24 heures.';
    <?php include '../TEMPLATE/footer.php'; ?>
 </body>
 </html>
+<!-- cvq -->
