@@ -1,494 +1,599 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Éléments du DOM
-    const uploadZone = document.getElementById('upload-zone');
-    const browseButton = document.getElementById('browse-button');
-    const imageInput = document.getElementById('image-input');
-    const previewContainer = document.getElementById('preview-container');
-    const imagePreview = document.getElementById('image-preview');
-    const cropButton = document.getElementById('crop-button');
-    const changeImageButton = document.getElementById('change-image');
-    const croppedContainer = document.getElementById('cropped-container');
-    const croppedPreview = document.getElementById('cropped-preview');
-    const croppedData = document.getElementById('cropped-data');
-    const recropButton = document.getElementById('recrop-button');
-    
-    // Éléments du modal
-    const cropModal = document.getElementById('crop-modal');
-    const cropperImage = document.getElementById('cropper-image');
-    const applyCropButton = document.getElementById('apply-crop');
-    const cancelCropButton = document.getElementById('cancel-crop');
-    const closeModal = document.querySelector('.close-modal');
-    
-    // Date input
-    const dateOuPeriodeInput = document.getElementById('date_ou_periode');
-    const dateValidationMessage = document.getElementById('date-validation-message');
-    const dateSuggestionMessage = document.getElementById('date-suggestion-message');
-    
-    // Options de prix
-    const gratuitRadio = document.getElementById('gratuit');
-    const payantRadio = document.getElementById('payant');
-    const prixContainer = document.getElementById('prix-container');
-    
-    let cropper; // Variable pour stocker l'instance de cropper
-    let tagDefinitions = {}; // Variable pour stocker les définitions de tags
+    // Initialize all features
+    initializePriceToggle();
+    initializeImageUpload();
+    initializeDynamicDateHints();
+    initializeFormValidation();
+    initializeTagAnimations();
 
-    // Improved tag initialization
-    async function initializeTags() {
-        try {
-            const response = await fetch('get_tags.php');
-            tagDefinitions = await response.json();
-            await setupTagSelectors();
-            setupTagValidation();
-        } catch (error) {
-            console.error('Error fetching tags:', error);
-            showError('Erreur lors du chargement des tags');
+    // Enhanced Price Toggle with Icon Color Change
+    function initializePriceToggle() {
+        const gratuitRadio = document.getElementById('gratuit');
+        const payantRadio = document.getElementById('payant');
+        const prixContainer = document.getElementById('prix-container');
+        const prixInput = document.getElementById('prix');
+
+        function togglePriceContainer() {
+            if (payantRadio.checked) {
+                prixContainer.classList.remove('hidden');
+                prixContainer.style.animation = 'slideDown 0.3s ease-out';
+                
+                // Focus on price input after animation
+                setTimeout(() => {
+                    prixInput.focus();
+                }, 100);
+            } else {
+                prixContainer.classList.add('hidden');
+                prixInput.value = '';
+            }
+        }
+
+        gratuitRadio.addEventListener('change', togglePriceContainer);
+        payantRadio.addEventListener('change', togglePriceContainer);
+
+        // Add visual feedback for price input
+        prixInput.addEventListener('input', function() {
+            if (this.value && parseFloat(this.value) > 0) {
+                this.style.borderColor = 'var(--sage-green)';
+                this.style.boxShadow = '0 0 0 4px rgba(135, 169, 107, 0.2)';
+            } else {
+                this.style.borderColor = 'rgba(135, 169, 107, 0.3)';
+                this.style.boxShadow = 'none';
+            }
+        });
+    }
+
+    // Smart Dynamic Date Hints System
+    function initializeDynamicDateHints() {
+        const dateInput = document.getElementById('date_ou_periode');
+        const hintElement = document.getElementById('date-hint');
+        const hintText = document.getElementById('hint-text');
+        const hintIcon = hintElement.querySelector('i');
+
+        let hintTimeout;
+
+        dateInput.addEventListener('input', function() {
+            // Clear previous timeout
+            clearTimeout(hintTimeout);
+            
+            // Wait for user to stop typing before updating hint
+            hintTimeout = setTimeout(() => {
+                updateDateHint(this.value.toLowerCase().trim());
+            }, 500);
+        });
+
+        dateInput.addEventListener('focus', function() {
+            hintElement.style.transform = 'scale(1.02)';
+            hintElement.style.boxShadow = '0 4px 15px rgba(135, 169, 107, 0.2)';
+        });
+
+        dateInput.addEventListener('blur', function() {
+            hintElement.style.transform = 'scale(1)';
+            hintElement.style.boxShadow = 'none';
+        });
+
+        function updateDateHint(value) {
+            // Reset classes
+            hintElement.className = 'field-hint';
+            
+            if (!value) {
+                // Default hint
+                hintIcon.className = 'fas fa-lightbulb';
+                hintText.textContent = 'Formats: date précise (15/06/2025), récurrence (Tous les samedis jusqu\'au 20/12/2025), ou période (01/06/2025 - 15/06/2025)';
+                return;
+            }
+
+            // Check for recurrence patterns
+            const recurrenceKeywords = ['tous les', 'chaque', 'chaque semaine', 'chaque mois', 'quotidien', 'hebdomadaire', 'mensuel'];
+            const isRecurrence = recurrenceKeywords.some(keyword => value.includes(keyword));
+            
+            // Check for days of the week
+            const weekdays = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+            const containsWeekday = weekdays.some(day => value.includes(day));
+            
+            // Check if it looks like a date
+            const datePattern = /\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}/;
+            const hasDate = datePattern.test(value);
+            
+            // Check for period indicators
+            const periodIndicators = ['-', 'au', 'jusqu', 'pendant', 'durant'];
+            const hasPeriodIndicator = periodIndicators.some(indicator => value.includes(indicator));
+
+            if (isRecurrence || containsWeekday) {
+                // User is writing a recurrence
+                if (!value.includes('(date non spécifiée)') && !hasDate && !hasPeriodIndicator) {
+                    hintElement.classList.add('suggestion');
+                    hintIcon.className = 'fas fa-exclamation-triangle';
+                    hintText.textContent = '💡 Si vous connaissez la fin: "jusqu\'au [Date]" (ex: "jusqu\'au 20/12/2025"). Sinon ajoutez "(date non spécifiée)"';
+                } else if (value.includes('jusqu') || value.includes('pendant')) {
+                    hintElement.classList.add('suggestion');
+                    hintIcon.className = 'fas fa-calendar-check';
+                    hintText.textContent = '✨ Parfait ! Vous précisez une période pour votre récurrence.';
+                } else {
+                    hintIcon.className = 'fas fa-repeat';
+                    hintText.textContent = '🔄 Récurrence détectée. Vous pouvez ajouter une fin: "jusqu\'au 20 mai 2025" ou "(date non spécifiée)"';
+                }
+            } else if (hasDate) {
+                // User is writing a date
+                if (value.includes('-') || value.includes('au')) {
+                    hintIcon.className = 'fas fa-calendar-week';
+                    hintText.textContent = '📅 Super ! Vous définissez une période avec date de début et fin.';
+                } else {
+                    hintIcon.className = 'fas fa-calendar-day';
+                    hintText.textContent = '📅 Date précise détectée. Format correct !';
+                }
+            } else if (value.length > 3) {
+                // User is typing something else, give suggestions
+                const suggestions = [];
+                
+                if (value.includes('printemps') || value.includes('été') || value.includes('automne') || value.includes('hiver')) {
+                    hintIcon.className = 'fas fa-seedling';
+                    hintText.textContent = '🌸 Période saisonnière ! Vous pouvez ajouter une année: "Printemps 2025"';
+                } else {
+                    hintElement.classList.add('suggestion');
+                    hintIcon.className = 'fas fa-question-circle';
+                    hintText.textContent = '🤔 Essayez: "15/06/2025", "Tous les samedis", "01/06/2025 - 15/06/2025", ou "Printemps 2025"';
+                }
+            }
         }
     }
 
-    function setupTagSelectors() {
-        const tagContainer = document.querySelector('.tags-container');
-        if (!tagContainer) return;
+    // Enhanced Image Upload with Drag & Drop
+    function initializeImageUpload() {
+        const uploadZone = document.getElementById('upload-zone');
+        const imageInput = document.getElementById('image-input');
+        const browseButton = document.getElementById('browse-button');
+        const previewContainer = document.getElementById('preview-container');
+        const croppedContainer = document.getElementById('cropped-container');
+        const imagePreview = document.getElementById('image-preview');
+        const croppedPreview = document.getElementById('cropped-preview');
+        const croppedData = document.getElementById('cropped-data');
+        const cropButton = document.getElementById('crop-button');
+        const changeImageButton = document.getElementById('change-image');
+        const recropButton = document.getElementById('recrop-button');
+        const cropModal = document.getElementById('crop-modal');
+        const cropperImage = document.getElementById('cropper-image');
+        const applyCropButton = document.getElementById('apply-crop');
+        const cancelCropButton = document.getElementById('cancel-crop');
+        const closeModal = document.querySelector('.close-modal');
 
-        // Clear existing tags
-        tagContainer.innerHTML = '';
+        let cropper = null;
+        let currentImageFile = null;
 
-        // Add tags sorted by display name
-        Object.entries(tagDefinitions)
-            .sort(([,a], [,b]) => a.display_name.localeCompare(b.display_name))
-            .forEach(([tagName, tagInfo]) => {
-                if (tagName !== 'interieur' && tagName !== 'exterieur' && 
-                    tagName !== 'gratuit' && tagName !== 'payant') {
-                    const tagElement = createTagElement(tagName, tagInfo);
-                    tagContainer.appendChild(tagElement);
+        // Enhanced drag and drop with visual feedback
+        uploadZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--sage-green)';
+            this.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+            this.style.transform = 'scale(1.02)';
+            this.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'rgba(135, 169, 107, 0.4)';
+            this.style.backgroundColor = '';
+            this.style.transform = 'scale(1)';
+            this.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'rgba(135, 169, 107, 0.4)';
+            this.style.backgroundColor = '';
+            this.style.transform = 'scale(1)';
+            this.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleImageSelection(files[0]);
+            }
+        });
+
+        // Click handlers
+        uploadZone.addEventListener('click', () => imageInput.click());
+        browseButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            imageInput.click();
+        });
+
+        imageInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                handleImageSelection(this.files[0]);
+            }
+        });
+
+        function handleImageSelection(file) {
+            if (!file.type.startsWith('image/')) {
+                showNotification('Veuillez sélectionner un fichier image valide.', 'error');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('La taille du fichier ne doit pas dépasser 5MB.', 'error');
+                return;
+            }
+
+            currentImageFile = file;
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                uploadZone.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+                croppedContainer.classList.add('hidden');
+                croppedData.value = '';
+                
+                showNotification('Image chargée avec succès ! 📸', 'success');
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        // Crop functionality
+        cropButton.addEventListener('click', function() {
+            cropperImage.src = imagePreview.src;
+            cropModal.classList.remove('hidden');
+            
+            setTimeout(() => {
+                if (cropper) {
+                    cropper.destroy();
                 }
-            });
+                
+                cropper = new Cropper(cropperImage, {
+                    aspectRatio: 4/3,
+                    viewMode: 2,
+                    dragMode: 'move',
+                    autoCropArea: 0.8,
+                    responsive: true,
+                    cropBoxResizable: true,
+                    cropBoxMovable: true,
+                    background: false,
+                    guides: true,
+                    center: true,
+                    highlight: true
+                });
+            }, 100);
+        });
+
+        applyCropButton.addEventListener('click', function() {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 800,
+                    height: 600,
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high'
+                });
+
+                const croppedImageData = canvas.toDataURL('image/jpeg', 0.9);
+                croppedPreview.src = croppedImageData;
+                croppedData.value = croppedImageData;
+
+                previewContainer.classList.add('hidden');
+                croppedContainer.classList.remove('hidden');
+                cropModal.classList.add('hidden');
+                
+                showNotification('Image recadrée avec succès ! ✂️', 'success');
+
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+
+        // Modal close handlers
+        cancelCropButton.addEventListener('click', closeCropModal);
+        closeModal.addEventListener('click', closeCropModal);
+
+        function closeCropModal() {
+            cropModal.classList.add('hidden');
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        }
+
+        changeImageButton.addEventListener('click', function() {
+            uploadZone.classList.remove('hidden');
+            previewContainer.classList.add('hidden');
+            croppedContainer.classList.add('hidden');
+            imageInput.value = '';
+            croppedData.value = '';
+            currentImageFile = null;
+        });
+
+        recropButton.addEventListener('click', function() {
+            if (currentImageFile) {
+                cropButton.click();
+            }
+        });
+
+        cropModal.addEventListener('click', function(e) {
+            if (e.target === cropModal) {
+                closeCropModal();
+            }
+        });
     }
 
-    function setupTagValidation() {
+    // Enhanced Form Validation
+    function initializeFormValidation() {
         const form = document.getElementById('activity-form');
-        const existingValidation = form.onsubmit;
+        const requiredFields = form.querySelectorAll('[required]');
 
-        form.onsubmit = function(e) {
-            const selectedTags = Array.from(document.querySelectorAll('input[name="tags[]"]:checked'))
-                .map(input => input.value);
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            let firstInvalidField = null;
 
-            if (selectedTags.length === 0) {
+            // Check required fields
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    markFieldAsInvalid(field);
+                    isValid = false;
+                    if (!firstInvalidField) {
+                        firstInvalidField = field;
+                    }
+                } else {
+                    markFieldAsValid(field);
+                }
+            });
+
+            // Check image requirement
+            const croppedImage = document.getElementById('cropped-data').value;
+            const imageInput = document.getElementById('image-input');
+            const uploadZone = document.getElementById('upload-zone');
+
+            if (!croppedImage && !imageInput.files.length) {
+                uploadZone.style.borderColor = 'var(--coral)';
+                uploadZone.style.backgroundColor = 'rgba(255, 107, 138, 0.1)';
+                showNotification('Une image est requise pour faire pousser votre activité ! 📸', 'error');
+                isValid = false;
+                if (!firstInvalidField) {
+                    firstInvalidField = uploadZone;
+                }
+            }
+
+            // Check tags requirement
+            const checkedTags = form.querySelectorAll('input[name="tags[]"]:checked');
+            if (checkedTags.length === 0) {
+                const tagsSection = document.querySelector('.tags-section');
+                tagsSection.style.borderColor = 'var(--coral)';
+                tagsSection.style.backgroundColor = 'rgba(255, 107, 138, 0.05)';
+                showNotification('Choisissez au moins un écosystème pour votre activité ! 🏷️', 'error');
+                isValid = false;
+                if (!firstInvalidField) {
+                    firstInvalidField = tagsSection;
+                }
+            }
+
+            if (!isValid) {
                 e.preventDefault();
-                showError('Veuillez sélectionner au moins un tag');
+                if (firstInvalidField) {
+                    firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    if (firstInvalidField.focus) {
+                        setTimeout(() => firstInvalidField.focus(), 500);
+                    }
+                }
                 return false;
             }
 
-            // Add payment tag based on radio selection
-            const paymentTag = gratuitRadio.checked ? 'gratuit' : 'payant';
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'tags[]';
-            hiddenInput.value = paymentTag;
-            this.appendChild(hiddenInput);
+            // Show loading state
+            const submitButton = form.querySelector('.btn-submit');
+            const originalContent = submitButton.innerHTML;
+            submitButton.innerHTML = '<div class="btn-content"><i class="fas fa-spinner fa-spin"></i><span>🌱 Plantation en cours...</span></div>';
+            submitButton.disabled = true;
 
-            return existingValidation ? existingValidation.call(this, e) : true;
-        };
-    }
-
-    function createTagElement(tagName, tagInfo) {
-        const div = document.createElement('div');
-        div.className = 'tag-item';
-        
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.id = `tag_${tagName}`;
-        input.name = 'tags[]';
-        input.value = tagName;
-
-        const label = document.createElement('label');
-        label.htmlFor = `tag_${tagName}`;
-        label.className = tagInfo.class || 'primary';
-        label.innerHTML = `<i class="fa-solid fa-tag"></i> ${tagInfo.display_name}`;
-
-        div.appendChild(input);
-        div.appendChild(label);
-        return div;
-    }
-
-    function showError(message) {
-        // Add error display logic here
-        alert(message);
-    }
-
-    // Initialize tags
-    initializeTags();
-
-    // Gestion de l'upload par glisser-déposer
-    uploadZone.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        uploadZone.style.backgroundColor = 'rgba(130, 137, 119, 0.2)';
-    });
-    
-    uploadZone.addEventListener('dragleave', function() {
-        uploadZone.style.backgroundColor = '';
-    });
-    
-    uploadZone.addEventListener('drop', function(e) {
-        e.preventDefault();
-        uploadZone.style.backgroundColor = '';
-        
-        if (e.dataTransfer.files.length > 0) {
-            handleImageFile(e.dataTransfer.files[0]);
-        }
-    });
-    
-    // Bouton pour parcourir les fichiers
-    browseButton.addEventListener('click', function() {
-        imageInput.click();
-    });
-    
-    // Sélection de fichier via l'input
-    imageInput.addEventListener('change', function() {
-        if (this.files.length > 0) {
-            handleImageFile(this.files[0]);
-        }
-    });
-    
-    // Traitement du fichier image
-    function handleImageFile(file) {
-        if (!file.type.match('image.*')) {
-            alert('Veuillez sélectionner une image valide.');
-            return;
-        }
-        
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            imagePreview.src = e.target.result;
-            uploadZone.classList.add('hidden');
-            uploadZone.classList.remove('required-field'); // Remove required field highlighting
-            previewContainer.classList.remove('hidden');
-            croppedContainer.classList.add('hidden');
-            
-            // Ouvrir directement l'outil de recadrage dès que l'image est chargée
-            setTimeout(() => {
-                openCropTool();
-            }, 300);
-        };
-        
-        reader.readAsDataURL(file);
-    }
-    
-    // Fonction pour ouvrir l'outil de recadrage
-    function openCropTool() {
-        cropperImage.src = imagePreview.src;
-        cropModal.classList.remove('hidden');
-        
-        // Initialiser Cropper.js
-        if (cropper) {
-            cropper.destroy();
-        }
-        
-        setTimeout(() => {
-            cropper = new Cropper(cropperImage, {
-                aspectRatio: 4 / 3, // Ratio 4:3 au lieu de 16:9
-                viewMode: 1,
-                guides: true,
-                autoCropArea: 0.8,
-                background: true,
-                modal: true,
-                responsive: true,
-                zoomable: true
-            });
-        }, 100);
-    }
-    
-    // Bouton pour changer l'image
-    changeImageButton.addEventListener('click', function() {
-        imageInput.value = '';
-        previewContainer.classList.add('hidden');
-        croppedContainer.classList.add('hidden');
-        uploadZone.classList.remove('hidden');
-    });
-    
-    // Bouton pour recadrer l'image
-    cropButton.addEventListener('click', openCropTool);
-    
-    // Fermer le modal
-    function closeModalFunction() {
-        cropModal.classList.add('hidden');
-        if (cropper) {
-            cropper.destroy();
-            cropper = null;
-        }
-    }
-    
-    closeModal.addEventListener('click', closeModalFunction);
-    cancelCropButton.addEventListener('click', closeModalFunction);
-    
-    // Appliquer le recadrage
-    applyCropButton.addEventListener('click', function() {
-        const croppedCanvas = cropper.getCroppedCanvas({
-            width: 800,
-            height: 600 // Changé pour correspondre au ratio 4:3
+            return true;
         });
-        
-        croppedPreview.src = croppedCanvas.toDataURL('image/jpeg');
-        croppedData.value = croppedCanvas.toDataURL('image/jpeg');
-        
-        previewContainer.classList.add('hidden');
-        croppedContainer.classList.remove('hidden');
-        closeModalFunction();
-    });
-    
-    // Recadrer à nouveau
-    recropButton.addEventListener('click', function() {
-        croppedContainer.classList.add('hidden');
-        previewContainer.classList.remove('hidden');
-        openCropTool();
-    });
-    
-    // Gestion des options de prix
-    gratuitRadio.addEventListener('change', function() {
-        if (this.checked) {
-            prixContainer.classList.add('hidden');
-        }
-    });
-    
-    payantRadio.addEventListener('change', function() {
-        if (this.checked) {
-            prixContainer.classList.remove('hidden');
-        }
-    });
-    
-    // Validation de la date
-    dateOuPeriodeInput.addEventListener('input', validateDateFormat);
-    dateOuPeriodeInput.addEventListener('blur', validateDateFormat);
 
-    function validateDateFormat() {
-        const value = dateOuPeriodeInput.value.trim();
-        let isValid = false;
-        let message = '';
-        
-        // Si le champ est vide
-        if (!value) {
-            dateValidationMessage.textContent = 'Ce champ est requis';
-            dateValidationMessage.style.color = '#e74c3c';
-            dateOuPeriodeInput.style.borderColor = '#e74c3c';
-            dateSuggestionMessage.classList.add('hidden');
-            return false;
+        function markFieldAsInvalid(field) {
+            field.style.borderColor = 'var(--coral)';
+            field.style.boxShadow = '0 0 0 4px rgba(255, 107, 138, 0.2)';
+            field.style.backgroundColor = 'rgba(255, 107, 138, 0.05)';
+            
+            field.style.animation = 'shake 0.5s ease-in-out';
+            setTimeout(() => {
+                field.style.animation = '';
+            }, 500);
         }
 
-        // Vérifie format de date JJ/MM/AAAA
-        const dateRegex = /^(0?[1-9]|[12][0-9]|3[01])\/(0?[1-9]|1[0-2])\/\d{4}$/;
-        
-        // Vérifie format de date avec texte (ex: 15 juin 2025)
-        const monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-        const textDateRegex = new RegExp(`^(0?[1-9]|[12][0-9]|3[01])\\s+(${monthNames.join('|')})\\s+\\d{4}$`, 'i');
-        
-        // Vérifie format de période (ex: 01/06/2025 - 15/06/2025)
-        const periodRegex = /^(0?[1-9]|[12][0-9]|3[01])\/(0?[1-9]|1[0-2])\/\d{4}\s*-\s*(0?[1-9]|[12][0-9]|3[01])\/(0?[1-9]|1[0-2])\/\d{4}$/;
-        
-        // Vérifie "Tous les..." (ex: Tous les lundis)
-        const recurringRegex = /^tous les (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s?$/i;
-        
-        // Vérifie le début d'un pattern récurrent (pour afficher le message de suggestion)
-        const recurringStartRegex = /^tous les (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s?/i;
-        
-        // Vérifie "Tous les... jusqu'au..." (ex: Tous les lundis jusqu'au 15 septembre 2025)
-        const recurringWithEndRegex = /^tous les (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s? jusqu'au (0?[1-9]|[12][0-9]|3[01])(\/|\s+)(0?[1-9]|1[0-2]|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)(\/|\s+)\d{4}$/i;
-        
-        // Vérifie "Tous les... (date non spécifiée)" (ex: Tous les lundis (date non spécifiée))
-        const recurringUnknownEndRegex = /^tous les (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s? \(date non spécifiée\)$/i;
-        
-        // Vérifie la validité
-        if (dateRegex.test(value)) {
-            // Validation supplémentaire pour la date JJ/MM/AAAA
-            const [day, month, year] = value.split('/').map(Number);
-            isValid = validateDateValues(day, month, year);
-            
-            if (!isValid) {
-                message = 'Date invalide. Veuillez vérifier jour/mois/année';
-            }
-            dateSuggestionMessage.classList.add('hidden');
-            
-        } else if (textDateRegex.test(value)) {
-            // Date avec texte (ex: 15 juin 2025)
-            const parts = value.split(' ');
-            const day = parseInt(parts[0], 10);
-            const monthIndex = monthNames.findIndex(m => 
-                m.toLowerCase() === parts[1].toLowerCase());
-            const year = parseInt(parts[2], 10);
-            
-            isValid = validateDateValues(day, monthIndex + 1, year);
-            
-            if (!isValid) {
-                message = 'Date invalide. Veuillez vérifier jour/mois/année';
-            }
-            dateSuggestionMessage.classList.add('hidden');
-            
-        } else if (periodRegex.test(value)) {
-            // Période (ex: 01/06/2025 - 15/06/2025)
-            const dates = value.split('-').map(d => d.trim());
-            const [startDay, startMonth, startYear] = dates[0].split('/').map(Number);
-            const [endDay, endMonth, endYear] = dates[1].split('/').map(Number);
-            
-            const isStartValid = validateDateValues(startDay, startMonth, startYear);
-            const isEndValid = validateDateValues(endDay, endMonth, endYear);
-            
-            isValid = isStartValid && isEndValid;
-            
-            if (!isValid) {
-                message = 'Période invalide. Veuillez vérifier les dates';
-            } else {
-                // Vérifier que la date de fin est après la date de début
-                const startDate = new Date(startYear, startMonth - 1, startDay);
-                const endDate = new Date(endYear, endMonth - 1, endDay);
-                
-                if (endDate <= startDate) {
-                    isValid = false;
-                    message = 'La date de fin doit être après la date de début';
+        function markFieldAsValid(field) {
+            field.style.borderColor = 'var(--sage-green)';
+            field.style.boxShadow = '0 0 0 4px rgba(135, 169, 107, 0.2)';
+            field.style.backgroundColor = 'rgba(135, 169, 107, 0.05)';
+        }
+
+        // Real-time validation
+        requiredFields.forEach(field => {
+            field.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    markFieldAsValid(this);
+                } else {
+                    this.style.borderColor = 'rgba(135, 169, 107, 0.3)';
+                    this.style.boxShadow = 'none';
+                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
                 }
-            }
-            dateSuggestionMessage.classList.add('hidden');
-            
-        } else if (recurringWithEndRegex.test(value)) {
-            // Format récurrent avec date de fin (ex: Tous les lundis jusqu'au 15 septembre 2025)
-            isValid = true;
-            dateSuggestionMessage.classList.add('hidden');
-            
-        } else if (recurringUnknownEndRegex.test(value)) {
-            // Format récurrent avec mention "date non spécifiée"
-            isValid = true;
-            dateSuggestionMessage.classList.add('hidden');
-            
-        } else if (recurringRegex.test(value)) {
-            // Format récurrent valide sans date de fin (ex: Tous les lundis)
-            // C'est valide techniquement, mais on encourage à ajouter une date de fin
-            isValid = false;
-            message = 'Veuillez préciser une date de fin pour l\'événement récurrent';
-            
-            // Afficher une suggestion d'ajout de date de fin
-            showRecurringSuggestion(value.match(/tous les ([a-zéèê]+)s?/i)[1]);
-            
-        } else if (recurringStartRegex.test(value)) {
-            // L'utilisateur est en train d'écrire un pattern récurrent, mais il n'est pas encore complet
-            // On considère que c'est en cours de saisie, donc valide temporairement
-            isValid = false;
-            message = 'Veuillez préciser une date de fin pour l\'événement récurrent';
-            
-            // Récupérer le jour de la semaine mentionné
-            const weekdayMatch = value.match(/tous les ([a-zéèê]+)s?/i);
-            if (weekdayMatch && weekdayMatch[1]) {
-                showRecurringSuggestion(weekdayMatch[1]);
-            }
-            
-        } else {
-            message = 'Format non reconnu. Utilisez DD/MM/YYYY, "JJ mois AAAA", "DD/MM/YYYY - DD/MM/YYYY" ou "Tous les..."';
-            dateSuggestionMessage.classList.add('hidden');
-        }
+            });
+        });
 
-        // Afficher le résultat de validation
-        if (isValid) {
-            dateValidationMessage.textContent = '✓ Format valide';
-            dateValidationMessage.style.color = '#2ecc71';
-            dateOuPeriodeInput.style.borderColor = '#2ecc71';
-        } else {
-            dateValidationMessage.textContent = message;
-            dateValidationMessage.style.color = '#e74c3c';
-            dateOuPeriodeInput.style.borderColor = '#e74c3c';
-        }
-
-        return isValid;
+        // Tag selection validation
+        const tagCheckboxes = form.querySelectorAll('input[name="tags[]"]');
+        tagCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const checkedTags = form.querySelectorAll('input[name="tags[]"]:checked');
+                const tagsSection = document.querySelector('.tags-section');
+                
+                if (checkedTags.length > 0) {
+                    tagsSection.style.borderColor = '';
+                    tagsSection.style.backgroundColor = '';
+                }
+            });
+        });
     }
 
-    // Fonction pour afficher la suggestion pour les événements récurrents
-    function showRecurringSuggestion(weekday) {
-        const today = new Date();
-        const oneYearLater = new Date(today);
-        oneYearLater.setFullYear(today.getFullYear() + 1);
-        
-        const day = oneYearLater.getDate();
-        const monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-        const month = monthNames[oneYearLater.getMonth()];
-        const year = oneYearLater.getFullYear();
-        
-        const suggestion = `${weekday}s jusqu'au ${day} ${month} ${year}`;
-        
-        dateSuggestionMessage.innerHTML = `
-            Pour les événements récurrents, précisez une date de fin :<br>
-            - "Tous les ${suggestion}"<br>
-            - ou "Tous les ${weekday}s (date non spécifiée)" si vous ne connaissez pas la date de fin
-        `;
-        dateSuggestionMessage.classList.remove('hidden');
-    }
-
-    // Fonction pour vérifier si une date est valide
-    function validateDateValues(day, month, year) {
-        const date = new Date(year, month - 1, day);
-        return date.getFullYear() === year &&
-               date.getMonth() === month - 1 &&
-               date.getDate() === day &&
-               year >= new Date().getFullYear(); // Date dans le futur
-    }    
+// Simple Tag Selection
+function initializeTagAnimations() {
+    const tagCards = document.querySelectorAll('.tag-card');
     
-    // Validation du formulaire
-    document.getElementById('activity-form').addEventListener('submit', function(e) {
-        const titre = document.getElementById('titre').value.trim();
-        const description = document.getElementById('description').value.trim();
-        const imageUploaded = croppedData.value || imagePreview.src !== '#';
-        const dateValue = dateOuPeriodeInput.value.trim();
+    tagCards.forEach(card => {
+        const checkbox = card.querySelector('input[type="checkbox"]');
         
-        let isValid = true;
-        let errorMessage = '';
+        // Simple click handler
+        card.addEventListener('click', function() {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+        });
+
+        // Simple color change on selection
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+    });
+}
+
+    // Enhanced Notification System
+    function showNotification(message, type = 'success') {
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notification => {
+            notification.style.animation = 'slideOut 0.3s ease-in forwards';
+            setTimeout(() => notification.remove(), 300);
+        });
+
+        const notification = document.createElement('div');
+        notification.classList.add('notification', type);
         
-        if (!titre) {
-            isValid = false;
-            errorMessage += 'Le titre est requis.\n';
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        };
+
+        const colors = {
+            success: 'linear-gradient(135deg, var(--sage-green), var(--forest-green))',
+            error: 'linear-gradient(135deg, var(--coral), #ff4757)',
+            warning: 'linear-gradient(135deg, var(--sunset-orange), #f39c12)',
+            info: 'linear-gradient(135deg, var(--sky-blue), #3498db)'
+        };
+
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas ${icons[type]}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        Object.assign(notification.style, {
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '15px 20px',
+            borderRadius: '15px',
+            color: 'white',
+            fontWeight: '600',
+            zIndex: '10000',
+            maxWidth: '400px',
+            background: colors[type],
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.2)',
+            backdropFilter: 'blur(10px)',
+            animation: 'slideIn 0.5s ease-out',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            cursor: 'pointer'
+        });
+
+        document.body.appendChild(notification);
+
+        // Auto remove
+        const autoRemove = setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-in forwards';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 300);
+        }, 5000);
+
+        // Click to remove
+        notification.addEventListener('click', () => {
+            clearTimeout(autoRemove);
+            notification.style.animation = 'slideOut 0.3s ease-in forwards';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 300);
+        });
+    }
+
+    // Add required CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
         
-        if (!description) {
-            isValid = false;
-            errorMessage += 'La description est requise.\n';
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
         }
         
-        if (!imageUploaded) {
-            isValid = false;
-            errorMessage += 'Une image est requise.\n';
-            // Highlight the upload zone with a red border
-            uploadZone.classList.add('required-field');
-            // Scroll to the image upload section
-            uploadZone.scrollIntoView({ behavior: 'smooth' });
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
         
-        if (payantRadio.checked && (!document.getElementById('prix').value || document.getElementById('prix').value <= 0)) {
-            isValid = false;
-            errorMessage += 'Veuillez entrer un prix valide.\n';
+        @keyframes iconBounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3) rotate(15deg); }
+            100% { transform: scale(1) rotate(0deg); }
         }
         
-        // Validation de la date avant soumission
-        if (!dateValue) {
-            isValid = false;
-            errorMessage += 'La date ou période est requise.\n';
-        } else {
-            // Valider le format de la date
-            const dateIsValid = validateDateFormat();
-            if (!dateIsValid) {
-                isValid = false;
-                errorMessage += 'Le format de date ou période est invalide.\n';
+        .animate-in {
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
         
-        if (!isValid) {
-            e.preventDefault();
-            alert('Erreur de validation:\n' + errorMessage);
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0);
+            animation: rippleEffect 0.6s ease-out;
+            pointer-events: none;
         }
         
-    });
-
-    // Suggestion pour compléter "Date non spécifiée"
-    dateOuPeriodeInput.addEventListener('keydown', function(e) {
-        // Si l'utilisateur appuie sur "(" après avoir écrit "Tous les [jour]"
-        if (e.key === '(' && /^Tous les (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s?\s*$/i.test(this.value)) {
-            // Compléter automatiquement avec "(date non spécifiée)"
-            this.value += "(date non spécifiée)";
-            e.preventDefault();
-            validateDateFormat();
+        @keyframes rippleEffect {
+            to {
+                transform: scale(2);
+                opacity: 0;
+            }
         }
-    });
+        
+        .upload-zone.drag-over {
+            border-style: solid !important;
+            background: rgba(135, 169, 107, 0.1) !important;
+        }
+        
+        .tag-card.selected {
+            animation: selectedPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes selectedPulse {
+            0%, 100% { box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2); }
+            50% { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25); }
+        }
+    `;
+    document.head.appendChild(style);
 });

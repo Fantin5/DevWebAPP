@@ -117,42 +117,58 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
     
-    // Insérer les données dans la base de données
-    $sql = "INSERT INTO activites (titre, description, image_url, prix, date_ou_periode) 
-            VALUES ('$titre', '$description', '$image_url', $prix, '$date_ou_periode')";
+    // THE FIX: Use transaction and proper duplicate handling
+    $conn->begin_transaction();
     
-    if ($conn->query($sql) === TRUE) {
-        $activity_id = $conn->insert_id;
+    try {
+        // Insérer les données dans la base de données
+        $sql = "INSERT INTO activites (titre, description, image_url, prix, date_ou_periode) 
+                VALUES (?, ?, ?, ?, ?)";
         
-        // Create an array with all tags, including the payment tag
-        $allTags = isset($_POST['tags']) && is_array($_POST['tags']) ? $_POST['tags'] : [];
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("sssds", $titre, $description, $image_url, $prix, $date_ou_periode);
         
-        // Add the payment tag (gratuit or payant)
-        $allTags[] = $payment_tag;
-        
-        // Update tag processing
-        foreach ($allTags as $tag_name) {
-            $tag_name = $conn->real_escape_string($tag_name);
-            
-            // Verify that the tag exists in tag_definitions
-            $checkTagSQL = "SELECT id FROM tag_definitions WHERE name = ?";
-            $stmt = $conn->prepare($checkTagSQL);
-            $stmt->bind_param("s", $tag_name);
-            $stmt->execute();
-            $tagResult = $stmt->get_result();
-            
-            if ($tagResult && $tagResult->num_rows > 0) {
-                $tagRow = $tagResult->fetch_assoc();
-                $tag_definition_id = $tagRow['id'];
-                
-                // Insert into activity_tags
-                $insertTagSQL = "INSERT INTO activity_tags (activity_id, tag_definition_id) VALUES (?, ?)";
-                $stmt = $conn->prepare($insertTagSQL);
-                $stmt->bind_param("ii", $activity_id, $tag_definition_id);
-                $stmt->execute();
-            }
-            $stmt->close();
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to insert activity");
         }
+        
+        $activity_id = $conn->insert_id;
+        $stmt->close();
+        
+        // THE FIX: Handle tags properly to avoid duplicates
+        $selectedTags = isset($_POST['tags']) && is_array($_POST['tags']) ? $_POST['tags'] : [];
+        
+        // Remove any payment tags from user selection (they shouldn't be there anyway)
+        $selectedTags = array_filter($selectedTags, function($tag) {
+            return !in_array($tag, ['gratuit', 'payant']);
+        });
+        
+        // Add the payment tag
+        $selectedTags[] = $payment_tag;
+        
+        // Remove duplicates and empty values
+        $finalTags = array_filter(array_unique($selectedTags), function($tag) {
+            return !empty(trim($tag));
+        });
+        
+        // Insert tags with duplicate check
+        if (!empty($finalTags)) {
+            $insertTagSQL = "INSERT IGNORE INTO activity_tags (activity_id, tag_definition_id) 
+                            SELECT ?, id FROM tag_definitions WHERE name = ?";
+            $tagStmt = $conn->prepare($insertTagSQL);
+            
+            foreach ($finalTags as $tag) {
+                $tag = trim($tag);
+                if (!empty($tag)) {
+                    $tagStmt->bind_param("is", $activity_id, $tag);
+                    $tagStmt->execute(); // Using INSERT IGNORE to handle duplicates
+                }
+            }
+            $tagStmt->close();
+        }
+        
+        // Commit the transaction
+        $conn->commit();
         
         // Send notification to subscribed users about the new activity
         sendActivityNotification($titre, $activity_id);
@@ -160,8 +176,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Rediriger vers la page d'accueil avec un message de succès
         header("Location: main.php?success=1");
         exit();
-    } else {
-        echo "Erreur: " . $sql . "<br>" . $conn->error;
+        
+    } catch (Exception $e) {
+        // Rollback on error
+        $conn->rollback();
+        error_log("Activity creation error: " . $e->getMessage());
+        
+        // Redirect back with error
+        header("Location: jenis.php?error=creation_failed");
+        exit();
     }
 }
 
