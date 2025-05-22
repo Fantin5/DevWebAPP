@@ -119,13 +119,28 @@ function getTagDisplayName($tag, $tagDisplayNames = null, $index = null) {
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
     <style>
-      /* Common styles - same as before */
+      /* Nature-inspired variables */
+      :root {
+          --primary-color: #3c8c5c;
+          --primary-light: #61b980;
+          --primary-dark: #275e3e;
+          --secondary-color: #946b2d;
+          --secondary-light: #c89e52;
+          --accent-color: #e9c46a;
+          --text-dark: #2d5a3d;
+          --bg-gradient: linear-gradient(135deg, #f8fff9 0%, #f0f7f2 100%);
+      }
+
+      /* Enhanced body background */
       body { 
           font-family: Arial, sans-serif; 
           position: relative;
           overflow-x: hidden;
           min-height: 100vh;
-          background: linear-gradient(135deg, rgba(228, 216, 200, 0.8) 0%, rgba(215, 225, 210, 0.8) 100%);
+          background: var(--bg-gradient);
+          background-image: 
+              radial-gradient(circle at 20% 20%, rgba(69, 161, 99, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(233, 196, 106, 0.1) 0%, transparent 50%);
       }
 
       .activities-page-title {
@@ -211,11 +226,11 @@ function getTagDisplayName($tag, $tagDisplayNames = null, $index = null) {
           z-index: 2;
       }
       
-      /* Activities Grid Styling */
+      /* Modern Activities Grid Styling */
       .activities-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          gap: 30px;
+          gap: 1.5rem;
           position: relative;
           animation: fadeIn 1s forwards;
       }
@@ -229,7 +244,9 @@ function getTagDisplayName($tag, $tagDisplayNames = null, $index = null) {
       .no-activities {
           text-align: center;
           padding: 60px 30px;
-          background-color: rgba(255, 255, 255, 0.7);
+          background: rgba(255, 255, 255, 0.9);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.8);
           border-radius: 20px;
           box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
           grid-column: 1/-1;
@@ -254,195 +271,213 @@ function getTagDisplayName($tag, $tagDisplayNames = null, $index = null) {
           font-size: 18px;
       }
       
-      /* Updated Card styling */
-      .card {
-          background-color: rgba(255, 255, 255, 0.9);
+      /* Modern Activity Card styling */
+      .activity-card {
+          background: rgba(255, 255, 255, 0.9);
           backdrop-filter: blur(10px);
-          border-radius: 20px;
-          overflow: hidden;
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-          display: flex;
-          flex-direction: column;
+          border: 1px solid rgba(255, 255, 255, 0.8);
           transition: all 0.4s ease;
-          border: 1px solid rgba(255, 255, 255, 0.7);
-          position: relative;
-          z-index: 1;
+          border-radius: 16px;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+          overflow: hidden;
+          cursor: pointer;
           animation: cardAppear 0.6s ease-out forwards;
           opacity: 0;
           transform: translateY(30px);
-          /* No fixed height to allow content to determine size */
       }
       
       @keyframes cardAppear {
           to { opacity: 1; transform: translateY(0); }
       }
       
-      .card:nth-child(3n+1) { animation-delay: 0.1s; }
-      .card:nth-child(3n+2) { animation-delay: 0.2s; }
-      .card:nth-child(3n+3) { animation-delay: 0.3s; }
+      .activity-card:nth-child(3n+1) { animation-delay: 0.1s; }
+      .activity-card:nth-child(3n+2) { animation-delay: 0.2s; }
+      .activity-card:nth-child(3n+3) { animation-delay: 0.3s; }
       
-      .card:hover {
-          transform: translateY(-10px);
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      .activity-card:hover {
+          transform: translateY(-8px) scale(1.02);
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
       }
       
-      .image-container {
-          height: 200px; /* Slightly reduced height */
-          overflow: hidden;
+      .card-image {
           position: relative;
+          height: 200px;
+          overflow: hidden;
+          border-radius: 16px 16px 0 0;
       }
       
-      .card img {
+      .card-image img {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          transition: transform 0.7s ease;
+          transition: transform 0.3s ease;
       }
       
-      .card:hover img {
-          transform: scale(1.1);
+      .activity-card:hover .card-image img {
+          transform: scale(1.05);
       }
       
-      /* Price tag and tags */
-      .price-tag {
+      /* Price badge and urgency badge */
+      .price-badge {
           position: absolute;
-          top: 15px;
-          right: 15px;
-          background: linear-gradient(135deg, rgba(148, 107, 45, 0.9) 0%, rgba(97, 70, 30, 0.9) 100%);
+          top: 1rem;
+          right: 1rem;
+          background: rgba(45, 90, 61, 0.9);
           color: white;
-          padding: 6px 12px;
-          border-radius: 30px;
-          font-size: 14px;
-          font-weight: 700;
+          padding: 0.5rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          backdrop-filter: blur(8px);
           display: flex;
           align-items: center;
-          gap: 6px;
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-          z-index: 10;
+          gap: 0.5rem;
       }
       
-      .price-tag.free {
-          background: linear-gradient(135deg, rgba(69, 161, 99, 0.9) 0%, rgba(39, 94, 62, 0.9) 100%);
+      .price-badge.free {
+          background: rgba(69, 161, 99, 0.9);
       }
       
-      .tag {
+      .purchased-badge {
           position: absolute;
-          bottom: 15px;
-          left: 15px;
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-          z-index: 2;
-          max-width: calc(100% - 30px);
-      }
-      
-      .tags {
-          background-color: rgba(60, 140, 92, 0.9);
+          top: 1rem;
+          left: 1rem;
+          background: rgba(69, 161, 99, 0.9);
           color: white;
-          padding: 6px 12px;
-          border-radius: 50px;
-          font-size: 12px;
+          padding: 0.5rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.8rem;
           font-weight: 600;
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-      }
-      
-      .tags.accent {
-          background-color: rgba(233, 196, 106, 0.9);
-          color: var(--text-dark);
-      }
-      
-      .tags.secondary {
-          background-color: rgba(148, 107, 45, 0.9);
-          color: white;
-      }
-      
-      .tags.primary {
-          background-color: rgba(60, 140, 92, 0.9);
-          color: white;
-      }
-      
-      /* Info section - reduced padding */
-      .info {
-          flex-grow: 1;
+          backdrop-filter: blur(8px);
           display: flex;
-          flex-direction: column;
-          padding: 15px 20px;
-          position: relative;
-          background-color: white;
+          align-items: center;
+          gap: 0.5rem;
       }
       
-      .card h3 {
-          font-size: 18px;
-          line-height: 1.4;
-          margin: 0 0 10px 0;
-          color: var(--text-dark);
+      /* Card content */
+      .card-content {
+          padding: 1.5rem;
+      }
+      
+      .card-content h3 {
+          font-size: 1.25rem;
           font-weight: 700;
-          min-height: unset; /* Remove fixed height */
+          color: #1f2937;
+          margin-bottom: 0.5rem;
+          line-height: 1.3;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
       }
       
-      .period {
-          color: #666;
-          margin: 0 0 5px 0;
-          font-size: 14px;
+      .activity-period {
+          color: #6b7280;
+          font-size: 0.9rem;
+          margin-bottom: 1rem;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 0.5rem;
       }
       
-      /* Actions section */
-      .actions {
-          padding: 15px 20px;
-          border-top: 1px solid #eee;
-          background-color: #f9f9f9;
+      .activity-period i {
+          color: var(--primary-color);
       }
       
-      .rating {
-          color: #f1c40f;
-          font-size: 16px;
+      .activity-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+      }
+      
+      .activity-tag {
+          background: var(--primary-light);
+          color: white;
+          padding: 0.35rem 0.75rem;
+          border-radius: 25px;
+          font-size: 0.85rem;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          cursor: pointer;
+      }
+      
+      .activity-tag:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(69, 161, 99, 0.2);
+      }
+      
+      .activity-tag.accent {
+          background: var(--accent-color);
+          color: var(--text-dark);
+      }
+      
+      .activity-tag.secondary {
+          background: var(--secondary-color);
+          color: white;
+      }
+      
+      .activity-tag.primary {
+          background: var(--primary-color);
+          color: white;
+      }
+      
+      .card-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.5rem;
+          border-top: 1px solid #f3f4f6;
+          background: #f9f9f9;
+      }
+      
+      .activity-rating {
           display: flex;
           align-items: center;
-          gap: 5px;
-          margin-bottom: 10px;
+          gap: 0.25rem;
+          color: #fbbf24;
+          font-size: 0.9rem;
+      }
+      
+      .rating-value {
+          color: #6b7280;
+          font-size: 0.85rem;
+          margin-left: 0.25rem;
       }
       
       .purchased-date {
-          color: #666;
-          font-size: 14px;
-          margin-top: 5px;
+          color: #6b7280;
+          font-size: 0.85rem;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
       }
       
       .purchased-date i {
-          color: #45cf91;
+          color: var(--primary-color);
       }
       
       .view-button {
           background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
           color: white;
-          padding: 10px 0;
-          border-radius: 50px;
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
           font-weight: 600;
-          font-size: 14px;
+          font-size: 0.9rem;
           cursor: pointer;
           transition: all 0.3s ease;
           border: none;
-          width: 100%;
-          margin-top: 10px;
+          text-decoration: none;
       }
       
       .view-button:hover {
           background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
-          transform: translateY(-3px);
+          transform: translateY(-2px);
           box-shadow: 0 8px 15px rgba(69, 161, 99, 0.3);
       }
       
@@ -653,64 +688,68 @@ function getTagDisplayName($tag, $tagDisplayNames = null, $index = null) {
                 // Type de prix
                 $isPaid = $row["prix"] > 0;
                 
-                echo '<div class="card" data-id="' . $row['id'] . '">';
-                echo '<div class="content">';
+                echo '<div class="activity-card" data-id="' . $row['id'] . '">';
                 
-                // Image container
-                echo '<div class="image-container">';
+                // Card image
+                echo '<div class="card-image">';
                 if ($row["image_url"]) {
                     echo '<img src="' . htmlspecialchars($row["image_url"]) . '" alt="' . htmlspecialchars($row["titre"]) . '" />';
                 } else {
                     echo '<img src="nature-placeholder.jpg" alt="placeholder" />';
                 }
-                echo '</div>';
                 
-                // Price tag
+                // Price badge
                 if ($isPaid) {
-                    echo '<div class="price-tag">';
+                    echo '<div class="price-badge">';
                     echo '<i class="fa-solid fa-euro-sign"></i> ' . number_format($row["prix"], 2) . ' €';
                     echo '</div>';
                 } else {
-                    echo '<div class="price-tag free">';
+                    echo '<div class="price-badge free">';
                     echo '<i class="fa-solid fa-gift"></i> Gratuit';
                     echo '</div>';
                 }
                 
-                // Tags - show up to 2 tags with display names
-                echo '<div class="tag">';
-                $displayedTags = 0;
-                foreach ($tagList as $index => $tag) {
-                    if ($displayedTags < 2 && $tag !== 'gratuit' && $tag !== 'payant') {
-                        $tagClass = getTagClass($tag);
-                        $displayName = getTagDisplayName($tag, $tagDisplayNames, $index);
-                        echo '<span class="tags ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . htmlspecialchars($displayName) . '</span>';
-                        $displayedTags++;
-                    }
-                }
-                echo '</div></div>';
+                // Purchased badge
+                echo '<div class="purchased-badge">';
+                echo '<i class="fa-solid fa-check-circle"></i> Inscrit';
+                echo '</div>';
                 
-                // Info
-                echo '<div class="info">';
+                echo '</div>';
+                
+                // Card content
+                echo '<div class="card-content">';
                 echo '<h3>' . htmlspecialchars($row["titre"]) . '</h3>';
                 
                 if ($row["date_ou_periode"]) {
-                    echo '<p class="period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
+                    echo '<p class="activity-period"><i class="fa-regular fa-calendar"></i> ' . htmlspecialchars($row["date_ou_periode"]) . '</p>';
                 }
-                
-                echo '</div>';
-                
-                // Actions 
-                echo '<div class="actions">';
-                echo '<div class="rating">' . getStars($randomRating) . '</div>';
                 
                 // Date d'achat
                 echo '<div class="purchased-date">';
-                echo '<i class="fa-solid fa-check-circle"></i> Inscrit le ' . date('d/m/Y', strtotime($row["date_achat"]));
+                echo '<i class="fa-solid fa-shopping-cart"></i> Inscrit le ' . date('d/m/Y', strtotime($row["date_achat"]));
                 echo '</div>';
                 
-                echo '<button class="view-button" onclick="window.location.href=\'activite.php?id=' . $row['id'] . '\'"><i class="fa-solid fa-eye"></i> Voir l\'activité</button>';
+                // Tags - show up to 3 tags with display names
+                echo '<div class="activity-tags">';
+                $displayedTags = 0;
+                foreach ($tagList as $index => $tag) {
+                    if ($displayedTags < 3 && $tag !== 'gratuit' && $tag !== 'payant') {
+                        $tagClass = getTagClass($tag);
+                        $displayName = getTagDisplayName($tag, $tagDisplayNames, $index);
+                        echo '<span class="activity-tag ' . $tagClass . '" data-tag="' . htmlspecialchars($tag) . '">' . htmlspecialchars($displayName) . '</span>';
+                        $displayedTags++;
+                    }
+                }
+                echo '</div>';
                 
                 echo '</div>';
+                
+                // Card footer 
+                echo '<div class="card-footer">';
+                echo '<div class="activity-rating">' . getStars($randomRating) . '</div>';
+                echo '<a href="activite.php?id=' . $row['id'] . '" class="view-button"><i class="fa-solid fa-eye"></i> Voir l\'activité</a>';
+                echo '</div>';
+                
                 echo '</div>';
             }
         }
@@ -757,7 +796,7 @@ function getTagDisplayName($tag, $tagDisplayNames = null, $index = null) {
         }
         
         // Rendre les cartes cliquables pour naviguer vers les détails
-        document.querySelectorAll('.card').forEach(card => {
+        document.querySelectorAll('.activity-card').forEach(card => {
           card.addEventListener('click', function(e) {
             // Ne pas rediriger si l'utilisateur a cliqué sur un bouton d'action
             if (e.target.closest('.view-button')) {
