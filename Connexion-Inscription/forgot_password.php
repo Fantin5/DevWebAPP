@@ -204,3 +204,4 @@ if(isset($_POST['submit'])){
    <?php include '../TEMPLATE/footer.php'; ?>
 </body>
 </html>
+<!-- cvq -->

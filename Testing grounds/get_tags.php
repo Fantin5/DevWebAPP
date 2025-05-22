@@ -18,3 +18,5 @@ $tags = $tagManager->getAllTags();
 
 echo json_encode($tags);
 $conn->close();
+
+// cvq

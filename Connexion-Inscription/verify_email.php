@@ -104,3 +104,4 @@ if(isset($_GET['email']) && isset($_GET['token'])){
    <?php include '../TEMPLATE/footer.php'; ?>
 </body>
 </html>
+<!-- cvq -->

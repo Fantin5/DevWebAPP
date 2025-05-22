@@ -281,3 +281,4 @@ $faq_result = $conn->query($faq_query);
     <script src="faq.js"></script>
 </body>
 </html>
+<!-- cvq -->

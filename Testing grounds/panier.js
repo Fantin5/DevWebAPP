@@ -329,3 +329,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Réinitialiser les animations au redimensionnement de la fenêtre
     window.addEventListener('resize', animateFloatingElements);
 });
+// cvq

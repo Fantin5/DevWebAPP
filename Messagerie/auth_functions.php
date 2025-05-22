@@ -25,3 +25,4 @@ function redirect_if_logged_in() {
     }
 }
 ?>
+<!-- cvq -->

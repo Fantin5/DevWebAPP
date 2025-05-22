@@ -123,3 +123,4 @@ function sendActivityNotification($activity_title, $activity_id) {
     return true;
 }
 ?>
+<!-- cvq -->

@@ -11,3 +11,4 @@ session_destroy();
 // Rediriger vers la page d'accueil
 header("Location: ../Testing grounds/main.php");
 exit();
+// cvq
