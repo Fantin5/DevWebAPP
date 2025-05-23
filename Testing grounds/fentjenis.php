@@ -170,8 +170,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Commit the transaction
         $conn->commit();
         
-        // Send notification to subscribed users about the new activity
-        sendActivityNotification($titre, $activity_id);
+
+        
+        // DEBUGGING: Log activity creation details
+        error_log("=== ACTIVITY CREATED ===");
+        error_log("Activity ID: " . $activity_id);
+        error_log("Activity Title: " . $titre);
+        error_log("Final Tags: " . implode(', ', $finalTags));
+        
+        // Send notification to subscribed users about the new activity with tag filtering
+        error_log("About to call sendActivityNotification...");
+        
+        try {
+            $notification_result = sendActivityNotification($titre, $activity_id, $finalTags);
+            error_log("sendActivityNotification result: " . ($notification_result ? 'SUCCESS' : 'FAILED'));
+        } catch (Exception $e) {
+            error_log("sendActivityNotification ERROR: " . $e->getMessage());
+        }
+        
+        error_log("=== END ACTIVITY CREATION ===");
+        
+        // Rediriger vers la page d'accueil avec un message de succès
+        header("Location: main.php?success=1");
+        exit();
         
         // Rediriger vers la page d'accueil avec un message de succès
         header("Location: main.php?success=1");

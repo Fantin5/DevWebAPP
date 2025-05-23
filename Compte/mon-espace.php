@@ -25,6 +25,10 @@ if ($conn->connect_error) {
 // Get user ID from session
 $user_id = $_SESSION['user_id'];
 
+
+// NOW ADD THE REQUIRE STATEMENT HERE (AFTER $user_id IS DEFINED)
+require_once '../includes/newsletter_functions.php';
+
 // Variable for messages
 $message = '';
 $message_type = '';
@@ -204,6 +208,53 @@ function formatPhoneNumber($phone) {
     
     // If the format doesn't match, return as is
     return $phone;
+}
+
+// Function to get user's selected tags (simplified version)
+function getUserSelectedTagsSimple($userId) {
+    $userConn = new mysqli("localhost", "root", "", "user_db");
+    $activityConn = new mysqli("localhost", "root", "", "activity");
+    
+    if ($userConn->connect_error || $activityConn->connect_error) {
+        return [];
+    }
+    
+    try {
+        $query = "SELECT unt.tag_id, td.display_name 
+                  FROM user_newsletter_tags unt 
+                  LEFT JOIN activity.tag_definitions td ON unt.tag_id = td.id 
+                  WHERE unt.user_id = ?";
+        
+        $stmt = $userConn->prepare($query);
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $tags = [];
+        while ($row = $result->fetch_assoc()) {
+            if ($row['display_name']) {
+                $tags[] = $row['display_name'];
+            }
+        }
+        
+        $stmt->close();
+        $userConn->close();
+        $activityConn->close();
+        
+        return $tags;
+    } catch (Exception $e) {
+        error_log("Error in getUserSelectedTagsSimple: " . $e->getMessage());
+        return [];
+    }
+}
+
+// Get user's selected tags for display (only if subscribed to newsletter)
+$user_selected_tags = [];
+$tag_count = 0;
+
+if ($user['newsletter_subscribed'] == 1) {
+    $user_selected_tags = getUserSelectedTagsSimple($user_id);
+    $tag_count = count($user_selected_tags);
 }
 ?>
 
@@ -982,46 +1033,75 @@ input:checked + .slider:before {
                 </button>
             </div>
             
-            <!-- Newsletter Card -->
-            <div class="dashboard-card">
-                <div class="card-decoration"></div>
-                <div class="dashboard-card-header">
-                    <div class="dashboard-card-icon">
-                        <i class="fa-solid fa-envelope"></i>
-                    </div>
-                    <h2 class="dashboard-card-title">Newsletter</h2>
-                </div>
-                
-                <div class="newsletter-status">
-                    <div class="status-indicator <?php echo $user['newsletter_subscribed'] ? 'status-active' : 'status-inactive'; ?>"></div>
-                    <div class="newsletter-status-text">
-                        <?php echo $user['newsletter_subscribed'] 
-                            ? 'Vous êtes abonné à notre newsletter' 
-                            : 'Vous n\'êtes pas abonné à notre newsletter'; ?>
-                    </div>
-                </div>
-                
-                <p>
-                    <?php echo $user['newsletter_subscribed'] 
-                        ? 'Recevez régulièrement des informations sur nos nouvelles activités. Vous pouvez vous désabonner à tout moment.' 
-                        : 'Abonnez-vous pour recevoir les informations sur nos nouvelles activités et offres exclusives.'; ?>
-                </p>
-                
-                <form method="post">
-                    <?php if ($user['newsletter_subscribed']): ?>
-                    <input type="hidden" name="newsletter_action" value="unsubscribe">
-                    <button type="submit" class="newsletter-button unsubscribe-button">
-                        <i class="fa-solid fa-bell-slash"></i> Se désabonner
-                    </button>
-                    <?php else: ?>
-                    <input type="hidden" name="newsletter_action" value="subscribe">
-                    <button type="submit" class="newsletter-button subscribe-button">
-                        <i class="fa-solid fa-bell"></i> S'abonner
-                    </button>
-                    <?php endif; ?>
-                </form>
+      <div class="dashboard-card">
+    <div class="card-decoration"></div>
+    <div class="dashboard-card-header">
+        <div class="dashboard-card-icon">
+            <i class="fa-solid fa-envelope"></i>
+        </div>
+        <h2 class="dashboard-card-title">Newsletter</h2>
+    </div>
+    
+    <div class="newsletter-status">
+        <div class="status-indicator <?php echo $user['newsletter_subscribed'] ? 'status-active' : 'status-inactive'; ?>"></div>
+        <div class="newsletter-status-text">
+            <?php echo $user['newsletter_subscribed'] 
+                ? 'Vous êtes abonné à notre newsletter' 
+                : 'Vous n\'êtes pas abonné à notre newsletter'; ?>
+        </div>
+    </div>
+    
+    <?php if ($user['newsletter_subscribed']): ?>
+        <div class="user-info-item">
+            <span class="user-info-label">Préférences de tags</span>
+            <div class="user-info-value">
+                <?php if ($tag_count > 0): ?>
+                    <strong><?php echo $tag_count; ?> tag(s) sélectionné(s):</strong><br>
+                    <small><?php echo implode(', ', array_slice($user_selected_tags, 0, 3)); ?><?php echo $tag_count > 3 ? '...' : ''; ?></small>
+                <?php else: ?>
+                    <span style="color: #ff9f67;">⚠️ Aucun tag sélectionné - vous recevrez toutes les notifications</span>
+                <?php endif; ?>
             </div>
-            
+        </div>
+        
+        <p style="font-size: 14px; color: #666; margin-bottom: 15px;">
+            <?php if ($tag_count > 0): ?>
+                Vous recevez des notifications uniquement pour les activités correspondant à vos préférences.
+            <?php else: ?>
+                Sans préférences définies, vous recevez toutes les notifications d'activités.
+            <?php endif; ?>
+            <br><strong>Note:</strong> Vous ne recevrez jamais de notifications pour vos propres activités.
+        </p>
+    <?php else: ?>
+        <p>Abonnez-vous pour recevoir les informations sur nos nouvelles activités et offres exclusives.</p>
+    <?php endif; ?>
+    
+    <form method="post" style="margin-bottom: 15px;">
+        <?php if ($user['newsletter_subscribed']): ?>
+        <input type="hidden" name="newsletter_action" value="unsubscribe">
+        <button type="submit" class="newsletter-button unsubscribe-button">
+            <i class="fa-solid fa-bell-slash"></i> Se désabonner
+        </button>
+        <?php else: ?>
+        <input type="hidden" name="newsletter_action" value="subscribe">
+        <button type="submit" class="newsletter-button subscribe-button">
+            <i class="fa-solid fa-bell"></i> S'abonner
+        </button>
+        <?php endif; ?>
+    </form>
+    
+    <?php if ($user['newsletter_subscribed']): ?>
+    <!-- Tag preferences section -->
+    <div class="newsletter-preferences">
+        <a href="../newsletter_tags.php" class="activity-link" style="margin-bottom: 10px;">
+            <i class="fa-solid fa-tags"></i> 🏷️ Gérer mes préférences de tags
+        </a>
+        <p style="font-size: 12px; color: #666; margin: 0;">
+            Choisissez les types d'activités qui vous intéressent pour recevoir des notifications personnalisées.
+        </p>
+    </div>
+    <?php endif; ?>
+</div>
             <!-- My Activities Card -->
             <div class="dashboard-card">
                 <div class="card-decoration"></div>
