@@ -62,7 +62,7 @@ function sendActivityNotification($activityTitle, $activityId, $activityTags = [
         }
         
         // Get tag IDs for the activity from activity_tags table
-        $tag_ids = [];
+        $activity_tag_ids = [];
         $activity_tags_sql = "SELECT tag_definition_id FROM activity_tags WHERE activity_id = ?";
         $activity_tags_stmt = $activity_conn->prepare($activity_tags_sql);
         $activity_tags_stmt->bind_param("i", $activityId);
@@ -70,24 +70,57 @@ function sendActivityNotification($activityTitle, $activityId, $activityTags = [
         $activity_tags_result = $activity_tags_stmt->get_result();
         
         while ($row = $activity_tags_result->fetch_assoc()) {
-            $tag_ids[] = $row['tag_definition_id'];
+            $activity_tag_ids[] = $row['tag_definition_id'];
         }
         $activity_tags_stmt->close();
         
-        error_log("Activity tag IDs: " . implode(', ', $tag_ids));
+        if (empty($activity_tag_ids)) {
+            error_log("⚠ No tags found for activity ID: " . $activityId);
+            return false;
+        }
         
-        // Simple approach: Get ALL newsletter subscribers (ignore tags for now)
-        $users_sql = "SELECT email, first_name, name, id FROM user_form WHERE newsletter_subscribed = 1 AND email_verified = 1";
+        error_log("Activity tag IDs: " . implode(', ', $activity_tag_ids));
+        
+        // Build the query to get users who should receive notifications
+        $users_sql = "
+            SELECT DISTINCT u.email, u.first_name, u.name, u.id 
+            FROM user_form u 
+            WHERE u.newsletter_subscribed = 1 
+            AND u.email_verified = 1";
         
         // Exclude creator if found
         if ($creator_user_id) {
-            $users_sql .= " AND id != " . $creator_user_id;
+            $users_sql .= " AND u.id != " . $creator_user_id;
             error_log("✓ Excluding creator ID: " . $creator_user_id);
         }
         
+        // Add tag filtering logic
+        $users_sql .= "
+            AND (
+                -- Users with no tag preferences (receive all notifications)
+                u.id NOT IN (SELECT DISTINCT user_id FROM user_newsletter_tags)
+                OR
+                -- Users whose selected tags match at least one of the activity's tags
+                u.id IN (
+                    SELECT DISTINCT unt.user_id 
+                    FROM user_newsletter_tags unt 
+                    WHERE unt.tag_id IN (" . implode(',', array_fill(0, count($activity_tag_ids), '?')) . ")
+                )
+            )";
+        
         error_log("SQL Query: " . $users_sql);
         
-        $users_result = $user_conn->query($users_sql);
+        // Prepare and execute the query
+        $users_stmt = $user_conn->prepare($users_sql);
+        
+        // Bind the tag IDs to the prepared statement
+        if (!empty($activity_tag_ids)) {
+            $types = str_repeat('i', count($activity_tag_ids));
+            $users_stmt->bind_param($types, ...$activity_tag_ids);
+        }
+        
+        $users_stmt->execute();
+        $users_result = $users_stmt->get_result();
         
         if (!$users_result) {
             error_log("ERROR: User query failed: " . $user_conn->error);
@@ -95,10 +128,10 @@ function sendActivityNotification($activityTitle, $activityId, $activityTags = [
         }
         
         $total_users = $users_result->num_rows;
-        error_log("Found " . $total_users . " newsletter subscribers");
+        error_log("Found " . $total_users . " newsletter subscribers matching criteria");
         
         if ($total_users == 0) {
-            error_log("⚠ No newsletter subscribers found!");
+            error_log("⚠ No newsletter subscribers found matching the criteria!");
             return false;
         }
         
@@ -108,6 +141,20 @@ function sendActivityNotification($activityTitle, $activityId, $activityTags = [
         $description = strip_tags($activity['description']);
         $description = preg_replace('/<!--CREATOR:.*?-->/', '', $description);
         $description = trim($description);
+        
+        // Get tag display names for email
+        $tag_names_sql = "SELECT display_name FROM tag_definitions WHERE id IN (" . implode(',', array_fill(0, count($activity_tag_ids), '?')) . ")";
+        $tag_names_stmt = $activity_conn->prepare($tag_names_sql);
+        $types = str_repeat('i', count($activity_tag_ids));
+        $tag_names_stmt->bind_param($types, ...$activity_tag_ids);
+        $tag_names_stmt->execute();
+        $tag_names_result = $tag_names_stmt->get_result();
+        
+        $tag_display_names = [];
+        while ($tag_row = $tag_names_result->fetch_assoc()) {
+            $tag_display_names[] = $tag_row['display_name'];
+        }
+        $tag_names_stmt->close();
         
         while ($user = $users_result->fetch_assoc()) {
             error_log("Attempting to send email to: " . $user['email'] . " (ID: " . $user['id'] . ")");
@@ -140,21 +187,23 @@ function sendActivityNotification($activityTitle, $activityId, $activityTags = [
                     <body>
                         <h2>Bonjour " . htmlspecialchars($user['first_name']) . " " . htmlspecialchars($user['name']) . ",</h2>
                         
-                        <p>Une nouvelle activité vient d'être ajoutée qui pourrait vous intéresser!</p>
+                        <p>Une nouvelle activité vient d'être ajoutée qui correspond à vos préférences!</p>
                         
                         <div style='background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;'>
                             <h3 style='color: #007bff; margin-top: 0;'>" . htmlspecialchars($activity['titre']) . "</h3>
                             <p><strong>Description:</strong> " . htmlspecialchars(substr($description, 0, 200)) . (strlen($description) > 200 ? '...' : '') . "</p>
                             <p><strong>Prix:</strong> " . ($activity['prix'] > 0 ? number_format($activity['prix'], 2) . "€" : "Gratuit") . "</p>
+                            " . (!empty($tag_display_names) ? "<p><strong>Tags:</strong> " . htmlspecialchars(implode(', ', $tag_display_names)) . "</p>" : "") . "
                         </div>
                         
                         <p><a href='http://localhost/ProjetWebDev copy2/Testing grounds/main.php' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Voir l'activité</a></p>
                         
                         <hr>
                         <p style='font-size: 12px; color: #6c757d;'>
-                            Vous recevez cet email car vous êtes abonné à notre newsletter.
+                            Vous recevez cet email car vous êtes abonné à notre newsletter et cette activité correspond à vos préférences.
                             <br>
-                            <a href='http://localhost/ProjetWebDev copy2/Compte/mon-espace.php'>Gérer mon compte</a>
+                            <a href='http://localhost/ProjetWebDev copy2/Compte/mon-espace.php'>Gérer mon compte</a> |
+                            <a href='http://localhost/ProjetWebDev copy2/newsletter_tags.php'>Modifier mes préférences</a>
                         </p>
                     </body>
                     </html>
@@ -164,7 +213,8 @@ function sendActivityNotification($activityTitle, $activityId, $activityTags = [
                 
 Une nouvelle activité vient d\'être ajoutée: ' . $activity['titre'] . '
 Description: ' . substr($description, 0, 200) . '
-Prix: ' . ($activity['prix'] > 0 ? number_format($activity['prix'], 2) . "€" : "Gratuit");
+Prix: ' . ($activity['prix'] > 0 ? number_format($activity['prix'], 2) . "€" : "Gratuit") . '
+Tags: ' . implode(', ', $tag_display_names);
                 
                 $mail->send();
                 $sent_count++;
@@ -174,6 +224,8 @@ Prix: ' . ($activity['prix'] > 0 ? number_format($activity['prix'], 2) . "€" :
                 error_log("✗ Failed to send email to: " . $user['email'] . " - Error: " . $mail->ErrorInfo);
             }
         }
+        
+        $users_stmt->close();
         
         error_log("Newsletter sent to $sent_count out of $total_users users for activity: $activityTitle");
         
