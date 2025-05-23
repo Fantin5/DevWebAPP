@@ -658,21 +658,6 @@ if ($result->num_rows > 0) {
         </div>
     </section>
 
-    <!-- Section Newsletter redesigned -->
-    <section class="newsletter-section fade-in-section">
-        <div class="newsletter-container">
-            <div class="newsletter-content">
-                <i class="fa-solid fa-envelope-open-text"></i>
-                <h2>Restez informé(e)</h2>
-                <p>Recevez en avant-première nos nouvelles activités et offres exclusives</p>
-                <form class="newsletter-form">
-                    <input type="email" placeholder="Votre adresse e-mail" required>
-                    <button type="submit">S'abonner</button>
-                </form>
-            </div>
-        </div>
-    </section>
-
     <!-- Back to top button -->
     <div class="scroll-top-button" id="scroll-top">
         <i class="fa-solid fa-arrow-up"></i>
@@ -754,19 +739,6 @@ include '../TEMPLATE/footer.php';
                     left: scrollAmount,
                     behavior: 'smooth'
                 });
-            });
-        }
-        
-        // Formulaire de newsletter
-        const newsletterForm = document.querySelector('.newsletter-form');
-        if (newsletterForm) {
-            newsletterForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const email = this.querySelector('input[type="email"]').value;
-                if (email) {
-                    showNotification('Merci pour votre inscription à notre newsletter !', 'success');
-                    this.reset();
-                }
             });
         }
 
