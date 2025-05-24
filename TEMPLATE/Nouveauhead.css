@@ -176,7 +176,7 @@ header::before {
 }
 
 .logo-container:hover .logo {
-    transform: scale(1.1) rotate(5deg);
+    transform: scale(1.1) ;
 }
 
 /* Remove logo text styles since we removed the text */
