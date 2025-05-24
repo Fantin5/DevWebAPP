@@ -177,6 +177,32 @@ $faq_result = $conn->query($faq_query);
             <h1>Synapse FAQ</h1>
         </div>
         
+        <!-- Search Section -->
+        <div class="faq-search-section">
+            <h2 class="search-title">Rechercher dans la FAQ</h2>
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <input type="text" id="faq-search" placeholder="Tapez votre mot-clé pour rechercher dans les questions et réponses...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+                <button id="clear-search" type="button">
+                    <i class="fas fa-times"></i>
+                    Effacer
+                </button>
+            </div>
+            <div class="search-info">
+                <div id="search-counter"></div>
+            </div>
+        </div>
+        
+        <!-- No Results Message -->
+        <div id="no-results">
+            <i class="fas fa-search"></i>
+            <h3>Aucun résultat trouvé</h3>
+            <p>Votre recherche "<span class="search-term"></span>" n'a donné aucun résultat.</p>
+            <p>Essayez avec d'autres mots-clés ou posez votre question via le formulaire de contact ci-dessous.</p>
+        </div>
+        
         <!-- Contenu FAQ with accordion style -->
         <section class="faq">
             <!-- Static FAQ Items -->
