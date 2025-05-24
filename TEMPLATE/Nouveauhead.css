@@ -194,7 +194,7 @@ header::before {
     padding: 0;
     list-style: none;
     display: flex;
-    gap: 80px;
+    gap: 60px;
     position: relative;
     background: rgba(255, 255, 255, 0.05);
     padding: 15px 30px;
@@ -736,7 +736,7 @@ header::before {
 /* Responsive Design */
 @media (max-width: 1200px) {
     .nav-links ul {
-        gap: 60px;
+        gap: 40px;
     }
     
     .logo-text {
@@ -765,7 +765,7 @@ header::before {
     }
     
     .nav-links ul {
-        gap: 20px;
+        gap: 15px;
         padding: 10px 20px;
         justify-content: center;
         flex-wrap: wrap;

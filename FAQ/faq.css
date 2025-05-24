@@ -1,38 +1,9 @@
 /* Enhanced faq.css - Includes search functionality styling */
 
-/* Fix for transparent header */
-header.header, 
-.header {
-    background-color: #828977 !important; /* Force solid background */
-    opacity: 1 !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Do not inherit transparency from any parent elements */
-body > header,
-body > .header {
-    background-color: #828977 !important; 
-    opacity: 1 !important;
-}
-
-/* Explicitly set the header z-index to ensure it's on top */
-header, .header {
-    z-index: 1000 !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-}
-
-/* Ensure all header elements inherit the opacity */
-header *, .header * {
-    opacity: 1 !important;
-}
-
-/* Reset any transparency that might be applied */
 * {
-    background-color: transparent;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
@@ -40,14 +11,6 @@ body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-}
-
-/* End of header fix */
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
 }
 
 /* Page container */
@@ -227,16 +190,6 @@ body {
     line-height: inherit;
     letter-spacing: normal;
     word-spacing: normal;
-}
-
-/* Override any header styles from the original file */
-.faq-titre {
-    display: none; /* Hide original title */
-}
-
-header {
-    background-color: transparent !important;
-    box-shadow: none !important;
 }
 
 /* FAQ Section */

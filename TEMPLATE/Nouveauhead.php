@@ -64,6 +64,13 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
               <div class="nav-ripple"></div>
             </a>
           </li>
+          <li class="nav-item">
+            <a href="../Testing grounds/activites.php" class="nav-link">
+              <i class="fa-solid fa-search nav-icon"></i>
+              <span>Découvrir les activités</span>
+              <div class="nav-ripple"></div>
+            </a>
+          </li>
           <li class="nav-item special">
             <a href="../Testing grounds/jenis.php" class="nav-link create-activity">
               <i class="fa-solid fa-plus nav-icon"></i>
