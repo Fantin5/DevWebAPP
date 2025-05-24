@@ -596,6 +596,13 @@ function getActivitiesWithExpiration($filters = []) {
     $types = "";
 
     // Apply filters
+    if (isset($filters['location']) && !empty($filters['location'])) {
+        $locationTerm = '%' . $filters['location'] . '%';
+        $where_clauses[] = "location LIKE ?";
+        $params[] = $locationTerm;
+        $types .= "s";
+    }
+
     if (isset($filters['expired_only']) && $filters['expired_only']) {
         // We'll filter expired activities in PHP since expiration logic is complex
     }

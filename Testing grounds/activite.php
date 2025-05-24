@@ -1923,11 +1923,25 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             <div class="main-content-wrapper">
                 <div class="activity-content">
                     <div class="activity-section">
-                        <h2>Description</h2>
-                        <div class="activity-description">
-                            <?php echo nl2br(htmlspecialchars($activity["description"])); ?>
+                        <h2><i class="fa-solid fa-info-circle"></i> Description</h2>
+                        <div class="activity-description"><?php echo nl2br(htmlspecialchars($activity["description"])); ?></div>
+                    </div>
+                    
+                    <?php if (!empty($activity["location"])): ?>
+                    <div class="activity-section">
+                        <h2><i class="fa-solid fa-map-marker-alt"></i> Localisation</h2>
+                        <div class="location-info">
+                            <p class="location-address">
+                                <i class="fa-solid fa-location-dot"></i>
+                                <?php echo htmlspecialchars($activity["location"]); ?>
+                            </p>
+                            <button class="location-button" onclick="openGoogleMaps('<?php echo htmlspecialchars($activity["location"]); ?>')">
+                                <i class="fa-solid fa-map"></i>
+                                <span>Voir sur Google Maps</span>
+                            </button>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
                     <?php if ($creator_data): ?>
                     <div class="creator-info">
@@ -2116,12 +2130,38 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                         </div>
                     <?php endif; ?>
                     
-                    <!-- Location Map Placeholder -->
-                    <div class="location-map">
-                        <div class="location-placeholder">
-                            Localisation non disponible
+                    <?php if (!empty($activity["location"])): ?>
+                    <!-- Enhanced Location Section in Sidebar -->
+                    <div class="location-section">
+                        <h3><i class="fa-solid fa-map-marker-alt"></i> Localisation</h3>
+                        <div class="location-card">
+                            <div class="location-address-sidebar">
+                                <i class="fa-solid fa-location-dot"></i>
+                                <span><?php echo htmlspecialchars($activity["location"]); ?></span>
+                            </div>
+                            <button class="location-maps-button" onclick="openGoogleMaps('<?php echo htmlspecialchars($activity["location"]); ?>')">
+                                <i class="fa-solid fa-map"></i>
+                                <span>Ouvrir dans Maps</span>
+                            </button>
+                            <div class="location-preview">
+                                <i class="fa-solid fa-map-location-dot"></i>
+                                <span>Cliquez pour voir l'itinéraire</span>
+                            </div>
                         </div>
                     </div>
+                    <?php else: ?>
+                    <!-- No location available -->
+                    <div class="location-section">
+                        <h3><i class="fa-solid fa-map-marker-alt"></i> Localisation</h3>
+                        <div class="location-card unavailable">
+                            <div class="location-unavailable">
+                                <i class="fa-solid fa-map-location"></i>
+                                <span>Localisation non spécifiée</span>
+                                <p>L'organisateur n'a pas fourni d'adresse précise</p>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                     
                     <!-- Social Sharing -->
                     <div class="social-sharing">
@@ -2333,6 +2373,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Google Maps integration
+    window.openGoogleMaps = function(address) {
+        const encodedAddress = encodeURIComponent(address);
+        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+        window.open(googleMapsUrl, '_blank');
+    }
     
     // Function to validate and add to cart
     async function validateAndAddToCart(item) {

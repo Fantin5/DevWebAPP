@@ -157,6 +157,23 @@ if ($result->num_rows > 0) {
                 <span id="hint-text">Formats acceptés: date précise (15/06/2025), récurrence (Tous les samedis), ou période (01/06/2025 - 15/06/2025)</span>
               </div>
             </div>
+
+            <div class="form-group">
+              <label for="location">
+                <i class="fas fa-map-marker-alt"></i>
+                Où se déroule cette aventure ?
+              </label>
+              <input
+                type="text"
+                id="location"
+                name="location"
+                placeholder="Ex: Parc de Belleville, Paris 20ème / 123 Rue de la Nature, Lyon"
+              />
+              <div class="field-hint">
+                <i class="fas fa-info-circle"></i>
+                <span>Adresse complète ou lieu-dit pour que les participants puissent vous trouver</span>
+              </div>
+            </div>
           </div>
 
           <!-- Section: Tags (The Cool Part!) -->
