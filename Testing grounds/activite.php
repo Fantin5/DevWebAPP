@@ -2480,6 +2480,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
     </script>
+    <script src="activity-expiration-manager.js"></script>
 </body>
 </html>
 

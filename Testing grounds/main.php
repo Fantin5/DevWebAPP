@@ -317,15 +317,7 @@ include '../TEMPLATE/Nouveauhead.php';
                         echo '</div>';
                         
                         // Show days remaining
-                        echo '<div class="last-chance-badge"><i class="fa-solid fa-clock"></i> ';
-                        if ($daysRemaining == 0) {
-                            echo 'Dernier jour !';
-                        } else if ($daysRemaining == 1) {
-                            echo 'Termine demain !';
-                        } else {
-                            echo 'Plus que ' . $daysRemaining . ' jours !';
-                        }
-                        echo '</div>';
+
                         
                         echo '<div class="tag">';
                         
@@ -963,6 +955,7 @@ include '../TEMPLATE/footer.php';
         }
     });
 </script>
+<script src="activity-expiration-manager.js"></script>
 
 <?php
 $conn->close();
