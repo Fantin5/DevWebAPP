@@ -37,20 +37,53 @@ if(isset($_POST['add_tag'])) {
     }
 }
 
-// Handle delete action
+// Handle delete action with proper foreign key constraint handling
 if(isset($_GET['delete']) && !empty($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    $delete_query = "DELETE FROM activites WHERE id = $id";
-    if(mysqli_query($conn, $delete_query)) {
+    
+    // Start transaction to ensure data integrity
+    $conn->begin_transaction();
+    
+    try {
+        // Step 1: Delete related purchase records from activites_achats
+        $delete_purchases_query = "DELETE FROM activites_achats WHERE activite_id = ?";
+        $stmt1 = $conn->prepare($delete_purchases_query);
+        $stmt1->bind_param("i", $id);
+        $stmt1->execute();
+        
+        // Step 2: Delete related activity tags from activity_tags
+        $delete_tags_query = "DELETE FROM activity_tags WHERE activity_id = ?";
+        $stmt2 = $conn->prepare($delete_tags_query);
+        $stmt2->bind_param("i", $id);
+        $stmt2->execute();
+        
+        // Step 3: Delete related evaluations (if any)
+        $delete_evaluations_query = "DELETE FROM evaluations WHERE activite_id = ?";
+        $stmt3 = $conn->prepare($delete_evaluations_query);
+        $stmt3->bind_param("i", $id);
+        $stmt3->execute();
+        
+        // Step 4: Finally delete the activity itself
+        $delete_activity_query = "DELETE FROM activites WHERE id = ?";
+        $stmt4 = $conn->prepare($delete_activity_query);
+        $stmt4->bind_param("i", $id);
+        $stmt4->execute();
+        
+        // If we get here, all deletions were successful
+        $conn->commit();
+        
         header("Location: admin_activites.php?success=deleted");
         exit();
-    } else {
-        $error = "Erreur lors de la suppression: " . mysqli_error($conn);
+        
+    } catch (Exception $e) {
+        // Rollback the transaction on error
+        $conn->rollback();
+        $error = "Erreur lors de la suppression: " . $e->getMessage();
     }
 }
 
 // Récupérer toutes les activités
-$activites_query = "SELECT * FROM activites";
+$activites_query = "SELECT * FROM activites ORDER BY date_creation DESC";
 $result = $conn->query($activites_query);
 ?>
 <!DOCTYPE html>
@@ -80,6 +113,18 @@ $result = $conn->query($activites_query);
         .action-links a { margin-right: 10px; }
         .success { color: green; margin-bottom: 15px; padding: 10px; background-color: #dff0d8; border-radius: 4px; }
         .error { color: red; margin-bottom: 15px; padding: 10px; background-color: #f2dede; border-radius: 4px; }
+        .purchase-info {
+            background-color: #fff3cd;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #856404;
+        }
+        .activity-stats {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -91,7 +136,7 @@ $result = $conn->query($activites_query);
     </div>
     
     <?php if(isset($_GET['success']) && $_GET['success'] == 'deleted'): ?>
-        <p class="success">L'activité a été supprimée avec succès.</p>
+        <p class="success">L'activité et toutes ses données associées ont été supprimées avec succès.</p>
     <?php endif; ?>
     
     <?php if(isset($_GET['success']) && $_GET['success'] == 'tag_added'): ?>
@@ -134,7 +179,8 @@ $result = $conn->query($activites_query);
                 <th>Image URL</th>
                 <th>Date</th>
                 <th>Date de création</th>
-                <th>ID Utilisateur</th>
+                <th>Créateur</th>
+                <th>Données associées</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -181,6 +227,19 @@ $result = $conn->query($activites_query);
                 
                 // Clean description for display (remove the creator info)
                 $clean_description = preg_replace('/<!--CREATOR:[^-]+-->/', '', $activite['description']);
+                
+                // Get associated data counts
+                $purchase_count_query = "SELECT COUNT(*) as count FROM activites_achats WHERE activite_id = " . $activite['id'];
+                $purchase_result = $conn->query($purchase_count_query);
+                $purchase_count = $purchase_result ? $purchase_result->fetch_assoc()['count'] : 0;
+                
+                $tags_count_query = "SELECT COUNT(*) as count FROM activity_tags WHERE activity_id = " . $activite['id'];
+                $tags_result = $conn->query($tags_count_query);
+                $tags_count = $tags_result ? $tags_result->fetch_assoc()['count'] : 0;
+                
+                $evaluations_count_query = "SELECT COUNT(*) as count FROM evaluations WHERE activite_id = " . $activite['id'];
+                $evaluations_result = $conn->query($evaluations_count_query);
+                $evaluations_count = $evaluations_result ? $evaluations_result->fetch_assoc()['count'] : 0;
             ?>
                 <tr>
                     <td><?php echo $activite['id']; ?></td>
@@ -206,15 +265,31 @@ $result = $conn->query($activites_query);
                             Non spécifié
                         <?php endif; ?>
                     </td>
+                    <td>
+                        <div class="activity-stats">
+                            <?php if($purchase_count > 0): ?>
+                                <div class="purchase-info">
+                                    📦 <?php echo $purchase_count; ?> achat(s)
+                                </div>
+                            <?php endif; ?>
+                            <div>🏷️ <?php echo $tags_count; ?> tag(s)</div>
+                            <?php if($evaluations_count > 0): ?>
+                                <div>⭐ <?php echo $evaluations_count; ?> évaluation(s)</div>
+                            <?php endif; ?>
+                        </div>
+                    </td>
                     <td class="action-links">
                         <a href="admin_activites.php?delete=<?php echo $activite['id']; ?>" 
-                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette activité?')">Supprimer</a>
+                           onclick="return confirm('⚠️ ATTENTION ⚠️\n\nCette action va supprimer :\n- L\'activité\n- <?php echo $purchase_count; ?> achat(s) associé(s)\n- <?php echo $tags_count; ?> tag(s) associé(s)\n- <?php echo $evaluations_count; ?> évaluation(s) associée(s)\n\nCette action est IRRÉVERSIBLE.\n\nÊtes-vous absolument sûr de vouloir continuer ?')"
+                           style="background-color: #dc3545; color: white; padding: 5px 10px; border-radius: 3px; text-decoration: none;">
+                            Supprimer
+                        </a>
                     </td>
                 </tr>
             <?php endwhile; ?>
             <?php if (mysqli_num_rows($result) == 0): ?>
                 <tr>
-                    <td colspan="9">Aucune activité trouvée</td>
+                    <td colspan="10">Aucune activité trouvée</td>
                 </tr>
             <?php endif; ?>
         </tbody>
