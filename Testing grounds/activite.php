@@ -1,25 +1,26 @@
 <?php
 session_start();
 
-// Configuration de la base de données
+// Database configuration
 $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "activity";
 
-// Créer une connexion
+// Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Connect to user database
 $user_conn = new mysqli($servername, $username, $password, "user_db");
 
-// Vérifier la connexion
+// Check connection
 if ($conn->connect_error) {
-    die("Échec de la connexion à la base de données: " . $conn->connect_error);
+    die("Connection failed: " . $conn->connect_error);
 }
 
 // Now that we have the connection, require tag setup and initialize TagManager
 require_once 'tag_setup.php';
+require_once 'activity_functions.php';
 $tagManager = new TagManager($conn);
 $tagDefinitions = $tagManager->getAllTags();
 
@@ -73,23 +74,11 @@ if ($result->num_rows === 0) {
 
 $activity = $result->fetch_assoc();
 
-// Check if the user is registered for this activity
-$userRegistered = false;
-if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
-    $user_id = $_SESSION['user_id'];
-    
-    $check_registration_sql = "SELECT id FROM activites_achats WHERE user_id = ? AND activite_id = ?";
-    $check_stmt = $conn->prepare($check_registration_sql);
-    $check_stmt->bind_param("ii", $user_id, $activity_id);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
-    
-    if ($check_result->num_rows > 0) {
-        $userRegistered = true;
-    }
-    
-    $check_stmt->close();
-}
+// Check user registration status and ownership
+$userStatus = checkUserActivityStatus($activity_id);
+$userRegistered = $userStatus['is_registered'];
+$isOwner = $userStatus['is_owner'];
+$canPurchase = $userStatus['can_purchase'];
 
 // Extract creator information from description if it exists
 $creator_data = null;
@@ -1710,6 +1699,150 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                 gap: 15px;
             }
         }
+        /* Enhanced Organizer Badge Styles */
+.owner-badge {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: white;
+    padding: 20px 25px;
+    border-radius: 20px;
+    text-align: center;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    box-shadow: 0 15px 35px rgba(243, 156, 18, 0.3);
+    position: relative;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    animation: ownerBadgeGlow 3s ease-in-out infinite alternate;
+}
+
+.owner-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0) 0%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        rgba(255, 255, 255, 0) 100%);
+    transform: skewX(-25deg);
+    animation: ownerBadgeShine 4s ease-in-out infinite;
+    z-index: 1;
+}
+
+.owner-badge i {
+    font-size: 28px;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+    position: relative;
+    animation: crownBounce 2s ease-in-out infinite;
+}
+
+.owner-badge span {
+    font-size: 16px;
+    z-index: 2;
+    position: relative;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    line-height: 1.4;
+}
+
+@keyframes ownerBadgeGlow {
+    0% {
+        box-shadow: 0 15px 35px rgba(243, 156, 18, 0.3);
+    }
+    100% {
+        box-shadow: 0 20px 45px rgba(243, 156, 18, 0.5);
+    }
+}
+
+@keyframes ownerBadgeShine {
+    0% {
+        left: -100%;
+    }
+    50% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+@keyframes crownBounce {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-5px) rotate(5deg);
+    }
+}
+
+.owner-badge:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 25px 50px rgba(243, 156, 18, 0.4);
+}
+
+/* Add golden sparkle effects */
+.owner-badge::after {
+    content: '✨';
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    animation: sparkle 1.5s ease-in-out infinite;
+    z-index: 3;
+}
+
+@keyframes sparkle {
+    0%, 100% {
+        opacity: 0.5;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* Alternative version with crown pattern */
+.owner-badge.crown-pattern {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 50%, #d35400 100%);
+    background-size: 200% 200%;
+    animation: ownerBadgeGradient 4s ease infinite;
+}
+
+@keyframes ownerBadgeGradient {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .owner-badge {
+        padding: 16px 20px;
+        gap: 12px;
+    }
+    
+    .owner-badge i {
+        font-size: 24px;
+    }
+    
+    .owner-badge span {
+        font-size: 14px;
+    }
+}
     </style>
 </head>
 <body>
@@ -1931,27 +2064,47 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                         <?php endif; ?>
                     </div>
                     
-                    <?php if ($userRegistered): ?>
-                    <div class="registration-badge">
-                        <i class="fa-solid fa-check-circle"></i> 
-                        <span>Vous êtes inscrit à cette activité</span>
-                    </div>
-                    <a href="mes-activites-registered.php" class="view-registrations-button">
-                        <i class="fa-solid fa-list"></i> <span>Voir mes inscriptions</span>
-                    </a>
+                    <?php if ($isOwner): ?>
+                        <!-- User owns this activity -->
+                        <div class="owner-badge">
+                            <i class="fa-solid fa-crown"></i> 
+                            <span>Vous êtes l'organisateur de cette activité</span>
+                        </div>
+                        <a href="mes-activites.php" class="view-registrations-button">
+                            <i class="fa-solid fa-cog"></i> <span>Gérer mes activités</span>
+                        </a>
+                    <?php elseif ($userRegistered): ?>
+                        <!-- User is already registered -->
+                        <div class="registration-badge">
+                            <i class="fa-solid fa-check-circle"></i> 
+                            <span>Vous êtes inscrit à cette activité</span>
+                        </div>
+                        <a href="mes-activites-registered.php" class="view-registrations-button">
+                            <i class="fa-solid fa-list"></i> <span>Voir mes inscriptions</span>
+                        </a>
+                    <?php elseif (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true): ?>
+                        <!-- User not logged in -->
+                        <div class="cannot-purchase-notice">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span>Connectez-vous pour vous inscrire à cette activité</span>
+                        </div>
+                        <a href="../Connexion-Inscription/login_form.php" class="signup-button">
+                            <i class="fa-solid fa-sign-in-alt"></i> <span>Se connecter</span>
+                        </a>
                     <?php else: ?>
-                    <button class="signup-button" id="signup-button" data-id="<?php echo $activity['id']; ?>">
-                        <i class="fa-solid fa-user-plus"></i> <span>S'inscrire à cette activité</span>
-                    </button>
-                    
-                    <button class="add-to-cart-button" id="add-to-cart-button" data-id="<?php echo $activity['id']; ?>" 
-                            data-title="<?php echo htmlspecialchars($activity['titre']); ?>" 
-                            data-price="<?php echo $activity['prix']; ?>" 
-                            data-image="<?php echo htmlspecialchars($activity['image_url'] ? $activity['image_url'] : 'nature-placeholder.jpg'); ?>" 
-                            data-period="<?php echo htmlspecialchars($activity['date_ou_periode']); ?>" 
-                            data-tags="<?php echo htmlspecialchars($activity['tags']); ?>">
-                        <i class="fa-solid fa-cart-shopping"></i> <span>Ajouter au panier</span>
-                    </button>
+                        <!-- User can purchase/register -->
+                        <button class="signup-button" id="signup-button" data-id="<?php echo $activity['id']; ?>">
+                            <i class="fa-solid fa-user-plus"></i> <span>S'inscrire à cette activité</span>
+                        </button>
+                        
+                        <button class="add-to-cart-button" id="add-to-cart-button" data-id="<?php echo $activity['id']; ?>" 
+                                data-title="<?php echo htmlspecialchars($activity['titre']); ?>" 
+                                data-price="<?php echo $activity['prix']; ?>" 
+                                data-image="<?php echo htmlspecialchars($activity['image_url'] ? $activity['image_url'] : 'nature-placeholder.jpg'); ?>" 
+                                data-period="<?php echo htmlspecialchars($activity['date_ou_periode']); ?>" 
+                                data-tags="<?php echo htmlspecialchars($activity['tags']); ?>">
+                            <i class="fa-solid fa-cart-shopping"></i> <span>Ajouter au panier</span>
+                        </button>
                     <?php endif; ?>
                     
                     <?php if ($activity["date_ou_periode"]): ?>
@@ -1993,199 +2146,339 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
     <?php include '../TEMPLATE/footer.php'; ?>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Create ambient particles
-            createParticles();
+document.addEventListener('DOMContentLoaded', function() {
+    // Create ambient particles
+    createParticles();
+    
+    // Initialize the cart if it doesn't exist
+    if (!localStorage.getItem('synapse-cart')) {
+        localStorage.setItem('synapse-cart', JSON.stringify([]));
+    }
+    
+    // Update cart count
+    updateCartCount();
+    
+    // Smart Sign-up button functionality (free activities only)
+    const signupButton = document.getElementById('signup-button');
+    if (signupButton) {
+        const activityId = signupButton.getAttribute('data-id');
+        const activityPrice = parseFloat(signupButton.getAttribute('data-price') || '0');
+        
+        // If activity is paid, change button behavior to add to cart
+        if (activityPrice > 0) {
+            signupButton.innerHTML = '<i class="fa-solid fa-cart-plus"></i> <span>Ajouter au panier</span>';
+            signupButton.classList.remove('signup-button');
+            signupButton.classList.add('add-to-cart-button');
             
-            // Initialize the cart if it doesn't exist
-            if (!localStorage.getItem('synapse-cart')) {
-                localStorage.setItem('synapse-cart', JSON.stringify([]));
-            }
-            
-            // Update cart count
-            updateCartCount();
-            
-            // Sign-up button functionality
-            const signupButton = document.getElementById('signup-button');
-            if (signupButton) {
-                signupButton.addEventListener('click', function() {
-                    showNotification('Fonctionnalité d\'inscription à venir. Cette activité sera développée ultérieurement.', 'info');
-                });
-            }
-            
-            // Add to cart button functionality
-            const addToCartButton = document.getElementById('add-to-cart-button');
-            if (addToCartButton) {
-                addToCartButton.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    const titre = this.getAttribute('data-title');
-                    const prix = parseFloat(this.getAttribute('data-price'));
-                    const image = this.getAttribute('data-image');
-                    const periode = this.getAttribute('data-period');
-                    const tagsStr = this.getAttribute('data-tags');
-                    const tags = tagsStr ? tagsStr.split(',') : [];
-                    
-                    // Add to cart
-                    addToCart({
-                        id: id,
-                        titre: titre,
-                        prix: prix,
-                        image: image,
-                        periode: periode,
-                        tags: tags
-                    });
-                    
-                    // Button animation
-                    this.classList.add('clicked');
-                    setTimeout(() => {
-                        this.classList.remove('clicked');
-                    }, 300);
-                });
-            }
-            
-            // Social sharing buttons functionality
-            document.querySelectorAll('.social-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    const url = encodeURIComponent(window.location.href);
-                    const title = encodeURIComponent(document.title);
-                    let shareUrl = '';
-                    
-                    if (this.classList.contains('facebook')) {
-                        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
-                    } else if (this.classList.contains('twitter')) {
-                        shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
-                    } else if (this.classList.contains('whatsapp')) {
-                        shareUrl = `https://api.whatsapp.com/send?text=${title} ${url}`;
-                    } else if (this.classList.contains('email')) {
-                        shareUrl = `mailto:?subject=${title}&body=Check out this activity: ${url}`;
-                    }
-                    
-                    if (shareUrl) {
-                        window.open(shareUrl, '_blank');
-                    }
-                });
-            });
-            
-            // Make activity tags clickable - redirect to activites.php with filter
-            document.querySelectorAll('.activity-tag').forEach(tag => {
-                tag.addEventListener('click', function() {
-                    const tagData = this.getAttribute('data-tag');
-                    if (tagData) {
-                        window.location.href = 'activites.php?tag=' + encodeURIComponent(tagData);
-                    }
-                });
-            });
-            
-            // Make similar activity cards clickable
-            document.querySelectorAll('.similar-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const activityId = this.getAttribute('data-id');
-                    if (activityId) {
-                        window.location.href = 'activite.php?id=' + activityId;
-                    }
-                });
-            });
-            
-            // Function to add to cart
-            function addToCart(item) {
-                // Get current cart
-                const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+            signupButton.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const titre = this.getAttribute('data-title');
+                const prix = parseFloat(this.getAttribute('data-price'));
+                const image = this.getAttribute('data-image');
+                const periode = this.getAttribute('data-period');
+                const tagsStr = this.getAttribute('data-tags');
+                const tags = tagsStr ? tagsStr.split(',') : [];
                 
-                // Check if item is already in cart
-                const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
-                
-                // If item not in cart, add it
-                if (existingItemIndex === -1) {
-                    cart.push(item);
-                    localStorage.setItem('synapse-cart', JSON.stringify(cart));
-                    updateCartCount();
-                    showNotification('Activité ajoutée au panier !', 'success');
-                } else {
-                    showNotification('Cette activité est déjà dans votre panier.', 'info');
-                }
-            }
-            
-            // Function to update cart count
-            function updateCartCount() {
-                const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
-                const cartCount = document.getElementById('panier-count');
-                if (cartCount) {
-                    cartCount.textContent = cart.length;
-                }
-            }
-            
-            // Function to show notification
-            function showNotification(message, type = 'success') {
-                // Remove existing notifications
-                const existingNotifications = document.querySelectorAll('.notification');
-                existingNotifications.forEach(notification => {
-                    notification.remove();
+                // Add to cart instead of direct registration
+                addToCart({
+                    id: id,
+                    titre: titre,
+                    prix: prix,
+                    image: image,
+                    periode: periode,
+                    tags: tags
                 });
                 
-                // Create notification
-                const notification = document.createElement('div');
-                notification.classList.add('notification', type);
-                
-                // Add icon
-                let icon = 'fa-circle-check';
-                if (type === 'info') {
-                    icon = 'fa-circle-info';
-                } else if (type === 'error') {
-                    icon = 'fa-circle-exclamation';
-                }
-                
-                notification.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
-                
-                // Add to document
-                document.body.appendChild(notification);
-                
-                // Auto-hide notification
+                // Button animation
+                this.classList.add('clicked');
                 setTimeout(() => {
-                    notification.style.opacity = '0';
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 500);
-                }, 3000);
+                    this.classList.remove('clicked');
+                }, 300);
+            });
+        } else {
+            // Free activity - direct registration
+            signupButton.addEventListener('click', function() {
+                // Show loading state
+                this.disabled = true;
+                this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Inscription en cours...</span>';
+                
+                // Direct registration via activity_functions.php
+                fetch('activity_functions.php?action=register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        activity_id: activityId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Inscription réussie ! Vous êtes maintenant inscrit à cette activité gratuite.', 'success');
+                        
+                        // Remove item from cart if it exists
+                        removeFromCartIfExists(activityId);
+                        
+                        // Reload page after 2 seconds to show updated status
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        if (data.requires_payment) {
+                            // This shouldn't happen for free activities, but handle it gracefully
+                            showNotification('Cette activité nécessite un paiement. Redirection vers le panier...', 'info');
+                            // Add to cart instead
+                            const item = {
+                                id: activityId,
+                                titre: this.getAttribute('data-title'),
+                                prix: parseFloat(this.getAttribute('data-price') || '0'),
+                                image: this.getAttribute('data-image'),
+                                periode: this.getAttribute('data-period'),
+                                tags: (this.getAttribute('data-tags') || '').split(',').filter(tag => tag.trim())
+                            };
+                            addToCart(item);
+                        } else if (data.redirect) {
+                            showNotification(data.message, 'error');
+                            setTimeout(() => {
+                                window.location.href = data.redirect;
+                            }, 2000);
+                        } else {
+                            showNotification(data.message || 'Erreur lors de l\'inscription', 'error');
+                        }
+                        
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fa-solid fa-user-plus"></i> <span>S\'inscrire à cette activité</span>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Une erreur est survenue lors de l\'inscription', 'error');
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fa-solid fa-user-plus"></i> <span>S\'inscrire à cette activité</span>';
+                });
+            });
+        }
+    }
+    
+    // Add to cart button functionality (separate button)
+    const addToCartButton = document.getElementById('add-to-cart-button');
+    if (addToCartButton) {
+        addToCartButton.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const titre = this.getAttribute('data-title');
+            const prix = parseFloat(this.getAttribute('data-price'));
+            const image = this.getAttribute('data-image');
+            const periode = this.getAttribute('data-period');
+            const tagsStr = this.getAttribute('data-tags');
+            const tags = tagsStr ? tagsStr.split(',') : [];
+            
+            // Validate before adding to cart
+            validateAndAddToCart({
+                id: id,
+                titre: titre,
+                prix: prix,
+                image: image,
+                periode: periode,
+                tags: tags
+            });
+            
+            // Button animation
+            this.classList.add('clicked');
+            setTimeout(() => {
+                this.classList.remove('clicked');
+            }, 300);
+        });
+    }
+    
+    // Social sharing buttons functionality
+    document.querySelectorAll('.social-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const url = encodeURIComponent(window.location.href);
+            const title = encodeURIComponent(document.title);
+            let shareUrl = '';
+            
+            if (this.classList.contains('facebook')) {
+                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+            } else if (this.classList.contains('twitter')) {
+                shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
+            } else if (this.classList.contains('whatsapp')) {
+                shareUrl = `https://api.whatsapp.com/send?text=${title} ${url}`;
+            } else if (this.classList.contains('email')) {
+                shareUrl = `mailto:?subject=${title}&body=Check out this activity: ${url}`;
             }
             
-            // Function to create ambient particles
-            function createParticles() {
-                for (let i = 0; i < 15; i++) {
-                    const particle = document.createElement('div');
-                    particle.classList.add('particle');
-                    
-                    // Random size
-                    const size = Math.random() * 5 + 3;
-                    particle.style.width = `${size}px`;
-                    particle.style.height = `${size}px`;
-                    
-                    // Random position
-                    particle.style.left = `${Math.random() * 100}vw`;
-                    particle.style.top = `${Math.random() * 100}vh`;
-                    
-                    // Random animation duration
-                    const duration = Math.random() * 15 + 10;
-                    particle.style.animationDuration = `${duration}s`;
-                    
-                    // Random animation delay
-                    particle.style.animationDelay = `${Math.random() * 5}s`;
-                    
-                    // Random opacity
-                    particle.style.opacity = Math.random() * 0.5 + 0.1;
-                    
-                    // Random color tint
-                    const colors = [
-                        'rgba(69, 161, 99, 0.6)',  // Green
-                        'rgba(233, 196, 106, 0.6)', // Gold
-                        'rgba(139, 109, 65, 0.6)',  // Brown
-                        'rgba(255, 255, 255, 0.6)'  // White
-                    ];
-                    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                    
-                    document.body.appendChild(particle);
-                }
+            if (shareUrl) {
+                window.open(shareUrl, '_blank');
             }
         });
+    });
+    
+    // Make activity tags clickable - redirect to activites.php with filter
+    document.querySelectorAll('.activity-tag').forEach(tag => {
+        tag.addEventListener('click', function() {
+            const tagData = this.getAttribute('data-tag');
+            if (tagData) {
+                window.location.href = 'activites.php?tag=' + encodeURIComponent(tagData);
+            }
+        });
+    });
+    
+    // Make similar activity cards clickable
+    document.querySelectorAll('.similar-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const activityId = this.getAttribute('data-id');
+            if (activityId) {
+                window.location.href = 'activite.php?id=' + activityId;
+            }
+        });
+    });
+    
+    // Function to validate and add to cart
+    async function validateAndAddToCart(item) {
+        try {
+            // First validate if user can add this activity to cart
+            const response = await fetch('activity_functions.php?action=validate_cart_addition', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    activity_id: item.id
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                addToCart(item);
+            } else {
+                if (data.redirect) {
+                    showNotification(data.message, 'error');
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 2000);
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error validating cart addition:', error);
+            showNotification('Une erreur est survenue lors de la validation', 'error');
+        }
+    }
+    
+    // Function to add to cart
+    function addToCart(item) {
+        // Get current cart
+        const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+        
+        // Check if item is already in cart
+        const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
+        
+        // If item not in cart, add it
+        if (existingItemIndex === -1) {
+            cart.push(item);
+            localStorage.setItem('synapse-cart', JSON.stringify(cart));
+            updateCartCount();
+            showNotification('Activité ajoutée au panier !', 'success');
+        } else {
+            showNotification('Cette activité est déjà dans votre panier.', 'info');
+        }
+    }
+    
+    // Function to update cart count
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+        const cartCount = document.getElementById('panier-count');
+        if (cartCount) {
+            cartCount.textContent = cart.length;
+        }
+    }
+    
+    // Function to show notification
+    function showNotification(message, type = 'success') {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notification => {
+            notification.remove();
+        });
+        
+        // Create notification
+        const notification = document.createElement('div');
+        notification.classList.add('notification', type);
+        
+        // Add icon
+        let icon = 'fa-circle-check';
+        if (type === 'info') {
+            icon = 'fa-circle-info';
+        } else if (type === 'error') {
+            icon = 'fa-circle-exclamation';
+        }
+        
+        notification.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
+        
+        // Add to document
+        document.body.appendChild(notification);
+        
+        // Auto-hide notification
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
+    
+    // Function to create ambient particles
+    function createParticles() {
+        for (let i = 0; i < 15; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Random size
+            const size = Math.random() * 5 + 3;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            
+            // Random position
+            particle.style.left = `${Math.random() * 100}vw`;
+            particle.style.top = `${Math.random() * 100}vh`;
+            
+            // Random animation duration
+            const duration = Math.random() * 15 + 10;
+            particle.style.animationDuration = `${duration}s`;
+            
+            // Random animation delay
+            particle.style.animationDelay = `${Math.random() * 5}s`;
+            
+            // Random opacity
+            particle.style.opacity = Math.random() * 0.5 + 0.1;
+            
+            // Random color tint
+            const colors = [
+                'rgba(69, 161, 99, 0.6)',  // Green
+                'rgba(233, 196, 106, 0.6)', // Gold
+                'rgba(139, 109, 65, 0.6)',  // Brown
+                'rgba(255, 255, 255, 0.6)'  // White
+            ];
+            particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            document.body.appendChild(particle);
+        }
+    }
+    
+    // Function to remove item from cart if it exists
+    function removeFromCartIfExists(activityId) {
+        const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+        const filteredCart = cart.filter(item => item.id !== activityId);
+        
+        if (filteredCart.length !== cart.length) {
+            localStorage.setItem('synapse-cart', JSON.stringify(filteredCart));
+            updateCartCount();
+        }
+    }
+});
     </script>
 </body>
 </html>
