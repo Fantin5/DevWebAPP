@@ -8,10 +8,26 @@ $action = isset($_GET['action']) ? $_GET['action'] : '';
 if ($action === 'check_payment_info') {
     checkPaymentInfo();
 } 
-// Action pour traiter un paiement direct
+// Action pour récupérer toutes les cartes de l'utilisateur
+elseif ($action === 'get_user_cards') {
+    getUserCards();
+}
+// Action pour traiter un paiement direct avec une carte spécifique
 elseif ($action === 'process_payment') {
     processDirectPayment();
 } 
+// Action pour supprimer une carte
+elseif ($action === 'delete_card') {
+    deleteCard();
+}
+// Action pour définir une carte par défaut
+elseif ($action === 'set_default_card') {
+    setDefaultCard();
+}
+// Action pour ajouter une nouvelle carte
+elseif ($action === 'add_card') {
+    addCard();
+}
 // Si aucune action n'est spécifiée, retourner une erreur
 else {
     echo json_encode(['success' => false, 'message' => 'Action non spécifiée']);
@@ -44,14 +60,17 @@ function checkPaymentInfo() {
         $tableExists = true;
     }
 
-    // Si la table n'existe pas, la créer
+    // Si la table n'existe pas, la créer avec la nouvelle structure
     if (!$tableExists) {
         $sql = "CREATE TABLE payment_info (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
+            card_name VARCHAR(100) DEFAULT 'Ma carte',
             card_last_four VARCHAR(4) NOT NULL,
             expiry_date VARCHAR(5) NOT NULL,
+            is_default TINYINT(1) DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES user_form(id)
         )";
         
@@ -62,22 +81,58 @@ function checkPaymentInfo() {
         }
     }
 
-    // Vérifier si l'utilisateur a déjà des informations de paiement
-    $stmt = $conn->prepare("SELECT id FROM payment_info WHERE user_id = ?");
+    // Compter le nombre de cartes de l'utilisateur
+    $stmt = $conn->prepare("SELECT COUNT(*) as count FROM payment_info WHERE user_id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
-
-    $hasPaymentInfo = $result->num_rows > 0;
+    $count = $result->fetch_assoc()['count'];
 
     $stmt->close();
     $conn->close();
 
-    echo json_encode(['has_payment_info' => $hasPaymentInfo]);
+    echo json_encode(['has_payment_info' => $count > 0, 'card_count' => $count]);
 }
 
 /**
- * Traite un paiement direct lorsque l'utilisateur a déjà des informations de paiement enregistrées
+ * Récupère toutes les cartes enregistrées de l'utilisateur
+ */
+function getUserCards() {
+    // Vérifier si l'utilisateur est connecté
+    if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+        echo json_encode(['success' => false, 'message' => 'Utilisateur non connecté']);
+        exit;
+    }
+
+    $user_id = $_SESSION['user_id'];
+    $conn = new mysqli('localhost', 'root', '', 'user_db');
+    
+    if ($conn->connect_error) {
+        echo json_encode(['success' => false, 'message' => 'Erreur de connexion à la base de données']);
+        exit;
+    }
+
+    $stmt = $conn->prepare("SELECT id, card_name, card_last_four, expiry_date, is_default FROM payment_info WHERE user_id = ? ORDER BY is_default DESC, created_at ASC");
+    $cards = [];
+    
+    if ($stmt) {
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        while ($row = $result->fetch_assoc()) {
+            $cards[] = $row;
+        }
+        
+        $stmt->close();
+    }
+    
+    $conn->close();
+    echo json_encode(['success' => true, 'cards' => $cards]);
+}
+
+/**
+ * Traite un paiement direct avec une carte spécifique
  */
 function processDirectPayment() {
     // Vérifier si l'utilisateur est connecté
@@ -95,11 +150,30 @@ function processDirectPayment() {
         exit;
     }
 
-    // Récupérer l'ID de l'utilisateur
     $user_id = $_SESSION['user_id'];
+    $card_id = isset($data['card_id']) ? intval($data['card_id']) : null;
 
-    // Traitement du paiement "direct" (simulé)
-    // Dans un environnement de production, vous intégreriez ici un système de paiement réel
+    // Si un card_id est spécifié, vérifier qu'il appartient à l'utilisateur
+    if ($card_id) {
+        $user_conn = new mysqli('localhost', 'root', '', 'user_db');
+        if ($user_conn->connect_error) {
+            echo json_encode(['success' => false, 'message' => 'Erreur de connexion à la base de données']);
+            exit;
+        }
+
+        $stmt = $user_conn->prepare("SELECT id FROM payment_info WHERE id = ? AND user_id = ?");
+        $stmt->bind_param("ii", $card_id, $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows == 0) {
+            echo json_encode(['success' => false, 'message' => 'Carte non trouvée']);
+            $user_conn->close();
+            exit;
+        }
+
+        $user_conn->close();
+    }
 
     // Récupérer les ID des activités
     $activity_ids = array_map(function($item) {
@@ -148,10 +222,192 @@ function processDirectPayment() {
     $stmt->close();
     $conn->close();
 
-    // Répondre avec le résultat
     echo json_encode([
         'success' => $success,
         'message' => $success ? 'Paiement traité avec succès' : 'Erreur lors du traitement du paiement'
+    ]);
+}
+
+/**
+ * Supprime une carte de paiement
+ */
+function deleteCard() {
+    if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+        echo json_encode(['success' => false, 'message' => 'Utilisateur non connecté']);
+        exit;
+    }
+
+    $json_data = file_get_contents('php://input');
+    $data = json_decode($json_data, true);
+
+    if (!isset($data['card_id'])) {
+        echo json_encode(['success' => false, 'message' => 'ID de carte manquant']);
+        exit;
+    }
+
+    $card_id = intval($data['card_id']);
+    $user_id = $_SESSION['user_id'];
+
+    $conn = new mysqli('localhost', 'root', '', 'user_db');
+    if ($conn->connect_error) {
+        echo json_encode(['success' => false, 'message' => 'Erreur de connexion à la base de données']);
+        exit;
+    }
+
+    // Vérifier que la carte appartient à l'utilisateur et récupérer si elle est par défaut
+    $stmt = $conn->prepare("SELECT is_default FROM payment_info WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $card_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows == 0) {
+        echo json_encode(['success' => false, 'message' => 'Carte non trouvée']);
+        $conn->close();
+        exit;
+    }
+
+    $card_data = $result->fetch_assoc();
+    $was_default = $card_data['is_default'];
+
+    // Supprimer la carte
+    $stmt = $conn->prepare("DELETE FROM payment_info WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $card_id, $user_id);
+    $success = $stmt->execute();
+
+    // Si la carte supprimée était par défaut, définir une autre carte comme défaut
+    if ($success && $was_default) {
+        $stmt = $conn->prepare("UPDATE payment_info SET is_default = 1 WHERE user_id = ? LIMIT 1");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+    }
+
+    $stmt->close();
+    $conn->close();
+
+    echo json_encode(['success' => $success]);
+}
+
+/**
+ * Définit une carte comme carte par défaut
+ */
+function setDefaultCard() {
+    if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+        echo json_encode(['success' => false, 'message' => 'Utilisateur non connecté']);
+        exit;
+    }
+
+    $json_data = file_get_contents('php://input');
+    $data = json_decode($json_data, true);
+
+    if (!isset($data['card_id'])) {
+        echo json_encode(['success' => false, 'message' => 'ID de carte manquant']);
+        exit;
+    }
+
+    $card_id = intval($data['card_id']);
+    $user_id = $_SESSION['user_id'];
+
+    $conn = new mysqli('localhost', 'root', '', 'user_db');
+    if ($conn->connect_error) {
+        echo json_encode(['success' => false, 'message' => 'Erreur de connexion à la base de données']);
+        exit;
+    }
+
+    // Vérifier que la carte appartient à l'utilisateur
+    $stmt = $conn->prepare("SELECT id FROM payment_info WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $card_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows == 0) {
+        echo json_encode(['success' => false, 'message' => 'Carte non trouvée']);
+        $conn->close();
+        exit;
+    }
+
+    // Retirer le statut par défaut de toutes les cartes de l'utilisateur
+    $conn->query("UPDATE payment_info SET is_default = 0 WHERE user_id = $user_id");
+
+    // Définir la carte sélectionnée comme défaut
+    $stmt = $conn->prepare("UPDATE payment_info SET is_default = 1 WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $card_id, $user_id);
+    $success = $stmt->execute();
+
+    $stmt->close();
+    $conn->close();
+
+    echo json_encode(['success' => $success]);
+}
+
+/**
+ * Ajoute une nouvelle carte de paiement
+ */
+function addCard() {
+    if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+        echo json_encode(['success' => false, 'message' => 'Utilisateur non connecté']);
+        exit;
+    }
+
+    $json_data = file_get_contents('php://input');
+    $data = json_decode($json_data, true);
+
+    if (!isset($data['card_number']) || !isset($data['expiry_date'])) {
+        echo json_encode(['success' => false, 'message' => 'Données de carte manquantes']);
+        exit;
+    }
+
+    $user_id = $_SESSION['user_id'];
+    $card_name = isset($data['card_name']) && !empty($data['card_name']) ? $data['card_name'] : 'Ma carte';
+    $card_number = substr(str_replace(' ', '', $data['card_number']), -4);
+    $expiry_date = $data['expiry_date'];
+    $set_as_default = isset($data['set_as_default']) ? $data['set_as_default'] : false;
+
+    $conn = new mysqli('localhost', 'root', '', 'user_db');
+    if ($conn->connect_error) {
+        echo json_encode(['success' => false, 'message' => 'Erreur de connexion à la base de données']);
+        exit;
+    }
+
+    // Créer la table si elle n'existe pas
+    $conn->query("CREATE TABLE IF NOT EXISTS payment_info (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        card_name VARCHAR(100) DEFAULT 'Ma carte',
+        card_last_four VARCHAR(4) NOT NULL,
+        expiry_date VARCHAR(5) NOT NULL,
+        is_default TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES user_form(id)
+    )");
+
+    // Vérifier s'il s'agit de la première carte (sera par défaut) ou si explicitement demandé
+    $stmt = $conn->prepare("SELECT COUNT(*) as count FROM payment_info WHERE user_id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $count = $result->fetch_assoc()['count'];
+    $is_default = ($count == 0 || $set_as_default) ? 1 : 0;
+
+    // Si on définit cette carte comme défaut, retirer le statut des autres
+    if ($is_default && $count > 0) {
+        $conn->query("UPDATE payment_info SET is_default = 0 WHERE user_id = $user_id");
+    }
+
+    // Insérer la nouvelle carte
+    $stmt = $conn->prepare("INSERT INTO payment_info (user_id, card_name, card_last_four, expiry_date, is_default) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("isssi", $user_id, $card_name, $card_number, $expiry_date, $is_default);
+    
+    $success = $stmt->execute();
+    $card_id = $success ? $conn->insert_id : null;
+
+    $stmt->close();
+    $conn->close();
+
+    echo json_encode([
+        'success' => $success,
+        'card_id' => $card_id,
+        'message' => $success ? 'Carte ajoutée avec succès' : 'Erreur lors de l\'ajout de la carte'
     ]);
 }
 ?>
