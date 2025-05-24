@@ -22,51 +22,134 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
     />
   </head>
   <body>
-<!-- hello  -->
-    <!-- Header -->
+    <!-- Enhanced Header with floating elements -->
     <header class="header">
-      <a href="../Testing grounds/main.php">
-        <img
-          class="logo"
-          src="../Connexion-Inscription/logo-transparent-pdf.png"
-          alt="Logo Synapse"
-        />
-      </a>
-<nav class="nav-links">
-  <ul>
-      <li><a href="../Testing grounds/main.php">Accueil</a></li>
-    <li><a href="../Concept/concept.php">Concept</a></li>
-    <li><a href="../Testing grounds/jenis.php"><i class="fa-solid fa-plus"></i> Créer une activité</a></li>
-  </ul>
-</nav>
+      <!-- Animated background elements -->
+      <div class="header-bg-elements">
+        <div class="floating-leaf leaf-1"><i class="fa-solid fa-leaf"></i></div>
+        <div class="floating-leaf leaf-2"><i class="fa-solid fa-seedling"></i></div>
+        <div class="floating-leaf leaf-3"><i class="fa-solid fa-spa"></i></div>
+        <div class="floating-particle particle-1"></div>
+        <div class="floating-particle particle-2"></div>
+        <div class="floating-particle particle-3"></div>
+      </div>
+
+      <!-- Left section: Logo with enhanced styling -->
+      <div class="header-left">
+        <a href="../Testing grounds/main.php" class="logo-container">
+          <div class="logo-background">
+            <img
+              class="logo"
+              src="../Connexion-Inscription/logo-transparent-pdf.png"
+              alt="Logo Synapse"
+            />
+          </div>
+        </a>
+      </div>
+
+      <!-- Center section: Enhanced Navigation -->
+      <nav class="nav-links">
+        <ul>
+          <li class="nav-item">
+            <a href="../Testing grounds/main.php" class="nav-link">
+              <i class="fa-solid fa-home nav-icon"></i>
+              <span>Accueil</span>
+              <div class="nav-ripple"></div>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="../Concept/concept.php" class="nav-link">
+              <i class="fa-solid fa-lightbulb nav-icon"></i>
+              <span>Concept</span>
+              <div class="nav-ripple"></div>
+            </a>
+          </li>
+          <li class="nav-item special">
+            <a href="../Testing grounds/jenis.php" class="nav-link create-activity">
+              <i class="fa-solid fa-plus nav-icon"></i>
+              <span>Créer une activité</span>
+              <div class="nav-ripple"></div>
+              <div class="glow-effect"></div>
+            </a>
+          </li>
+        </ul>
+      </nav>
     
-<div class="icon">
-  <?php include '../TEMPLATE/admin_button.php'; ?>
-  <a href="../Testing grounds/panier.php" class="panier-link" aria-label="Panier">
-    <i class="fa-solid fa-cart-shopping"></i>
-    <span class="panier-count" id="panier-count">0</span>
-  </a>
-  <?php if($logged_in): ?>
-        <!-- Menu déroulant pour l'utilisateur connecté -->
-        <div class="profile-dropdown">
-          <a href="#" class="connexion-profil" aria-label="Profil">
-            <i class="fa-solid fa-user"></i>
-            <span class="profile-name"><?= htmlspecialchars($user_name) ?></span>
+      <!-- Right section: Enhanced Icons -->
+      <div class="header-right">
+        <?php include '../TEMPLATE/admin_button.php'; ?>
+        
+        <!-- Enhanced Cart -->
+        <div class="cart-container">
+          <a href="../Testing grounds/panier.php" class="panier-link" aria-label="Panier">
+            <div class="cart-icon-wrapper">
+              <i class="fa-solid fa-cart-shopping"></i>
+              <div class="cart-pulse"></div>
+            </div>
+            <span class="panier-count" id="panier-count">0</span>
           </a>
-          <div class="dropdown-content">
-            <a href="../Compte/mon-espace.php"><i class="fa-solid fa-gear"></i> Mon profil</a>
-            <a href="../Testing grounds/mes-activites.php"><i class="fa-solid fa-calendar-days"></i> Mes activités</a>
+        </div>
+
+        <?php if($logged_in): ?>
+        <!-- Enhanced Profile Dropdown -->
+        <div class="profile-dropdown enhanced">
+          <a href="#" class="connexion-profil enhanced-profile" aria-label="Profil">
+            <div class="profile-avatar">
+              <i class="fa-solid fa-user"></i>
+              <div class="profile-status"></div>
+            </div>
+            <div class="profile-info">
+              <span class="profile-name"><?= htmlspecialchars($user_name) ?></span>
+              <span class="profile-role">Membre</span>
+            </div>
+            <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+          </a>
+          <div class="dropdown-content enhanced-dropdown">
+            <div class="dropdown-header">
+              <div class="user-avatar-large">
+                <i class="fa-solid fa-user"></i>
+              </div>
+              <div class="user-details">
+                <strong><?= htmlspecialchars($user_name) ?></strong>
+                <span>Explorateur de nature</span>
+              </div>
+            </div>
             <div class="dropdown-divider"></div>
-            <a href="../Connexion-Inscription/logout.php"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+            <a href="../Compte/mon-espace.php" class="dropdown-link">
+              <i class="fa-solid fa-gear"></i> 
+              <span>Mon profil</span>
+              <i class="fa-solid fa-arrow-right link-arrow"></i>
+            </a>
+            <a href="../Testing grounds/mes-activites.php" class="dropdown-link">
+              <i class="fa-solid fa-calendar-days"></i> 
+              <span>Mes activités</span>
+              <i class="fa-solid fa-arrow-right link-arrow"></i>
+            </a>
+            <a href="../Testing grounds/mes-activites-registered.php" class="dropdown-link">
+              <i class="fa-solid fa-clipboard-list"></i> 
+              <span>Activités inscrites</span>
+              <i class="fa-solid fa-arrow-right link-arrow"></i>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a href="../Connexion-Inscription/logout.php" class="dropdown-link logout">
+              <i class="fa-solid fa-right-from-bracket"></i> 
+              <span>Déconnexion</span>
+              <i class="fa-solid fa-arrow-right link-arrow"></i>
+            </a>
           </div>
         </div>
         <?php else: ?>
-        <!-- Lien simple pour la connexion -->
-        <a href="../Connexion-Inscription/login_form.php" class="connexion-profil" aria-label="Connexion">
-          <i class="fa-solid fa-user"></i>
+        <!-- Enhanced Login Link -->
+        <a href="../Connexion-Inscription/login_form.php" class="connexion-profil login-btn" aria-label="Connexion">
+          <div class="login-icon-wrapper">
+            <i class="fa-solid fa-user"></i>
+            <div class="login-pulse"></div>
+          </div>
+          <span class="login-text">Connexion</span>
         </a>
         <?php endif; ?>
       </div>
     </header>
-      <script src="../TEMPLATE/Nouveauhead.js"></script>
-      <!-- cvq -->
+    
+    <script src="../TEMPLATE/Nouveauhead.js"></script>
+    <!-- cvq -->
