@@ -2592,16 +2592,7 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                             <i class="fa-solid fa-sign-in-alt"></i> <span>Se connecter</span>
                         </a>
                     <?php else: ?>
-                        <!-- User can purchase/register -->
-                        <button class="signup-button" id="signup-button" 
-                                data-id="<?php echo $activity['id']; ?>"
-                                data-title="<?php echo htmlspecialchars($activity['titre']); ?>" 
-                                data-price="<?php echo $activity['prix']; ?>" 
-                                data-image="<?php echo htmlspecialchars($activity['image_url'] ? $activity['image_url'] : 'nature-placeholder.jpg'); ?>" 
-                                data-period="<?php echo htmlspecialchars($activity['date_ou_periode']); ?>" 
-                                data-tags="<?php echo htmlspecialchars($activity['tags']); ?>">
-                            <i class="fa-solid fa-user-plus"></i> <span>S'inscrire à cette activité</span>
-                        </button>
+                        
                         
                         <button class="add-to-cart-button" id="add-to-cart-button" data-id="<?php echo $activity['id']; ?>" 
                                 data-title="<?php echo htmlspecialchars($activity['titre']); ?>" 
@@ -2622,21 +2613,7 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                         </div>
                     <?php endif; ?>
                     
-                    <!-- Social Sharing -->
-                    <div class="social-sharing">
-                        <div class="social-button facebook">
-                            <i class="fa-brands fa-facebook-f"></i>
-                        </div>
-                        <div class="social-button twitter">
-                            <i class="fa-brands fa-twitter"></i>
-                        </div>
-                        <div class="social-button whatsapp">
-                            <i class="fa-brands fa-whatsapp"></i>
-                        </div>
-                        <div class="social-button email">
-                            <i class="fa-solid fa-envelope"></i>
-                        </div>
-                    </div>
+                   
                 </div>
             </div>
         </div>

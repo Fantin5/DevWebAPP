@@ -215,8 +215,8 @@ Ce lien expirera dans 24 heures.';
     
    <main class="login-page-main">
       <div class="switch">
-         <div class="left-curved-container empty" id="box1">Se connecter</div>
-         <div class="right-curved-container filled" id="box2">Créer un compte</div>
+        <div class="left-curved-container filled" id="box1">Se connecter</div>
+<div class="right-curved-container empty" id="box2">Créer un compte</div>
       </div>
 
       <!-- Affichage "Se connecter" -->
