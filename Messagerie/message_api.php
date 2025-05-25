@@ -243,9 +243,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         // Update conversation with last message
                         if (updateConversation($conn, $conversation_id, $message_id)) {
+                            // Get the actual timestamp from database
+                            $timestamp_query = "SELECT timestamp FROM messages WHERE id = $message_id";
+                            $timestamp_result = mysqli_query($conn, $timestamp_query);
+                            $timestamp_data = mysqli_fetch_assoc($timestamp_result);
+                            
                             $response = [
                                 'success' => true,
-                                'message_id' => $message_id
+                                'message_id' => $message_id,
+                                'timestamp' => $timestamp_data['timestamp'],
+                                'formatted_time' => formatMessageTime($timestamp_data['timestamp'])
                             ];
                         } else {
                             $response = [

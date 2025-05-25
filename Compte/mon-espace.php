@@ -88,6 +88,21 @@ if ($result_reviews && $result_reviews->num_rows > 0) {
 $stmt_reviews->close();
 $conn_activity->close();
 
+// Count user conversations
+$conversations_count = 0;
+$sql_conversations = "SELECT COUNT(*) as count FROM conversations WHERE user1_id = ? OR user2_id = ?";
+$stmt_conversations = $conn->prepare($sql_conversations);
+$stmt_conversations->bind_param("ii", $user_id, $user_id);
+$stmt_conversations->execute();
+$result_conversations = $stmt_conversations->get_result();
+
+if ($result_conversations && $result_conversations->num_rows > 0) {
+    $row_conversations = $result_conversations->fetch_assoc();
+    $conversations_count = $row_conversations['count'];
+}
+
+$stmt_conversations->close();
+
 // Handle profile update
 if (isset($_POST['update_profile'])) {
     $first_name = $_POST['first_name'];
@@ -1256,8 +1271,9 @@ input:checked + .slider:before {
         </div>
         <h2 class="dashboard-card-title">Messagerie</h2>
     </div>
+    
     <div class="activities-count">
-        <span id="conversations-count">0</span>
+        <?php echo $conversations_count; ?>
     </div>
     <p class="center-text">Conversations actives</p>
     
@@ -1667,26 +1683,6 @@ document.addEventListener('DOMContentLoaded', function() {
         loadSavedAccounts();
     }
 });
-
-// Update conversation count
-function updateConversationCount() {
-    fetch('../Messagerie/message_api.php?action=get_conversation_count')
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const countElement = document.getElementById('conversations-count');
-            if (countElement) {
-                countElement.textContent = data.count;
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching conversation count:', error);
-    });
-}
-
-// Call it once on page load
-updateConversationCount();
     </script>
 </body>
 </html>

@@ -712,6 +712,17 @@ function formatMessageTime($timestamp) {
                 display: none;
             }
         }
+        
+        /* Desktop responsiveness - ensure conversations are always visible */
+        @media (min-width: 769px) {
+            .conversations-sidebar {
+                display: flex !important;
+            }
+            
+            .back-to-conversations {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -936,9 +947,31 @@ function formatMessageTime($timestamp) {
             
             if (backButton && conversationsSidebar && messageArea) {
                 backButton.addEventListener('click', function() {
-                    conversationsSidebar.classList.remove('hidden');
-                    messageArea.classList.remove('active');
+                    // On mobile, show conversations sidebar and hide message area
+                    if (window.innerWidth <= 768) {
+                        conversationsSidebar.classList.remove('hidden');
+                        messageArea.classList.remove('active');
+                        // Update URL to remove conversation_id parameter
+                        const url = new URL(window.location);
+                        url.searchParams.delete('conversation_id');
+                        window.history.pushState({}, '', url);
+                    }
                 });
+            }
+            
+            // Handle window resize to ensure proper display
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    // Desktop view - always show conversations sidebar
+                    if (conversationsSidebar) {
+                        conversationsSidebar.classList.remove('hidden');
+                    }
+                }
+            });
+            
+            // Ensure conversations are visible on page load for desktop
+            if (window.innerWidth > 768 && conversationsSidebar) {
+                conversationsSidebar.classList.remove('hidden');
             }
             
             // Function to get current time
@@ -1151,70 +1184,26 @@ function formatMessageTime($timestamp) {
                 setInterval(checkNewMessages, 3000);
             }
 
-            // Handle conversation deletion
-            const deleteButtons = document.querySelectorAll('.delete-conversation');
-            const deleteDialog = document.getElementById('delete-dialog');
-            const cancelDelete = document.getElementById('cancel-delete');
-            const confirmDelete = document.getElementById('confirm-delete');
-            let conversationToDelete = null;
-
-            // Add event listener to delete buttons
-            deleteButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    conversationToDelete = this.getAttribute('data-id');
-                    deleteDialog.classList.add('show');
-                });
-            });
-
-            // Cancel delete
-            if (cancelDelete) {
-                cancelDelete.addEventListener('click', function() {
-                    deleteDialog.classList.remove('show');
-                    conversationToDelete = null;
-                });
-            }
-
-            // Confirm delete
-            if (confirmDelete) {
-                confirmDelete.addEventListener('click', function() {
-                    if (conversationToDelete) {
-                        const formData = new FormData();
-                        formData.append('action', 'delete_conversation');
-                        formData.append('conversation_id', conversationToDelete);
-                        
-                        fetch('message_api.php', {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                window.location.href = 'messagerie.php';
-                            } else {
-                                console.error('Delete Error:', data);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                        });
+            // Update conversation count in real-time
+            function updateConversationCount() {
+                fetch('message_api.php?action=get_conversation_count')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update count in mon-espace if we're coming from there
+                        const countElement = document.getElementById('conversations-count');
+                        if (countElement) {
+                            countElement.textContent = data.count;
+                        }
                     }
-                    
-                    deleteDialog.classList.remove('show');
+                })
+                .catch(error => {
+                    console.error('Error fetching conversation count:', error);
                 });
             }
 
-            // Close dialog when clicking outside
-            if (deleteDialog) {
-                deleteDialog.addEventListener('click', function(e) {
-                    if (e.target === deleteDialog) {
-                        deleteDialog.classList.remove('show');
-                        conversationToDelete = null;
-                    }
-                });
-            }
+            // Update count on page load
+            updateConversationCount();
         });
     </script>
 </body>
