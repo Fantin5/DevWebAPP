@@ -317,15 +317,7 @@ include '../TEMPLATE/Nouveauhead.php';
                         echo '</div>';
                         
                         // Show days remaining
-                        echo '<div class="last-chance-badge"><i class="fa-solid fa-clock"></i> ';
-                        if ($daysRemaining == 0) {
-                            echo 'Dernier jour !';
-                        } else if ($daysRemaining == 1) {
-                            echo 'Termine demain !';
-                        } else {
-                            echo 'Plus que ' . $daysRemaining . ' jours !';
-                        }
-                        echo '</div>';
+
                         
                         echo '<div class="tag">';
                         
@@ -658,21 +650,6 @@ if ($result->num_rows > 0) {
         </div>
     </section>
 
-    <!-- Section Newsletter redesigned -->
-    <section class="newsletter-section fade-in-section">
-        <div class="newsletter-container">
-            <div class="newsletter-content">
-                <i class="fa-solid fa-envelope-open-text"></i>
-                <h2>Restez informé(e)</h2>
-                <p>Recevez en avant-première nos nouvelles activités et offres exclusives</p>
-                <form class="newsletter-form">
-                    <input type="email" placeholder="Votre adresse e-mail" required>
-                    <button type="submit">S'abonner</button>
-                </form>
-            </div>
-        </div>
-    </section>
-
     <!-- Back to top button -->
     <div class="scroll-top-button" id="scroll-top">
         <i class="fa-solid fa-arrow-up"></i>
@@ -756,19 +733,6 @@ include '../TEMPLATE/footer.php';
                 });
             });
         }
-        
-        // Formulaire de newsletter
-        const newsletterForm = document.querySelector('.newsletter-form');
-        if (newsletterForm) {
-            newsletterForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const email = this.querySelector('input[type="email"]').value;
-                if (email) {
-                    showNotification('Merci pour votre inscription à notre newsletter !', 'success');
-                    this.reset();
-                }
-            });
-        }
 
         // Make activity cards clickable - redirect to activity detail page
         document.querySelectorAll('.activity-card').forEach(card => {
@@ -832,10 +796,9 @@ include '../TEMPLATE/footer.php';
             card.style.cursor = 'pointer';
         });
         
-        // Ajouter des événements pour les boutons "Ajouter au panier"
+        // Enhanced Add to cart functionality using consolidated functions
         document.querySelectorAll('.add-to-cart-button').forEach(button => {
             button.addEventListener('click', function(event) {
-                // Empêcher la propagation de l'événement pour éviter de naviguer vers la page détaillée
                 event.stopPropagation();
                 
                 const id = this.getAttribute('data-id');
@@ -846,38 +809,65 @@ include '../TEMPLATE/footer.php';
                 const tagsStr = this.getAttribute('data-tags');
                 const tags = tagsStr ? tagsStr.split(',') : [];
                 
-                // Ajouter l'activité au panier
-                addToCart({
-                    id: id,
-                    titre: titre,
-                    prix: prix,
-                    image: image,
-                    periode: periode,
-                    tags: tags
+                // Use consolidated validation function
+                fetch('activity_functions.php?action=validate_cart_addition', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        activity_id: id
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        if (data.redirect) {
+                            showNotification(data.message, 'error');
+                            setTimeout(() => {
+                                window.location.href = data.redirect;
+                            }, 2000);
+                            return;
+                        }
+                        
+                        showNotification(data.message, 'error');
+                        return;
+                    }
+                    
+                    // If validation passes, add to cart
+                    addToCart({
+                        id: id,
+                        titre: titre,
+                        prix: prix,
+                        image: image,
+                        periode: periode,
+                        tags: tags
+                    }, this);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Une erreur est survenue. Veuillez réessayer.', 'error');
                 });
-                
-                // Animation du bouton
-                this.classList.add('clicked');
-                setTimeout(() => {
-                    this.classList.remove('clicked');
-                }, 300);
             });
         });
-        
-        // Fonction pour ajouter au panier
-        function addToCart(item) {
-            // Récupérer le panier actuel
+
+        // Function to add to cart
+        function addToCart(item, buttonElement) {
             const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
-            
-            // Vérifier si l'article est déjà dans le panier
             const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
             
-            // Si l'article n'est pas déjà dans le panier, l'ajouter
             if (existingItemIndex === -1) {
                 cart.push(item);
                 localStorage.setItem('synapse-cart', JSON.stringify(cart));
                 updateCartCount();
                 showNotification('Activité ajoutée au panier !', 'success');
+                
+                if (buttonElement) {
+                    buttonElement.classList.add('clicked');
+                    setTimeout(() => {
+                        buttonElement.classList.remove('clicked');
+                    }, 300);
+                }
             } else {
                 showNotification('Cette activité est déjà dans votre panier.', 'info');
             }
@@ -965,6 +955,7 @@ include '../TEMPLATE/footer.php';
         }
     });
 </script>
+<script src="activity-expiration-manager.js"></script>
 
 <?php
 $conn->close();

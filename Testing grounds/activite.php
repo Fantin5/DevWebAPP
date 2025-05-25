@@ -1,25 +1,27 @@
 <?php
 session_start();
 
-// Configuration de la base de données
+// Database configuration
 $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "activity";
 
-// Créer une connexion
+// Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Connect to user database
 $user_conn = new mysqli($servername, $username, $password, "user_db");
 
-// Vérifier la connexion
+// Check connection
 if ($conn->connect_error) {
-    die("Échec de la connexion à la base de données: " . $conn->connect_error);
+    die("Connection failed: " . $conn->connect_error);
 }
 
 // Now that we have the connection, require tag setup and initialize TagManager
 require_once 'tag_setup.php';
+require_once 'activity_functions.php';
+require_once 'review_system.php';
 $tagManager = new TagManager($conn);
 $tagDefinitions = $tagManager->getAllTags();
 
@@ -31,6 +33,12 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 }
 
 $activity_id = $_GET['id'];
+
+// Debug: Make sure activity_id is properly set
+error_log('Activity ID from GET: ' . $activity_id);
+if (!$activity_id || !is_numeric($activity_id)) {
+    error_log('CRITICAL: Activity ID is not valid!');
+}
 
 // Récupérer les définitions de tags depuis la base de données
 $tagDefinitions = [];
@@ -73,22 +81,29 @@ if ($result->num_rows === 0) {
 
 $activity = $result->fetch_assoc();
 
-// Check if the user is registered for this activity
-$userRegistered = false;
-if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
-    $user_id = $_SESSION['user_id'];
-    
-    $check_registration_sql = "SELECT id FROM activites_achats WHERE user_id = ? AND activite_id = ?";
-    $check_stmt = $conn->prepare($check_registration_sql);
-    $check_stmt->bind_param("ii", $user_id, $activity_id);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
-    
-    if ($check_result->num_rows > 0) {
-        $userRegistered = true;
-    }
-    
-    $check_stmt->close();
+// Check user registration status and ownership
+$userStatus = checkUserActivityStatus($activity_id);
+$userRegistered = $userStatus['is_registered'];
+$isOwner = $userStatus['is_owner'];
+$canPurchase = $userStatus['can_purchase'];
+
+// Initialize review manager and get real reviews
+$reviewManager = new ReviewManager();
+$reviewsData = $reviewManager->getActivityReviews($activity_id, 10, 0);
+$reviews = $reviewsData['reviews'] ?? [];
+$totalReviews = $reviewsData['total'] ?? 0;
+
+// Get activity rating
+$ratingData = $reviewManager->getActivityRating($activity_id);
+$averageRating = $ratingData['average_rating'] ?? 0;
+$ratingBreakdown = $ratingData['rating_breakdown'] ?? [];
+
+// Check if current user can review this activity
+$canReview = false;
+$reviewPermission = ['can_review' => false, 'reason' => 'not_logged_in'];
+if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']) {
+    $reviewPermission = $reviewManager->canUserReview($activity_id, $_SESSION['user_id']);
+    $canReview = $reviewPermission['can_review'];
 }
 
 // Extract creator information from description if it exists
@@ -102,10 +117,10 @@ if (preg_match('/<!--CREATOR:([^-]+)-->/', $activity["description"], $matches)) 
         // Remove the creator info from the description for display
         $activity["description"] = preg_replace('/<!--CREATOR:[^-]+-->/', '', $activity["description"]);
         
-        // If we have user_id, try to get the latest information from database
+        // If we have user_id, try to get the latest information from database INCLUDING SOCIAL MEDIA URLS
         if (isset($creator_data['user_id'])) {
             $user_id = $creator_data['user_id'];
-            $user_sql = "SELECT name, first_name, email, phone_nb FROM user_form WHERE id = ?";
+            $user_sql = "SELECT name, first_name, email, phone_nb, instagram_url, facebook_url, twitter_url FROM user_form WHERE id = ?";
             $user_stmt = $user_conn->prepare($user_sql);
             $user_stmt->bind_param("i", $user_id);
             $user_stmt->execute();
@@ -117,7 +132,11 @@ if (preg_match('/<!--CREATOR:([^-]+)-->/', $activity["description"], $matches)) 
                 $creator_data['first_name'] = $user_data['first_name'];
                 $creator_data['email'] = $user_data['email'];
                 $creator_data['phone_nb'] = $user_data['phone_nb'];
+                $creator_data['instagram_url'] = $user_data['instagram_url'];
+                $creator_data['facebook_url'] = $user_data['facebook_url'];
+                $creator_data['twitter_url'] = $user_data['twitter_url'];
             }
+            $user_stmt->close();
         }
     } catch (Exception $e) {
         // If there's an error parsing, just continue without creator data
@@ -213,10 +232,6 @@ if (count($similar_activities) < 4) {
 $tags = $activity["tags"] ? explode(',', $activity["tags"]) : [];
 $tagDisplayNames = $activity["tag_display_names"] ? explode('|', $activity["tag_display_names"]) : [];
 
-// Générer une note aléatoire pour la démonstration (mais stable pour une activité donnée)
-$randomSeed = $activity_id * 13; // Use activity ID as seed for consistency
-$randomRating = (($randomSeed % 21) + 30) / 10; // Between 3.0 and 5.0
-
 // Fonction pour obtenir les étoiles formatées basées sur la note
 function getStars($rating) {
     $fullStars = floor($rating);
@@ -273,83 +288,6 @@ function formatPhoneNumber($phone) {
     // Si le format ne correspond pas, renvoyer tel quel
     return $phone;
 }
-
-// Generate random reviews for demo purposes
-function generateRandomReviews($activity_id) {
-    $reviewsCount = rand(3, 6);
-    $reviews = [];
-    
-    $names = [
-        'Sophie Martin', 'Thomas Bernard', 'Emma Dubois', 'Lucas Petit', 
-        'Camille Moreau', 'Jules Leroy', 'Léa Richard', 'Hugo Simon', 
-        'Chloé Laurent', 'Antoine Girard', 'Manon Robert', 'Maxime Michel'
-    ];
-    
-    $comments = [
-        'Superbe activité, je recommande vivement !',
-        'J\'ai passé un excellent moment, à refaire.',
-        'Très belle découverte, merci pour cette expérience.',
-        'Le cadre est magnifique et l\'activité bien organisée.',
-        'Bon rapport qualité-prix, activité enrichissante.',
-        'Parfait pour se détendre et profiter de la nature.',
-        'Une expérience unique et mémorable.',
-        'Très bien organisé, rien à redire.',
-        'Idéal pour une sortie en famille ou entre amis.',
-        'Animation de qualité, je n\'ai pas vu le temps passer.',
-        'Je n\'étais pas sûr(e) au début, mais j\'ai finalement adoré.',
-        'Le guide était passionné et a su nous captiver.',
-        'Enrichissant et divertissant à la fois.'
-    ];
-    
-    $commentVariations = [
-        'Un peu cher pour ce que c\'est, mais agréable tout de même.',
-        'Quelques petits points à améliorer mais globalement satisfaisant.',
-        'Le temps était moyen mais l\'activité reste intéressante.',
-        'Pourrait être plus accessible, mais l\'expérience vaut le détour.',
-        'La préparation avant l\'activité pourrait être plus claire.',
-        'Un peu court à mon goût, j\'en aurais voulu plus !'
-    ];
-    
-    for ($i = 0; $i < $reviewsCount; $i++) {
-        $seed = ($activity_id * 7 + $i * 13) % 1000; // Deterministic but looks random
-        $rating = (($seed % 21) + 30) / 10; // Between 3.0 and 5.0
-        
-        // Determine comment based on rating
-        $commentText = '';
-        if ($rating >= 4.5) {
-            $commentText = $comments[($seed + $i) % count($comments)];
-        } else if ($rating >= 3.5) {
-            $commentText = $comments[($seed + $i * 2) % count($comments)];
-            if (rand(0, 1) == 1) {
-                $commentText .= ' ' . $commentVariations[$i % count($commentVariations)];
-            }
-        } else {
-            $commentText = $commentVariations[$i % count($commentVariations)];
-        }
-        
-        $date = date('Y-m-d', strtotime('-' . ($i + 1) * 7 . ' days'));
-        
-        $reviews[] = [
-            'name' => $names[($seed + $i) % count($names)],
-            'rating' => $rating,
-            'comment' => $commentText,
-            'date' => $date
-        ];
-    }
-    
-    return $reviews;
-}
-
-$reviews = generateRandomReviews($activity_id);
-
-// Calculate the average review rating
-$totalRating = 0;
-$reviewCount = count($reviews);
-foreach ($reviews as $review) {
-    $totalRating += $review['rating'];
-}
-
-$averageRating = $reviewCount > 0 ? $totalRating / $reviewCount : 0;
 
 // Get the main image dimensions
 $imageDimensions = [1200, 800]; // Default dimensions
@@ -1105,7 +1043,7 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             font-style: italic;
         }
         
-        /* Enhanced reviews section */
+        /* Enhanced reviews section with real data */
         .reviews-section {
             margin-top: 60px;
             padding-top: 40px;
@@ -1117,6 +1055,8 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
         }
         
         .reviews-header h2 {
@@ -1152,31 +1092,152 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             font-size: 14px;
         }
         
+        .review-form-section {
+            background: rgba(69, 161, 99, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 2px dashed rgba(69, 161, 99, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .review-form-section:hover {
+            border-color: rgba(69, 161, 99, 0.4);
+            background: rgba(69, 161, 99, 0.08);
+        }
+        
+        .review-form-title {
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .review-form {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .star-rating {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .star-rating input[type="radio"] {
+            display: none;
+        }
+        
+        .star-rating label {
+            font-size: 32px;
+            color: #ddd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .star-rating label:hover,
+        .star-rating label.active {
+            color: #f1c40f;
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 8px rgba(241, 196, 15, 0.5));
+        }
+        
+        .comment-textarea {
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid rgba(69, 161, 99, 0.2);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 16px;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .comment-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(69, 161, 99, 0.2);
+        }
+        
+        .submit-review-btn {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px rgba(69, 161, 99, 0.3);
+        }
+        
+        .submit-review-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(69, 161, 99, 0.4);
+        }
+        
+        .submit-review-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
         .reviews-list {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: 25px;
         }
         
         .review-item {
             background-color: #f9f9f9;
-            border-radius: 15px;
-            padding: 25px;
+            border-radius: 20px;
+            padding: 30px;
             transition: all 0.3s ease;
             border: 1px solid rgba(230, 230, 230, 0.5);
+            position: relative;
         }
         
         .review-item:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
             background-color: white;
         }
         
         .review-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .reviewer-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
         
         .reviewer-name {
@@ -1190,18 +1251,111 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             font-size: 14px;
         }
         
+        .review-edited {
+            color: #999;
+            font-size: 12px;
+            font-style: italic;
+        }
+        
+        .review-actions {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        
+        .review-action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .edit-review-btn {
+            background: rgba(255, 159, 103, 0.2);
+            color: #e67e22;
+        }
+        
+        .edit-review-btn:hover {
+            background: #ff9f67;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .delete-review-btn {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+        
+        .delete-review-btn:hover {
+            background: #e74c3c;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
         .review-rating {
             margin-bottom: 15px;
+        }
+        
+        .review-rating .stars {
+            gap: 3px;
         }
         
         .review-rating .stars i {
             color: #f1c40f;
             font-size: 16px;
+            filter: none;
         }
         
         .review-content {
             color: #555;
             line-height: 1.6;
+            font-size: 16px;
+        }
+        
+        .no-reviews {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            background: rgba(69, 161, 99, 0.05);
+            border-radius: 20px;
+            border: 2px dashed rgba(69, 161, 99, 0.2);
+        }
+        
+        .no-reviews i {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+        
+        .no-reviews h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .no-reviews p {
+            font-size: 16px;
+        }
+        
+        .review-permission-message {
+            background: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            color: #2c3e50;
+        }
+        
+        .review-permission-message i {
+            color: #3498db;
+            margin-right: 10px;
         }
         
         /* Enhanced Similar Activities section */
@@ -1669,6 +1823,11 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             .similar-activities-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .reviews-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
         
         @media (max-width: 576px) {
@@ -1710,6 +1869,325 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                 gap: 15px;
             }
         }
+        
+        /* Enhanced Organizer Badge Styles */
+        .owner-badge {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 20px;
+            text-align: center;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 15px 35px rgba(243, 156, 18, 0.3);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            animation: ownerBadgeGlow 3s ease-in-out infinite alternate;
+        }
+
+        .owner-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                rgba(255, 255, 255, 0) 0%, 
+                rgba(255, 255, 255, 0.3) 50%, 
+                rgba(255, 255, 255, 0) 100%);
+            transform: skewX(-25deg);
+            animation: ownerBadgeShine 4s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        .owner-badge i {
+            font-size: 28px;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+            position: relative;
+            animation: crownBounce 2s ease-in-out infinite;
+        }
+
+        .owner-badge span {
+            font-size: 16px;
+            z-index: 2;
+            position: relative;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            line-height: 1.4;
+        }
+
+        @keyframes ownerBadgeGlow {
+            0% {
+                box-shadow: 0 15px 35px rgba(243, 156, 18, 0.3);
+            }
+            100% {
+                box-shadow: 0 20px 45px rgba(243, 156, 18, 0.5);
+            }
+        }
+
+        @keyframes ownerBadgeShine {
+            0% {
+                left: -100%;
+            }
+            50% {
+                left: -100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+
+        @keyframes crownBounce {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-5px) rotate(5deg);
+            }
+        }
+
+        .owner-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 25px 50px rgba(243, 156, 18, 0.4);
+        }
+
+        /* Add golden sparkle effects */
+        .owner-badge::after {
+            content: '✨';
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 20px;
+            animation: sparkle 1.5s ease-in-out infinite;
+            z-index: 3;
+        }
+
+        @keyframes sparkle {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        /* Alternative version with crown pattern */
+        .owner-badge.crown-pattern {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 50%, #d35400 100%);
+            background-size: 200% 200%;
+            animation: ownerBadgeGradient 4s ease infinite;
+        }
+
+        @keyframes ownerBadgeGradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .owner-badge {
+                padding: 16px 20px;
+                gap: 12px;
+            }
+            
+            .owner-badge i {
+                font-size: 24px;
+            }
+            
+            .owner-badge span {
+                font-size: 14px;
+            }
+        }
+
+        /* Edit Review Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 25px;
+            padding: 40px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.4s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(69, 161, 99, 0.1);
+        }
+        
+        .modal-title {
+            color: var(--primary-color);
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-modal:hover {
+            background: rgba(69, 161, 99, 0.1);
+            color: var(--primary-color);
+            transform: rotate(90deg);
+        }
+        
+        .modal-star-rating {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(69, 161, 99, 0.05);
+            border-radius: 15px;
+        }
+        
+        .modal-star-rating input {
+            display: none;
+        }
+        
+        .modal-star-rating label {
+            font-size: 40px;
+            color: #ddd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-star-rating label:hover,
+        .modal-star-rating label.active {
+            color: #f1c40f;
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 10px rgba(241, 196, 15, 0.5));
+        }
+        
+        .modal-textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 20px;
+            border: 2px solid rgba(69, 161, 99, 0.1);
+            border-radius: 15px;
+            font-family: inherit;
+            font-size: 16px;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: rgba(69, 161, 99, 0.02);
+        }
+        
+        .modal-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(69, 161, 99, 0.2);
+            background: white;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .modal-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modal-btn-save {
+            background: linear-gradient(135deg, var(--primary-color), #3abd7a);
+            color: white;
+            box-shadow: 0 8px 20px rgba(69, 161, 99, 0.3);
+        }
+        
+        .modal-btn-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(69, 161, 99, 0.4);
+        }
+        
+        .modal-btn-cancel {
+            background: #f1f1f1;
+            color: #666;
+        }
+        
+        .modal-btn-cancel:hover {
+            background: #e1e1e1;
+            transform: translateY(-2px);
+        }
+        
+        .modal-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
     </style>
 </head>
 <body>
@@ -1742,9 +2220,12 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                     <h1 class="activity-title"><?php echo htmlspecialchars($activity["titre"]); ?></h1>
                     
                     <div class="activity-meta">
+                        <?php if ($totalReviews > 0): ?>
                         <div class="activity-rating">
-                            <?php echo getStars($randomRating); ?>
+                            <?php echo getStars($averageRating); ?>
+                            <span>(<?php echo $totalReviews; ?> avis)</span>
                         </div>
+                        <?php endif; ?>
                         
                         <?php if ($activity["date_ou_periode"]): ?>
                             <div class="activity-period">
@@ -1790,11 +2271,25 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             <div class="main-content-wrapper">
                 <div class="activity-content">
                     <div class="activity-section">
-                        <h2>Description</h2>
-                        <div class="activity-description">
-                            <?php echo nl2br(htmlspecialchars($activity["description"])); ?>
+                        <h2><i class="fa-solid fa-info-circle"></i> Description</h2>
+                        <div class="activity-description"><?php echo nl2br(htmlspecialchars($activity["description"])); ?></div>
+                    </div>
+                    
+                    <?php if (!empty($activity["location"])): ?>
+                    <div class="activity-section">
+                        <h2><i class="fa-solid fa-map-marker-alt"></i> Localisation</h2>
+                        <div class="location-info">
+                            <p class="location-address">
+                                <i class="fa-solid fa-location-dot"></i>
+                                <?php echo htmlspecialchars($activity["location"]); ?>
+                            </p>
+                            <button class="location-button" onclick="openGoogleMaps('<?php echo htmlspecialchars($activity["location"]); ?>')">
+                                <i class="fa-solid fa-map"></i>
+                                <span>Voir sur Google Maps</span>
+                            </button>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
                     <?php if ($creator_data): ?>
                     <div class="creator-info">
@@ -1820,39 +2315,177 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                                 <span><?php echo htmlspecialchars(formatPhoneNumber($creator_data['phone_nb'])); ?></span>
                             </div>
                             <?php endif; ?>
+                            
+                            <?php 
+                            // Check if creator has social media links
+                            $has_social = !empty($creator_data['instagram_url']) || !empty($creator_data['facebook_url']) || !empty($creator_data['twitter_url']);
+                            if ($has_social): ?>
+                            <div class="creator-detail">
+                                <i class="fa-solid fa-share-nodes"></i>
+                                <div class="creator-social-links">
+                                    <?php if (!empty($creator_data['instagram_url'])): ?>
+                                    <a href="<?php echo htmlspecialchars($creator_data['instagram_url']); ?>" target="_blank" class="creator-social-link instagram" title="Instagram">
+                                        <i class="fa-brands fa-instagram"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (!empty($creator_data['facebook_url'])): ?>
+                                    <a href="<?php echo htmlspecialchars($creator_data['facebook_url']); ?>" target="_blank" class="creator-social-link facebook" title="Facebook">
+                                        <i class="fa-brands fa-facebook"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (!empty($creator_data['twitter_url'])): ?>
+                                    <a href="<?php echo htmlspecialchars($creator_data['twitter_url']); ?>" target="_blank" class="creator-social-link twitter" title="X (Twitter)">
+                                        <i class="fa-brands fa-x-twitter"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endif; ?>
                     
-                    <!-- Reviews Section -->
+                    <!-- Reviews Section with Real Data -->
                     <div class="reviews-section">
                         <div class="reviews-header">
                             <h2>Avis des participants</h2>
+                            <?php if ($totalReviews > 0): ?>
                             <div class="reviews-average">
                                 <div class="reviews-average-number"><?php echo number_format($averageRating, 1); ?></div>
                                 <div class="reviews-average-stars">
                                     <?php echo getStars($averageRating); ?>
-                                    <div class="reviews-count"><?php echo $reviewCount; ?> avis</div>
+                                    <div class="reviews-count"><?php echo $totalReviews; ?> avis</div>
                                 </div>
                             </div>
+                            <?php endif; ?>
                         </div>
                         
-                        <div class="reviews-list">
+                        <!-- Review Submission Form -->
+                        <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']): ?>
+                            <?php if ($canReview): ?>
+                            <div class="review-form-section">
+                                <h3 class="review-form-title">
+                                    <i class="fa-solid fa-star"></i>
+                                    Laissez votre avis sur cette activité
+                                </h3>
+                                <form class="review-form" id="review-form">
+                                    <div class="form-group">
+                                        <label class="form-label">Votre note</label>
+                                        <div class="star-rating" id="star-rating">
+                                            <input type="radio" name="rating" value="1" id="star1" required>
+                                            <label for="star1"><i class="fa-solid fa-star"></i></label>
+                                            <input type="radio" name="rating" value="2" id="star2">
+                                            <label for="star2"><i class="fa-solid fa-star"></i></label>
+                                            <input type="radio" name="rating" value="3" id="star3">
+                                            <label for="star3"><i class="fa-solid fa-star"></i></label>
+                                            <input type="radio" name="rating" value="4" id="star4">
+                                            <label for="star4"><i class="fa-solid fa-star"></i></label>
+                                            <input type="radio" name="rating" value="5" id="star5">
+                                            <label for="star5"><i class="fa-solid fa-star"></i></label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label" for="review-comment">Votre commentaire</label>
+                                        <textarea 
+                                            name="comment" 
+                                            id="review-comment" 
+                                            class="comment-textarea" 
+                                            placeholder="Partagez votre expérience avec cette activité... Qu'avez-vous aimé ? Que recommanderiez-vous aux autres participants ?"
+                                            required
+                                            minlength="10"
+                                            maxlength="1000"
+                                        ></textarea>
+                                        <small style="color: #666; font-size: 12px;">Minimum 10 caractères, maximum 1000 caractères</small>
+                                    </div>
+                                    
+                                    <button type="submit" class="submit-review-btn">
+                                        <i class="fa-solid fa-paper-plane"></i>
+                                        Publier mon avis
+                                    </button>
+                                </form>
+                            </div>
+                            <?php else: ?>
+                            <div class="review-permission-message">
+                                <i class="fa-solid fa-info-circle"></i>
+                                <?php
+                                switch ($reviewPermission['reason']) {
+                                    case 'not_registered':
+                                        echo 'Vous devez être inscrit à cette activité pour laisser un avis.';
+                                        break;
+                                    case 'already_reviewed':
+                                        echo 'Vous avez déjà laissé un avis pour cette activité.';
+                                        break;
+                                    case 'owner':
+                                        echo 'Vous ne pouvez pas évaluer votre propre activité.';
+                                        break;
+                                    case 'expired':
+                                        echo 'Cette activité ne permet plus les avis.';
+                                        break;
+                                    default:
+                                        echo 'Vous ne pouvez pas laisser d\'avis pour cette activité.';
+                                }
+                                ?>
+                            </div>
+                            <?php endif; ?>
+                        <?php else: ?>
+                        <div class="review-permission-message">
+                            <i class="fa-solid fa-sign-in-alt"></i>
+                            <a href="../Connexion-Inscription/login_form.php">Connectez-vous</a> pour laisser un avis sur cette activité.
+                        </div>
+                        <?php endif; ?>
+                        
+                        <!-- Display Reviews -->
+                        <?php if ($totalReviews > 0): ?>
+                        <div class="reviews-list" id="reviews-list">
                             <?php foreach ($reviews as $review): ?>
-                            <div class="review-item">
+                            <div class="review-item" data-review-id="<?php echo $review['id']; ?>">
                                 <div class="review-header">
-                                    <div class="reviewer-name"><?php echo htmlspecialchars($review['name']); ?></div>
-                                    <div class="review-date"><?php echo date('d/m/Y', strtotime($review['date'])); ?></div>
+                                    <div class="reviewer-info">
+                                        <div class="reviewer-name"><?php echo htmlspecialchars($review['user_display_name']); ?></div>
+                                        <div class="review-date"><?php echo $review['date_formatted']; ?></div>
+                                        <?php if ($review['is_edited']): ?>
+                                        <div class="review-edited">Modifié le <?php echo $review['updated_formatted']; ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] && $_SESSION['user_id'] == $review['utilisateur_id']): ?>
+                                    <div class="review-actions">
+                                        <button class="review-action-btn edit-review-btn" onclick="editReview(<?php echo $review['id']; ?>, <?php echo $review['note']; ?>, '<?php echo addslashes($review['commentaire']); ?>')">
+                                            <i class="fa-solid fa-pen"></i> Modifier
+                                        </button>
+                                        <button class="review-action-btn delete-review-btn" onclick="deleteReview(<?php echo $review['id']; ?>)">
+                                            <i class="fa-solid fa-trash"></i> Supprimer
+                                        </button>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="review-rating">
-                                    <?php echo getStars($review['rating']); ?>
+                                    <?php echo getStars($review['note']); ?>
                                 </div>
                                 <div class="review-content">
-                                    <?php echo htmlspecialchars($review['comment']); ?>
+                                    <?php echo nl2br(htmlspecialchars($review['commentaire'])); ?>
                                 </div>
                             </div>
                             <?php endforeach; ?>
                         </div>
+                        
+                        <?php if ($reviewsData['has_more']): ?>
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button id="load-more-reviews" class="submit-review-btn" style="max-width: 300px;">
+                                <i class="fa-solid fa-plus"></i>
+                                Charger plus d'avis
+                            </button>
+                        </div>
+                        <?php endif; ?>
+                        <?php else: ?>
+                        <div class="no-reviews">
+                            <i class="fa-regular fa-comments"></i>
+                            <h3>Aucun avis pour le moment</h3>
+                            <p>Soyez le premier à partager votre expérience sur cette activité !</p>
+                        </div>
+                        <?php endif; ?>
                     </div>
                     
                     <!-- Enhanced Similar Activities -->
@@ -1931,27 +2564,53 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                         <?php endif; ?>
                     </div>
                     
-                    <?php if ($userRegistered): ?>
-                    <div class="registration-badge">
-                        <i class="fa-solid fa-check-circle"></i> 
-                        <span>Vous êtes inscrit à cette activité</span>
-                    </div>
-                    <a href="mes-activites-registered.php" class="view-registrations-button">
-                        <i class="fa-solid fa-list"></i> <span>Voir mes inscriptions</span>
-                    </a>
+                    <?php if ($isOwner): ?>
+                        <!-- User owns this activity -->
+                        <div class="owner-badge">
+                            <i class="fa-solid fa-crown"></i> 
+                            <span>Vous êtes l'organisateur de cette activité</span>
+                        </div>
+                        <a href="mes-activites.php" class="view-registrations-button">
+                            <i class="fa-solid fa-cog"></i> <span>Gérer mes activités</span>
+                        </a>
+                    <?php elseif ($userRegistered): ?>
+                        <!-- User is already registered -->
+                        <div class="registration-badge">
+                            <i class="fa-solid fa-check-circle"></i> 
+                            <span>Vous êtes inscrit à cette activité</span>
+                        </div>
+                        <a href="mes-activites-registered.php" class="view-registrations-button">
+                            <i class="fa-solid fa-list"></i> <span>Voir mes inscriptions</span>
+                        </a>
+                    <?php elseif (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true): ?>
+                        <!-- User not logged in -->
+                        <div class="cannot-purchase-notice">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span>Connectez-vous pour vous inscrire à cette activité</span>
+                        </div>
+                        <a href="../Connexion-Inscription/login_form.php" class="signup-button">
+                            <i class="fa-solid fa-sign-in-alt"></i> <span>Se connecter</span>
+                        </a>
                     <?php else: ?>
-                    <button class="signup-button" id="signup-button" data-id="<?php echo $activity['id']; ?>">
-                        <i class="fa-solid fa-user-plus"></i> <span>S'inscrire à cette activité</span>
-                    </button>
-                    
-                    <button class="add-to-cart-button" id="add-to-cart-button" data-id="<?php echo $activity['id']; ?>" 
-                            data-title="<?php echo htmlspecialchars($activity['titre']); ?>" 
-                            data-price="<?php echo $activity['prix']; ?>" 
-                            data-image="<?php echo htmlspecialchars($activity['image_url'] ? $activity['image_url'] : 'nature-placeholder.jpg'); ?>" 
-                            data-period="<?php echo htmlspecialchars($activity['date_ou_periode']); ?>" 
-                            data-tags="<?php echo htmlspecialchars($activity['tags']); ?>">
-                        <i class="fa-solid fa-cart-shopping"></i> <span>Ajouter au panier</span>
-                    </button>
+                        <!-- User can purchase/register -->
+                        <button class="signup-button" id="signup-button" 
+                                data-id="<?php echo $activity['id']; ?>"
+                                data-title="<?php echo htmlspecialchars($activity['titre']); ?>" 
+                                data-price="<?php echo $activity['prix']; ?>" 
+                                data-image="<?php echo htmlspecialchars($activity['image_url'] ? $activity['image_url'] : 'nature-placeholder.jpg'); ?>" 
+                                data-period="<?php echo htmlspecialchars($activity['date_ou_periode']); ?>" 
+                                data-tags="<?php echo htmlspecialchars($activity['tags']); ?>">
+                            <i class="fa-solid fa-user-plus"></i> <span>S'inscrire à cette activité</span>
+                        </button>
+                        
+                        <button class="add-to-cart-button" id="add-to-cart-button" data-id="<?php echo $activity['id']; ?>" 
+                                data-title="<?php echo htmlspecialchars($activity['titre']); ?>" 
+                                data-price="<?php echo $activity['prix']; ?>" 
+                                data-image="<?php echo htmlspecialchars($activity['image_url'] ? $activity['image_url'] : 'nature-placeholder.jpg'); ?>" 
+                                data-period="<?php echo htmlspecialchars($activity['date_ou_periode']); ?>" 
+                                data-tags="<?php echo htmlspecialchars($activity['tags']); ?>">
+                            <i class="fa-solid fa-cart-shopping"></i> <span>Ajouter au panier</span>
+                        </button>
                     <?php endif; ?>
                     
                     <?php if ($activity["date_ou_periode"]): ?>
@@ -1962,13 +2621,6 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                             </p>
                         </div>
                     <?php endif; ?>
-                    
-                    <!-- Location Map Placeholder -->
-                    <div class="location-map">
-                        <div class="location-placeholder">
-                            Localisation non disponible
-                        </div>
-                    </div>
                     
                     <!-- Social Sharing -->
                     <div class="social-sharing">
@@ -1990,203 +2642,879 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
         </div>
     </div>
 
+    <!-- Edit Review Modal -->
+    <div id="edit-review-modal" class="modal-overlay">
+        <div class="modal">
+            <button class="close-modal" onclick="closeEditModal()">
+                <i class="fa-solid fa-times"></i>
+            </button>
+            
+            <div class="modal-header">
+                <h3 class="modal-title">Modifier mon avis</h3>
+            </div>
+            
+            <form id="edit-review-form">
+                <input type="hidden" id="edit-review-id" name="review_id">
+                
+                <div class="form-group">
+                    <label class="form-label">Nouvelle note</label>
+                    <div class="modal-star-rating" id="edit-star-rating">
+                        <input type="radio" name="rating" value="1" id="edit-star1" required>
+                        <label for="edit-star1"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" name="rating" value="2" id="edit-star2">
+                        <label for="edit-star2"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" name="rating" value="3" id="edit-star3">
+                        <label for="edit-star3"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" name="rating" value="4" id="edit-star4">
+                        <label for="edit-star4"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" name="rating" value="5" id="edit-star5">
+                        <label for="edit-star5"><i class="fa-solid fa-star"></i></label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit-comment">Nouveau commentaire</label>
+                    <textarea 
+                        name="comment" 
+                        id="edit-comment" 
+                        class="modal-textarea" 
+                        placeholder="Modifiez votre commentaire..."
+                        required
+                        minlength="10"
+                        maxlength="1000"
+                    ></textarea>
+                    <small style="color: #666; font-size: 12px;">Minimum 10 caractères, maximum 1000 caractères</small>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn modal-btn-cancel" onclick="closeEditModal()">
+                        <i class="fa-solid fa-times"></i> Annuler
+                    </button>
+                    <button type="submit" class="modal-btn modal-btn-save" id="save-edit-btn">
+                        <i class="fa-solid fa-save"></i> Sauvegarder
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <?php include '../TEMPLATE/footer.php'; ?>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Create ambient particles
-            createParticles();
+document.addEventListener('DOMContentLoaded', function() {
+    // Debug: Check if activity ID is properly set
+    const activityId = <?php echo intval($activity_id); ?>;
+    console.log('Activity ID from PHP:', activityId);
+    
+    if (!activityId || activityId === 0) {
+        console.error('CRITICAL ERROR: Activity ID is not properly set!');
+        console.log('Raw activity_id variable:', '<?php echo $activity_id; ?>');
+    }
+    
+    // Create ambient particles
+    createParticles();
+    
+    // Initialize the cart if it doesn't exist
+    if (!localStorage.getItem('synapse-cart')) {
+        localStorage.setItem('synapse-cart', JSON.stringify([]));
+    }
+    
+    // Update cart count
+    updateCartCount();
+    
+    // Review system variables
+    let currentReviewOffset = <?php echo count($reviews); ?>;
+    let hasMoreReviews = <?php echo $reviewsData['has_more'] ? 'true' : 'false'; ?>;
+    
+    // Initialize star rating for review form
+    initStarRating('star-rating');
+    
+    // Initialize star rating for edit modal
+    initStarRating('edit-star-rating');
+    
+    // Review form submission
+    const reviewForm = document.getElementById('review-form');
+    if (reviewForm) {
+        reviewForm.addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            // Initialize the cart if it doesn't exist
-            if (!localStorage.getItem('synapse-cart')) {
-                localStorage.setItem('synapse-cart', JSON.stringify([]));
+            const formData = new FormData(this);
+            const rating = formData.get('rating');
+            const comment = formData.get('comment');
+            const activityId = <?php echo intval($activity_id); ?>; // Make sure it's properly converted to integer
+            
+            console.log('Submitting review:', {activityId, rating, comment}); // Debug log
+            
+            if (!rating) {
+                showNotification('Veuillez sélectionner une note.', 'error');
+                return;
             }
             
-            // Update cart count
-            updateCartCount();
-            
-            // Sign-up button functionality
-            const signupButton = document.getElementById('signup-button');
-            if (signupButton) {
-                signupButton.addEventListener('click', function() {
-                    showNotification('Fonctionnalité d\'inscription à venir. Cette activité sera développée ultérieurement.', 'info');
-                });
+            if (!comment || comment.length < 10) {
+                showNotification('Le commentaire doit contenir au moins 10 caractères.', 'error');
+                return;
             }
             
-            // Add to cart button functionality
-            const addToCartButton = document.getElementById('add-to-cart-button');
-            if (addToCartButton) {
-                addToCartButton.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    const titre = this.getAttribute('data-title');
-                    const prix = parseFloat(this.getAttribute('data-price'));
-                    const image = this.getAttribute('data-image');
-                    const periode = this.getAttribute('data-period');
-                    const tagsStr = this.getAttribute('data-tags');
-                    const tags = tagsStr ? tagsStr.split(',') : [];
+            if (!activityId || activityId === 0) {
+                showNotification('Erreur: ID d\'activité manquant.', 'error');
+                console.error('Activity ID is missing or zero:', activityId);
+                return;
+            }
+            
+            // Disable submit button
+            const submitBtn = document.querySelector('.submit-review-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publication...';
+            
+            // Submit review - MAKE SURE TO USE review_system.php
+            fetch('review_system.php?action=submit_review', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    activity_id: parseInt(activityId),
+                    rating: parseInt(rating),
+                    comment: comment
+                })
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Review response:', data); // Debug log
+                if (data.success) {
+                    showNotification(data.message, 'success');
                     
-                    // Add to cart
-                    addToCart({
-                        id: id,
-                        titre: titre,
-                        prix: prix,
-                        image: image,
-                        periode: periode,
-                        tags: tags
+                    // Reload page after 2 seconds to show new review
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    showNotification(data.message || 'Erreur lors de la publication', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Une erreur est survenue lors de la publication de votre avis.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    }
+    
+    // Edit review form submission
+    const editReviewForm = document.getElementById('edit-review-form');
+    if (editReviewForm) {
+        editReviewForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const rating = formData.get('rating');
+            const comment = formData.get('comment');
+            const reviewId = document.getElementById('edit-review-id').value;
+            
+            if (!rating) {
+                showNotification('Veuillez sélectionner une note.', 'error');
+                return;
+            }
+            
+            if (comment.length < 10) {
+                showNotification('Le commentaire doit contenir au moins 10 caractères.', 'error');
+                return;
+            }
+            
+            // Disable submit button
+            const submitBtn = document.getElementById('save-edit-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sauvegarde...';
+            
+            // Update review
+            fetch('review_system.php?action=update_review', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    review_id: parseInt(reviewId),
+                    rating: parseInt(rating),
+                    comment: comment
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    closeEditModal();
+                    
+                    // Reload page after 2 seconds to show updated review
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    showNotification(data.message, 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Une erreur est survenue lors de la mise à jour de votre avis.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    }
+    
+    // Load more reviews functionality
+    const loadMoreBtn = document.getElementById('load-more-reviews');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', function() {
+            if (!hasMoreReviews) return;
+            
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Chargement...';
+            this.disabled = true;
+            
+            const activityId = <?php echo intval($activity_id); ?>; // Get activity ID from PHP
+            
+            console.log('Loading more reviews for activity:', activityId);
+            
+            fetch('review_system.php?action=get_reviews', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    activity_id: parseInt(activityId),
+                    limit: 10,
+                    offset: currentReviewOffset
+                })
+            })
+            .then(response => {
+                console.log('Load more response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Load more response:', data); // Debug log
+                if (data.success && data.reviews.length > 0) {
+                    const reviewsList = document.getElementById('reviews-list');
+                    
+                    data.reviews.forEach(review => {
+                        const reviewElement = createReviewElement(review);
+                        reviewsList.appendChild(reviewElement);
                     });
                     
-                    // Button animation
-                    this.classList.add('clicked');
-                    setTimeout(() => {
-                        this.classList.remove('clicked');
-                    }, 300);
-                });
-            }
-            
-            // Social sharing buttons functionality
-            document.querySelectorAll('.social-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    const url = encodeURIComponent(window.location.href);
-                    const title = encodeURIComponent(document.title);
-                    let shareUrl = '';
+                    currentReviewOffset += data.reviews.length;
+                    hasMoreReviews = data.has_more;
                     
-                    if (this.classList.contains('facebook')) {
-                        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
-                    } else if (this.classList.contains('twitter')) {
-                        shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
-                    } else if (this.classList.contains('whatsapp')) {
-                        shareUrl = `https://api.whatsapp.com/send?text=${title} ${url}`;
-                    } else if (this.classList.contains('email')) {
-                        shareUrl = `mailto:?subject=${title}&body=Check out this activity: ${url}`;
+                    if (!hasMoreReviews) {
+                        this.style.display = 'none';
+                    } else {
+                        this.innerHTML = originalText;
+                        this.disabled = false;
                     }
-                    
-                    if (shareUrl) {
-                        window.open(shareUrl, '_blank');
-                    }
-                });
-            });
-            
-            // Make activity tags clickable - redirect to activites.php with filter
-            document.querySelectorAll('.activity-tag').forEach(tag => {
-                tag.addEventListener('click', function() {
-                    const tagData = this.getAttribute('data-tag');
-                    if (tagData) {
-                        window.location.href = 'activites.php?tag=' + encodeURIComponent(tagData);
-                    }
-                });
-            });
-            
-            // Make similar activity cards clickable
-            document.querySelectorAll('.similar-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const activityId = this.getAttribute('data-id');
-                    if (activityId) {
-                        window.location.href = 'activite.php?id=' + activityId;
-                    }
-                });
-            });
-            
-            // Function to add to cart
-            function addToCart(item) {
-                // Get current cart
-                const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
-                
-                // Check if item is already in cart
-                const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
-                
-                // If item not in cart, add it
-                if (existingItemIndex === -1) {
-                    cart.push(item);
-                    localStorage.setItem('synapse-cart', JSON.stringify(cart));
-                    updateCartCount();
-                    showNotification('Activité ajoutée au panier !', 'success');
                 } else {
-                    showNotification('Cette activité est déjà dans votre panier.', 'info');
+                    this.style.display = 'none';
                 }
-            }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Erreur lors du chargement des avis.', 'error');
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
+        });
+    }
+    
+    // Smart Sign-up button functionality (free activities only)
+    const signupButton = document.getElementById('signup-button');
+    if (signupButton) {
+        const activityId = signupButton.getAttribute('data-id');
+        const activityPrice = parseFloat(signupButton.getAttribute('data-price') || '0');
+        
+        // If activity is paid, change button behavior to add to cart
+        if (activityPrice > 0) {
+            signupButton.innerHTML = '<i class="fa-solid fa-cart-plus"></i> <span>Ajouter au panier</span>';
+            signupButton.classList.remove('signup-button');
+            signupButton.classList.add('add-to-cart-button');
             
-            // Function to update cart count
-            function updateCartCount() {
-                const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
-                const cartCount = document.getElementById('panier-count');
-                if (cartCount) {
-                    cartCount.textContent = cart.length;
-                }
-            }
-            
-            // Function to show notification
-            function showNotification(message, type = 'success') {
-                // Remove existing notifications
-                const existingNotifications = document.querySelectorAll('.notification');
-                existingNotifications.forEach(notification => {
-                    notification.remove();
+            signupButton.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const titre = this.getAttribute('data-title');
+                const prix = parseFloat(this.getAttribute('data-price'));
+                const image = this.getAttribute('data-image');
+                const periode = this.getAttribute('data-period');
+                const tagsStr = this.getAttribute('data-tags');
+                const tags = tagsStr ? tagsStr.split(',') : [];
+                
+                console.log('Adding to cart:', {id, titre, prix, image, periode, tags}); // Debug log
+                
+                // Add to cart instead of direct registration
+                validateAndAddToCart({
+                    id: id,
+                    titre: titre,
+                    prix: prix,
+                    image: image,
+                    periode: periode,
+                    tags: tags
                 });
                 
-                // Create notification
-                const notification = document.createElement('div');
-                notification.classList.add('notification', type);
-                
-                // Add icon
-                let icon = 'fa-circle-check';
-                if (type === 'info') {
-                    icon = 'fa-circle-info';
-                } else if (type === 'error') {
-                    icon = 'fa-circle-exclamation';
-                }
-                
-                notification.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
-                
-                // Add to document
-                document.body.appendChild(notification);
-                
-                // Auto-hide notification
+                // Button animation
+                this.classList.add('clicked');
                 setTimeout(() => {
-                    notification.style.opacity = '0';
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 500);
-                }, 3000);
+                    this.classList.remove('clicked');
+                }, 300);
+            });
+        } else {
+            // Free activity - direct registration
+            signupButton.addEventListener('click', function() {
+                // Show loading state
+                this.disabled = true;
+                this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Inscription en cours...</span>';
+                
+                // Direct registration via activity_functions.php
+                fetch('activity_functions.php?action=register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        activity_id: parseInt(activityId)
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Inscription réussie ! Vous êtes maintenant inscrit à cette activité gratuite.', 'success');
+                        
+                        // Remove item from cart if it exists
+                        removeFromCartIfExists(activityId);
+                        
+                        // Reload page after 2 seconds to show updated status
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        if (data.requires_payment) {
+                            // This shouldn't happen for free activities, but handle it gracefully
+                            showNotification('Cette activité nécessite un paiement. Redirection vers le panier...', 'info');
+                            // Add to cart instead
+                            const item = {
+                                id: activityId,
+                                titre: this.getAttribute('data-title'),
+                                prix: parseFloat(this.getAttribute('data-price') || '0'),
+                                image: this.getAttribute('data-image'),
+                                periode: this.getAttribute('data-period'),
+                                tags: (this.getAttribute('data-tags') || '').split(',').filter(tag => tag.trim())
+                            };
+                            addToCart(item);
+                        } else if (data.redirect) {
+                            showNotification(data.message, 'error');
+                            setTimeout(() => {
+                                window.location.href = data.redirect;
+                            }, 2000);
+                        } else {
+                            showNotification(data.message || 'Erreur lors de l\'inscription', 'error');
+                        }
+                        
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fa-solid fa-user-plus"></i> <span>S\'inscrire à cette activité</span>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Une erreur est survenue lors de l\'inscription', 'error');
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fa-solid fa-user-plus"></i> <span>S\'inscrire à cette activité</span>';
+                });
+            });
+        }
+    }
+    
+    // Add to cart button functionality (separate button)
+    const addToCartButton = document.getElementById('add-to-cart-button');
+    if (addToCartButton) {
+        addToCartButton.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const titre = this.getAttribute('data-title');
+            const prix = parseFloat(this.getAttribute('data-price'));
+            const image = this.getAttribute('data-image');
+            const periode = this.getAttribute('data-period');
+            const tagsStr = this.getAttribute('data-tags');
+            const tags = tagsStr ? tagsStr.split(',') : [];
+            
+            // Validate before adding to cart
+            validateAndAddToCart({
+                id: id,
+                titre: titre,
+                prix: prix,
+                image: image,
+                periode: periode,
+                tags: tags
+            });
+            
+            // Button animation
+            this.classList.add('clicked');
+            setTimeout(() => {
+                this.classList.remove('clicked');
+            }, 300);
+        });
+    }
+    
+    // Social sharing buttons functionality
+    document.querySelectorAll('.social-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const url = encodeURIComponent(window.location.href);
+            const title = encodeURIComponent(document.title);
+            let shareUrl = '';
+            
+            if (this.classList.contains('facebook')) {
+                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+            } else if (this.classList.contains('twitter')) {
+                shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
+            } else if (this.classList.contains('whatsapp')) {
+                shareUrl = `https://api.whatsapp.com/send?text=${title} ${url}`;
+            } else if (this.classList.contains('email')) {
+                shareUrl = `mailto:?subject=${title}&body=Check out this activity: ${url}`;
             }
             
-            // Function to create ambient particles
-            function createParticles() {
-                for (let i = 0; i < 15; i++) {
-                    const particle = document.createElement('div');
-                    particle.classList.add('particle');
-                    
-                    // Random size
-                    const size = Math.random() * 5 + 3;
-                    particle.style.width = `${size}px`;
-                    particle.style.height = `${size}px`;
-                    
-                    // Random position
-                    particle.style.left = `${Math.random() * 100}vw`;
-                    particle.style.top = `${Math.random() * 100}vh`;
-                    
-                    // Random animation duration
-                    const duration = Math.random() * 15 + 10;
-                    particle.style.animationDuration = `${duration}s`;
-                    
-                    // Random animation delay
-                    particle.style.animationDelay = `${Math.random() * 5}s`;
-                    
-                    // Random opacity
-                    particle.style.opacity = Math.random() * 0.5 + 0.1;
-                    
-                    // Random color tint
-                    const colors = [
-                        'rgba(69, 161, 99, 0.6)',  // Green
-                        'rgba(233, 196, 106, 0.6)', // Gold
-                        'rgba(139, 109, 65, 0.6)',  // Brown
-                        'rgba(255, 255, 255, 0.6)'  // White
-                    ];
-                    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                    
-                    document.body.appendChild(particle);
-                }
+            if (shareUrl) {
+                window.open(shareUrl, '_blank');
             }
         });
+    });
+    
+    // Make activity tags clickable - redirect to activites.php with filter
+    document.querySelectorAll('.activity-tag').forEach(tag => {
+        tag.addEventListener('click', function() {
+            const tagData = this.getAttribute('data-tag');
+            if (tagData) {
+                window.location.href = 'activites.php?tag=' + encodeURIComponent(tagData);
+            }
+        });
+    });
+    
+    // Make similar activity cards clickable
+    document.querySelectorAll('.similar-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const activityId = this.getAttribute('data-id');
+            if (activityId) {
+                window.location.href = 'activite.php?id=' + activityId;
+            }
+        });
+    });
+    
+    // Google Maps integration
+    window.openGoogleMaps = function(address) {
+        const encodedAddress = encodeURIComponent(address);
+        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+        window.open(googleMapsUrl, '_blank');
+    }
+    
+    // Function to initialize star rating
+    function initStarRating(containerId) {
+        const starRating = document.getElementById(containerId);
+        if (!starRating) return;
+        
+        const stars = starRating.querySelectorAll('label');
+        const inputs = starRating.querySelectorAll('input');
+        
+        // Reset stars initially
+        clearStars(stars);
+        
+        stars.forEach((star, index) => {
+            star.addEventListener('mouseover', function() {
+                highlightStars(stars, index + 1);
+            });
+            
+            star.addEventListener('click', function() {
+                const rating = index + 1;
+                inputs[index].checked = true;
+                highlightStars(stars, rating, true);
+            });
+        });
+        
+        starRating.addEventListener('mouseleave', function() {
+            const checkedInput = starRating.querySelector('input:checked');
+            if (checkedInput) {
+                const rating = parseInt(checkedInput.value);
+                highlightStars(stars, rating, true);
+            } else {
+                clearStars(stars);
+            }
+        });
+        
+        function highlightStars(starElements, count, permanent = false) {
+            starElements.forEach((star, index) => {
+                star.classList.remove('active');
+                if (index < count) {
+                    star.classList.add('active');
+                }
+            });
+        }
+        
+        function clearStars(starElements) {
+            starElements.forEach(star => star.classList.remove('active'));
+        }
+    }
+    
+    // Function to create review element
+    function createReviewElement(review) {
+        const reviewDiv = document.createElement('div');
+        reviewDiv.className = 'review-item';
+        reviewDiv.setAttribute('data-review-id', review.id);
+        
+        const isOwner = <?php echo isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'null'; ?> === review.utilisateur_id;
+        
+        reviewDiv.innerHTML = `
+            <div class="review-header">
+                <div class="reviewer-info">
+                    <div class="reviewer-name">${escapeHtml(review.user_display_name)}</div>
+                    <div class="review-date">${review.date_formatted}</div>
+                    ${review.is_edited ? `<div class="review-edited">Modifié le ${review.updated_formatted}</div>` : ''}
+                </div>
+                ${isOwner ? `
+                <div class="review-actions">
+                    <button class="review-action-btn edit-review-btn" onclick="editReview(${review.id}, ${review.note}, '${review.commentaire.replace(/'/g, "\\'")}')">
+                        <i class="fa-solid fa-pen"></i> Modifier
+                    </button>
+                    <button class="review-action-btn delete-review-btn" onclick="deleteReview(${review.id})">
+                        <i class="fa-solid fa-trash"></i> Supprimer
+                    </button>
+                </div>
+                ` : ''}
+            </div>
+            <div class="review-rating">
+                ${getStarsHTML(review.note)}
+            </div>
+            <div class="review-content">
+                ${escapeHtml(review.commentaire).replace(/\n/g, '<br>')}
+            </div>
+        `;
+        
+        return reviewDiv;
+    }
+    
+    // Function to generate stars HTML
+    function getStarsHTML(rating) {
+        let stars = '';
+        for (let i = 1; i <= 5; i++) {
+            if (i <= rating) {
+                stars += '<i class="fa-solid fa-star"></i>';
+            } else {
+                stars += '<i class="fa-regular fa-star"></i>';
+            }
+        }
+        return `<span class="stars">${stars}</span>`;
+    }
+    
+    // Function to escape HTML
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+    
+    // Function to validate and add to cart
+    async function validateAndAddToCart(item) {
+        console.log('Validating item for cart:', item); // Debug log
+        
+        try {
+            // First validate if user can add this activity to cart
+            const response = await fetch('activity_functions.php?action=validate_cart_addition', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    activity_id: item.id
+                })
+            });
+            
+            const data = await response.json();
+            console.log('Validation response:', data); // Debug log
+            
+            if (data.success) {
+                addToCart(item);
+            } else {
+                if (data.redirect) {
+                    showNotification(data.message, 'error');
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 2000);
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error validating cart addition:', error);
+            showNotification('Une erreur est survenue lors de la validation', 'error');
+        }
+    }
+    
+    // Function to add to cart
+    function addToCart(item) {
+        console.log('Adding item to cart:', item); // Debug log
+        
+        // Get current cart
+        const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+        
+        // Check if item is already in cart
+        const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
+        
+        // If item not in cart, add it
+        if (existingItemIndex === -1) {
+            cart.push(item);
+            localStorage.setItem('synapse-cart', JSON.stringify(cart));
+            updateCartCount();
+            showNotification('Activité ajoutée au panier !', 'success');
+            console.log('Item added to cart successfully'); // Debug log
+        } else {
+            showNotification('Cette activité est déjà dans votre panier.', 'info');
+            console.log('Item already in cart'); // Debug log
+        }
+    }
+    
+    // Function to update cart count
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+        const cartCount = document.getElementById('panier-count');
+        if (cartCount) {
+            cartCount.textContent = cart.length;
+        }
+    }
+    
+    // Function to show notification
+    function showNotification(message, type = 'success') {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notification => {
+            notification.remove();
+        });
+        
+        // Create notification
+        const notification = document.createElement('div');
+        notification.classList.add('notification', type);
+        
+        // Add icon
+        let icon = 'fa-circle-check';
+        if (type === 'info') {
+            icon = 'fa-circle-info';
+        } else if (type === 'error') {
+            icon = 'fa-circle-exclamation';
+        }
+        
+        notification.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
+        
+        // Add to document
+        document.body.appendChild(notification);
+        
+        // Auto-hide notification
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
+    
+    // Function to create ambient particles
+    function createParticles() {
+        for (let i = 0; i < 15; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Random size
+            const size = Math.random() * 5 + 3;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            
+            // Random position
+            particle.style.left = `${Math.random() * 100}vw`;
+            particle.style.top = `${Math.random() * 100}vh`;
+            
+            // Random animation duration
+            const duration = Math.random() * 15 + 10;
+            particle.style.animationDuration = `${duration}s`;
+            
+            // Random animation delay
+            particle.style.animationDelay = `${Math.random() * 5}s`;
+            
+            // Random opacity
+            particle.style.opacity = Math.random() * 0.5 + 0.1;
+            
+            // Random color tint
+            const colors = [
+                'rgba(69, 161, 99, 0.6)',  // Green
+                'rgba(233, 196, 106, 0.6)', // Gold
+                'rgba(139, 109, 65, 0.6)',  // Brown
+                'rgba(255, 255, 255, 0.6)'  // White
+            ];
+            particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            document.body.appendChild(particle);
+        }
+    }
+    
+    // Function to remove item from cart if it exists
+    function removeFromCartIfExists(activityId) {
+        const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
+        const filteredCart = cart.filter(item => item.id !== activityId);
+        
+        if (filteredCart.length !== cart.length) {
+            localStorage.setItem('synapse-cart', JSON.stringify(filteredCart));
+            updateCartCount();
+        }
+    }
+});
+
+// Global functions for review management
+function editReview(reviewId, currentRating, currentComment) {
+    // Set form values
+    document.getElementById('edit-review-id').value = reviewId;
+    document.getElementById('edit-comment').value = currentComment;
+    
+    // Set rating
+    const ratingInput = document.getElementById(`edit-star${currentRating}`);
+    if (ratingInput) {
+        ratingInput.checked = true;
+    }
+    
+    // Highlight stars manually
+    const stars = document.querySelectorAll('#edit-star-rating label');
+    stars.forEach((star, index) => {
+        star.classList.remove('active');
+        if (index < currentRating) {
+            star.classList.add('active');
+        }
+    });
+    
+    // Show modal
+    document.getElementById('edit-review-modal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+    document.getElementById('edit-review-modal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    
+    // Reset form
+    document.getElementById('edit-review-form').reset();
+    document.querySelectorAll('#edit-star-rating label').forEach(star => {
+        star.classList.remove('active');
+    });
+}
+
+function deleteReview(reviewId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer votre avis ? Cette action est irréversible.')) {
+        return;
+    }
+    
+    // Delete review
+    fetch('review_system.php?action=delete_review', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            review_id: reviewId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success notification
+            const notification = document.createElement('div');
+            notification.classList.add('notification', 'success');
+            notification.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${data.message}`;
+            document.body.appendChild(notification);
+            
+            // Remove review element from DOM
+            const reviewElement = document.querySelector(`[data-review-id="${reviewId}"]`);
+            if (reviewElement) {
+                reviewElement.style.opacity = '0';
+                reviewElement.style.transform = 'translateY(-20px)';
+                setTimeout(() => {
+                    reviewElement.remove();
+                }, 300);
+            }
+            
+            // Auto-hide notification and reload page
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    notification.remove();
+                    location.reload();
+                }, 500);
+            }, 2000);
+        } else {
+            // Show error notification
+            const notification = document.createElement('div');
+            notification.classList.add('notification', 'error');
+            notification.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${data.message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 3000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        
+        const notification = document.createElement('div');
+        notification.classList.add('notification', 'error');
+        notification.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Une erreur est survenue lors de la suppression.';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    });
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('edit-review-modal');
+    if (e.target === modal) {
+        closeEditModal();
+    }
+});
+
+// Handle ESC key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('edit-review-modal');
+        if (modal.style.display === 'flex') {
+            closeEditModal();
+        }
+    }
+});
     </script>
+    <script src="activity-expiration-manager.js"></script>
 </body>
 </html>
 

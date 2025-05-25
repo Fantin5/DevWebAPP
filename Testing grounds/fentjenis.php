@@ -40,6 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $titre = $conn->real_escape_string($_POST['titre']);
     $description = $conn->real_escape_string($_POST['description']);
     $date_ou_periode = isset($_POST['date_ou_periode']) ? $conn->real_escape_string($_POST['date_ou_periode']) : '';
+    $location = isset($_POST['location']) ? $conn->real_escape_string($_POST['location']) : '';
     
     // Get creator information from session
     $creator_info = "";
@@ -122,11 +123,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     try {
         // Insérer les données dans la base de données
-        $sql = "INSERT INTO activites (titre, description, image_url, prix, date_ou_periode) 
-                VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO activites (titre, description, image_url, prix, date_ou_periode, location) 
+                VALUES (?, ?, ?, ?, ?, ?)";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssds", $titre, $description, $image_url, $prix, $date_ou_periode);
+        $stmt->bind_param("sssdss", $titre, $description, $image_url, $prix, $date_ou_periode, $location);
         
         if (!$stmt->execute()) {
             throw new Exception("Failed to insert activity");

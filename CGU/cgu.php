@@ -40,6 +40,36 @@ if ($result && $result->num_rows > 0) {
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        /* Header fix - prevent conflicts with Nouveauhead.css */
+        header.header, 
+        .header {
+            background: #4f7259 !important;
+            opacity: 1 !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(20px) !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            z-index: 999 !important;
+        }
+
+        /* Ensure all header elements are visible */
+        header *, .header * {
+            opacity: 1 !important;
+        }
+
+        /* Reset any transparency that might be applied */
+        body {
+            background-color: #E4D8C8;
+            margin: 0;
+            padding: 0;
+            font-family: 'Open Sans', Arial, sans-serif;
+        }
+    </style>
 </head>
 <body>
     <?php include '../TEMPLATE/Nouveauhead.php'; ?>

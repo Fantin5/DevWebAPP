@@ -8,6 +8,69 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit;
 }
 
+// Traitement AJAX pour supprimer une carte
+if (isset($_POST['delete_card'])) {
+    $card_id = intval($_POST['card_id']);
+    $user_id = $_SESSION['user_id'];
+    
+    $user_conn = new mysqli('localhost', 'root', '', 'user_db');
+    if (!$user_conn->connect_error) {
+        // Vérifier que la carte appartient à l'utilisateur
+        $stmt = $user_conn->prepare("DELETE FROM payment_info WHERE id = ? AND user_id = ?");
+        $stmt->bind_param("ii", $card_id, $user_id);
+        $success = $stmt->execute();
+        
+        // Si on supprime la carte par défaut, définir une autre carte comme défaut
+        if ($success) {
+            $stmt = $user_conn->prepare("SELECT COUNT(*) as count FROM payment_info WHERE user_id = ? AND is_default = 1");
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            
+            if ($row['count'] == 0) {
+                // Définir la première carte restante comme défaut
+                $stmt = $user_conn->prepare("UPDATE payment_info SET is_default = 1 WHERE user_id = ? LIMIT 1");
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+            }
+        }
+        
+        $stmt->close();
+        $user_conn->close();
+        
+        echo json_encode(['success' => $success]);
+    } else {
+        echo json_encode(['success' => false]);
+    }
+    exit;
+}
+
+// Traitement AJAX pour définir une carte par défaut
+if (isset($_POST['set_default_card'])) {
+    $card_id = intval($_POST['card_id']);
+    $user_id = $_SESSION['user_id'];
+    
+    $user_conn = new mysqli('localhost', 'root', '', 'user_db');
+    if (!$user_conn->connect_error) {
+        // Retirer le statut par défaut de toutes les cartes de l'utilisateur
+        $user_conn->query("UPDATE payment_info SET is_default = 0 WHERE user_id = $user_id");
+        
+        // Définir la carte sélectionnée comme défaut
+        $stmt = $user_conn->prepare("UPDATE payment_info SET is_default = 1 WHERE id = ? AND user_id = ?");
+        $stmt->bind_param("ii", $card_id, $user_id);
+        $success = $stmt->execute();
+        
+        $stmt->close();
+        $user_conn->close();
+        
+        echo json_encode(['success' => $success]);
+    } else {
+        echo json_encode(['success' => false]);
+    }
+    exit;
+}
+
 // Traitement AJAX du paiement
 if (isset($_POST['process_payment'])) {
     $response = ['success' => true, 'message' => 'Paiement traité avec succès'];
@@ -15,10 +78,9 @@ if (isset($_POST['process_payment'])) {
     // Enregistrer les informations de paiement si demandé
     if (isset($_POST['save_info']) && $_POST['save_info']) {
         $user_id = $_SESSION['user_id'];
-        $card_number = substr(str_replace(' ', '', $_POST['card_number']), -4); // Stocker uniquement les 4 derniers chiffres
+        $card_number = substr(str_replace(' ', '', $_POST['card_number']), -4);
         $expiry_date = $_POST['expiry_date'];
-        
-        // On ne stocke pas le CVV pour des raisons de sécurité
+        $card_name = isset($_POST['card_name']) && !empty($_POST['card_name']) ? $_POST['card_name'] : 'Ma carte';
         
         $conn = new mysqli('localhost', 'root', '', 'user_db');
         if ($conn->connect_error) {
@@ -27,31 +89,30 @@ if (isset($_POST['process_payment'])) {
             exit;
         }
         
-        // Vérifier si une table pour les infos de paiement existe, sinon la créer
+        // Créer la table si elle n'existe pas
         $conn->query("CREATE TABLE IF NOT EXISTS payment_info (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
+            card_name VARCHAR(100) DEFAULT 'Ma carte',
             card_last_four VARCHAR(4) NOT NULL,
             expiry_date VARCHAR(5) NOT NULL,
+            is_default TINYINT(1) DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES user_form(id)
         )");
         
-        // Vérifier si l'utilisateur a déjà des informations de paiement
-        $stmt = $conn->prepare("SELECT id FROM payment_info WHERE user_id = ?");
+        // Vérifier s'il s'agit de la première carte (sera par défaut)
+        $stmt = $conn->prepare("SELECT COUNT(*) as count FROM payment_info WHERE user_id = ?");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
         $result = $stmt->get_result();
+        $count = $result->fetch_assoc()['count'];
+        $is_default = ($count == 0) ? 1 : 0;
         
-        if ($result->num_rows > 0) {
-            // Mettre à jour les informations existantes
-            $stmt = $conn->prepare("UPDATE payment_info SET card_last_four = ?, expiry_date = ? WHERE user_id = ?");
-            $stmt->bind_param("ssi", $card_number, $expiry_date, $user_id);
-        } else {
-            // Insérer de nouvelles informations
-            $stmt = $conn->prepare("INSERT INTO payment_info (user_id, card_last_four, expiry_date) VALUES (?, ?, ?)");
-            $stmt->bind_param("iss", $user_id, $card_number, $expiry_date);
-        }
+        // Insérer la nouvelle carte
+        $stmt = $conn->prepare("INSERT INTO payment_info (user_id, card_name, card_last_four, expiry_date, is_default) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("isssi", $user_id, $card_name, $card_number, $expiry_date, $is_default);
         
         if (!$stmt->execute()) {
             $response = ['success' => false, 'message' => 'Erreur lors de l\'enregistrement des informations de paiement'];
@@ -61,17 +122,15 @@ if (isset($_POST['process_payment'])) {
         $conn->close();
     }
     
-    // Traitement du panier
+    // Traitement du panier (inchangé)
     if (isset($_POST['panier_json'])) {
         $panier = json_decode($_POST['panier_json'], true);
         
-        if (is_array($panier)) { // Validation que $panier est bien un tableau
-            // Enregistrer les achats dans la base de données
+        if (is_array($panier)) {
             $conn = new mysqli('localhost', 'root', '', 'activity');
             if (!$conn->connect_error) {
                 $user_id = $_SESSION['user_id'];
                 
-                // Vérifier si la table activites_achats existe, sinon la créer
                 $conn->query("CREATE TABLE IF NOT EXISTS activites_achats (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     user_id INT NOT NULL,
@@ -85,13 +144,11 @@ if (isset($_POST['process_payment'])) {
                 foreach ($panier as $item) {
                     $activity_id = $item['id'];
                     
-                    // Vérifier si l'utilisateur est déjà inscrit à cette activité
                     $check_stmt = $conn->prepare("SELECT id FROM activites_achats WHERE user_id = ? AND activite_id = ?");
                     $check_stmt->bind_param("ii", $user_id, $activity_id);
                     $check_stmt->execute();
                     $check_result = $check_stmt->get_result();
                     
-                    // Seulement ajouter si l'utilisateur n'est pas déjà inscrit
                     if ($check_result->num_rows == 0) {
                         $stmt->bind_param("ii", $user_id, $activity_id);
                         $stmt->execute();
@@ -104,7 +161,6 @@ if (isset($_POST['process_payment'])) {
                 $conn->close();
             }
             
-            // Vider le panier dans la session
             $_SESSION['panier'] = [];
         } else {
             $response = ['success' => false, 'message' => 'Format de panier invalide'];
@@ -115,11 +171,80 @@ if (isset($_POST['process_payment'])) {
     exit;
 }
 
-// Validation du panier JSON et gestion du panier en session
+// Traitement AJAX du paiement avec carte sélectionnée
+if (isset($_POST['pay_with_selected_card'])) {
+    $card_id = intval($_POST['selected_card_id']);
+    $user_id = $_SESSION['user_id'];
+    
+    // Vérifier que la carte appartient à l'utilisateur
+    $user_conn = new mysqli('localhost', 'root', '', 'user_db');
+    if ($user_conn->connect_error) {
+        echo json_encode(['success' => false, 'message' => 'Erreur de connexion']);
+        exit;
+    }
+    
+    $stmt = $user_conn->prepare("SELECT id FROM payment_info WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $card_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows == 0) {
+        echo json_encode(['success' => false, 'message' => 'Carte non trouvée']);
+        exit;
+    }
+    
+    $user_conn->close();
+    
+    // Traiter le panier
+    if (isset($_POST['panier_json'])) {
+        $panier = json_decode($_POST['panier_json'], true);
+        
+        if (is_array($panier)) {
+            $conn = new mysqli('localhost', 'root', '', 'activity');
+            if (!$conn->connect_error) {
+                $conn->query("CREATE TABLE IF NOT EXISTS activites_achats (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    activite_id INT NOT NULL,
+                    date_achat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (activite_id) REFERENCES activites(id)
+                )");
+                
+                $stmt = $conn->prepare("INSERT INTO activites_achats (user_id, activite_id) VALUES (?, ?)");
+                
+                foreach ($panier as $item) {
+                    $activity_id = $item['id'];
+                    
+                    $check_stmt = $conn->prepare("SELECT id FROM activites_achats WHERE user_id = ? AND activite_id = ?");
+                    $check_stmt->bind_param("ii", $user_id, $activity_id);
+                    $check_stmt->execute();
+                    $check_result = $check_stmt->get_result();
+                    
+                    if ($check_result->num_rows == 0) {
+                        $stmt->bind_param("ii", $user_id, $activity_id);
+                        $stmt->execute();
+                    }
+                    
+                    $check_stmt->close();
+                }
+                
+                $stmt->close();
+                $conn->close();
+            }
+            
+            $_SESSION['panier'] = [];
+        }
+    }
+    
+    echo json_encode(['success' => true, 'message' => 'Paiement traité avec succès']);
+    exit;
+}
+
+// Validation du panier JSON et gestion du panier en session (inchangé)
 if (isset($_POST['panier_json'])) {
     $panier = json_decode($_POST['panier_json'], true);
     
-    if (is_array($panier)) { // Vérifier que $panier est bien un tableau
+    if (is_array($panier)) {
         $_SESSION['panier'] = array_map(function($item) {
             return $item['id'];
         }, $panier);
@@ -134,6 +259,7 @@ if (!isset($_SESSION['panier']) || empty($_SESSION['panier'])) {
     exit;
 }
 
+// Calcul du total (inchangé)
 $conn = new mysqli('localhost', 'root', '', 'activity');
 if ($conn->connect_error) {
     die("Erreur de connexion à la base : " . $conn->connect_error);
@@ -159,23 +285,21 @@ while ($row = $result->fetch_assoc()) {
 $stmt->close();
 $conn->close();
 
-// Vérifier si l'utilisateur a déjà des informations de paiement enregistrées
+// Récupérer toutes les cartes enregistrées de l'utilisateur
 $user_id = $_SESSION['user_id'];
-$payment_info = null;
+$payment_cards = [];
 
-// Connexion directe à la base de données des utilisateurs (user_db)
 $user_conn = new mysqli('localhost', 'root', '', 'user_db');
 if (!$user_conn->connect_error) {
-    // Vérifier si la table payment_info existe
     $result = $user_conn->query("SHOW TABLES LIKE 'payment_info'");
     if ($result->num_rows > 0) {
-        $stmt = $user_conn->prepare("SELECT card_last_four, expiry_date FROM payment_info WHERE user_id = ?");
+        $stmt = $user_conn->prepare("SELECT id, card_name, card_last_four, expiry_date, is_default FROM payment_info WHERE user_id = ? ORDER BY is_default DESC, created_at ASC");
         if ($stmt) {
             $stmt->bind_param("i", $user_id);
             $stmt->execute();
             $result = $stmt->get_result();
-            if ($result->num_rows > 0) {
-                $payment_info = $result->fetch_assoc();
+            while ($row = $result->fetch_assoc()) {
+                $payment_cards[] = $row;
             }
             $stmt->close();
         }
@@ -216,25 +340,80 @@ if (!$user_conn->connect_error) {
             border: 1px solid #ddd;
             font-size: 16px;
         }
-        .saved-card-info {
+        .saved-cards-container {
+            margin-bottom: 30px;
+        }
+        .saved-card {
             background-color: #f9f9f9;
             padding: 20px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .saved-card:hover {
+            border-color: #45cf91;
+            box-shadow: 0 2px 8px rgba(69, 207, 145, 0.2);
+        }
+        .saved-card.selected {
+            border-color: #45cf91;
+            background-color: #f0fdf4;
+        }
+        .saved-card.default {
             border-left: 4px solid #45cf91;
         }
-        .saved-card-info h3 {
-            color: #333;
-            margin-top: 0;
-            margin-bottom: 15px;
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
         }
-        .saved-card-info p {
+        .card-info h3 {
+            color: #333;
+            margin: 0 0 5px 0;
+            font-size: 1.1em;
+        }
+        .card-info p {
             margin: 5px 0;
-            color: #333;
+            color: #666;
         }
-        .saved-card-info i {
+        .card-info i {
             color: #45cf91;
             margin-right: 10px;
+        }
+        .card-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .card-action-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .card-action-btn:hover {
+            background-color: #e0e0e0;
+        }
+        .card-action-btn.delete:hover {
+            color: #e74c3c;
+            background-color: #ffeaea;
+        }
+        .card-action-btn.default:hover {
+            color: #45cf91;
+            background-color: #f0fdf4;
+        }
+        .default-badge {
+            background-color: #45cf91;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
         }
         .checkout-button {
             width: 100%;
@@ -255,6 +434,10 @@ if (!$user_conn->connect_error) {
         }
         .checkout-button:hover {
             background-color: #3abd7a;
+        }
+        .checkout-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
         }
         .secondary-button {
             width: 100%;
@@ -284,8 +467,8 @@ if (!$user_conn->connect_error) {
         .save-info-container input[type="checkbox"] {
             margin-right: 10px;
         }
-        .payment-options {
-            margin-bottom: 30px;
+        .new-card-form {
+            display: none;
         }
         @media (max-width: 600px) {
             .paiement-container { padding: 20px 5px; }
@@ -301,70 +484,75 @@ if (!$user_conn->connect_error) {
         Montant à payer : <?= number_format($total, 2) ?> €
     </div>
 
-    <?php if ($payment_info): ?>
-    <div class="payment-options">
-        <div class="saved-card-info">
-            <h3>Carte enregistrée</h3>
-            <p><i class="fa-solid fa-credit-card"></i> Carte se terminant par <?= $payment_info['card_last_four'] ?></p>
-            <p><i class="fa-regular fa-calendar"></i> Expire le <?= $payment_info['expiry_date'] ?></p>
-            
-            <form action="#" method="post" id="use-saved-card-form">
-                <input type="hidden" name="use_saved_card" value="1">
-                <input type="hidden" name="montant" value="<?= $total ?>">
-                <input type="hidden" name="panier_json" value='<?= htmlspecialchars($_POST['panier_json'] ?? '[]') ?>'>
-                <button type="submit" class="checkout-button"><i class="fa-solid fa-check-circle"></i> Utiliser cette carte</button>
-            </form>
-            
-            <button id="show-new-card-form" class="secondary-button"><i class="fa-solid fa-plus-circle"></i> Utiliser une autre carte</button>
-        </div>
+    <?php if (!empty($payment_cards)): ?>
+    <div class="saved-cards-container">
+        <h3 style="margin-bottom: 20px;">Mes cartes enregistrées</h3>
         
-        <div id="new-card-form" style="display: none;">
-            <h3 style="margin-bottom:20px;">Informations de carte bancaire</h3>
-            
-            <form action="#" method="post">
-                <label>Numéro de carte :</label>
-                <input type="text" name="card_number" maxlength="19" required autocomplete="cc-number">
-
-                <label>Date d'expiration :</label>
-                <input type="text" name="expiry_date" placeholder="MM/AA" maxlength="5" required autocomplete="cc-exp">
-
-                <label>CVV :</label>
-                <input type="text" name="cvv" maxlength="4" required autocomplete="cc-csc">
-
-                <div class="save-info-container">
-                    <input type="checkbox" id="save_payment_info" name="save_payment_info" value="1" checked>
-                    <label for="save_payment_info">Mettre à jour mes informations pour mes prochains achats</label>
+        <?php foreach ($payment_cards as $card): ?>
+        <div class="saved-card <?= $card['is_default'] ? 'default' : '' ?>" data-card-id="<?= $card['id'] ?>">
+            <div class="card-header">
+                <div class="card-info">
+                    <h3>
+                        <?= htmlspecialchars($card['card_name']) ?>
+                        <?php if ($card['is_default']): ?>
+                            <span class="default-badge">Par défaut</span>
+                        <?php endif; ?>
+                    </h3>
+                    <p><i class="fa-solid fa-credit-card"></i> Carte se terminant par <?= $card['card_last_four'] ?></p>
+                    <p><i class="fa-regular fa-calendar"></i> Expire le <?= $card['expiry_date'] ?></p>
                 </div>
-
-                <input type="hidden" name="montant" value="<?= $total ?>">
-                <input type="hidden" name="panier_json" value='<?= htmlspecialchars($_POST['panier_json'] ?? '[]') ?>'>
-                <button type="submit" class="checkout-button"><i class="fa-solid fa-credit-card"></i> Payer maintenant</button>
-            </form>
+                <div class="card-actions">
+                    <?php if (!$card['is_default']): ?>
+                        <button class="card-action-btn default" onclick="setDefaultCard(<?= $card['id'] ?>)" title="Définir par défaut">
+                            <i class="fa-solid fa-star"></i>
+                        </button>
+                    <?php endif; ?>
+                    <button class="card-action-btn delete" onclick="deleteCard(<?= $card['id'] ?>)" title="Supprimer">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
         </div>
+        <?php endforeach; ?>
+        
+        <button id="pay-with-selected-card" class="checkout-button" disabled>
+            <i class="fa-solid fa-check-circle"></i> Payer avec la carte sélectionnée
+        </button>
+        
+        <button id="show-new-card-form" class="secondary-button">
+            <i class="fa-solid fa-plus-circle"></i> Ajouter une nouvelle carte
+        </button>
     </div>
-    <?php else: ?>
-    <h3 style="margin-bottom:20px;">Informations de carte bancaire</h3>
-
-    <form action="#" method="post">
-        <label>Numéro de carte :</label>
-        <input type="text" name="card_number" maxlength="19" required autocomplete="cc-number">
-
-        <label>Date d'expiration :</label>
-        <input type="text" name="expiry_date" placeholder="MM/AA" maxlength="5" required autocomplete="cc-exp">
-
-        <label>CVV :</label>
-        <input type="text" name="cvv" maxlength="4" required autocomplete="cc-csc">
-
-        <div class="save-info-container">
-            <input type="checkbox" id="save_payment_info" name="save_payment_info" value="1">
-            <label for="save_payment_info">Enregistrer mes informations pour mes prochains achats</label>
-        </div>
-
-        <input type="hidden" name="montant" value="<?= $total ?>">
-        <input type="hidden" name="panier_json" value='<?= htmlspecialchars($_POST['panier_json'] ?? '[]') ?>'>
-        <button type="submit" class="checkout-button"><i class="fa-solid fa-credit-card"></i> Payer maintenant</button>
-    </form>
     <?php endif; ?>
+
+    <div id="new-card-form" class="new-card-form">
+        <h3 style="margin-bottom:20px;">
+            <?= empty($payment_cards) ? 'Informations de carte bancaire' : 'Ajouter une nouvelle carte' ?>
+        </h3>
+        
+        <form action="#" method="post">
+            <label>Nom de la carte :</label>
+            <input type="text" name="card_name" placeholder="ex: Carte principale, Carte travail..." maxlength="100">
+
+            <label>Numéro de carte :</label>
+            <input type="text" name="card_number" maxlength="19" required autocomplete="cc-number">
+
+            <label>Date d'expiration :</label>
+            <input type="text" name="expiry_date" placeholder="MM/AA" maxlength="5" required autocomplete="cc-exp">
+
+            <label>CVV :</label>
+            <input type="text" name="cvv" maxlength="4" required autocomplete="cc-csc">
+
+            <div class="save-info-container">
+                <input type="checkbox" id="save_payment_info" name="save_payment_info" value="1" checked>
+                <label for="save_payment_info">Enregistrer cette carte pour mes prochains achats</label>
+            </div>
+
+            <input type="hidden" name="montant" value="<?= $total ?>">
+            <input type="hidden" name="panier_json" value='<?= htmlspecialchars($_POST['panier_json'] ?? '[]') ?>'>
+            <button type="submit" class="checkout-button"><i class="fa-solid fa-credit-card"></i> Payer maintenant</button>
+        </form>
+    </div>
 </div>
 
 <?php include '../TEMPLATE/footer.php'; ?>
@@ -374,27 +562,130 @@ document.addEventListener('DOMContentLoaded', function() {
     const cardInput = document.querySelector('input[name="card_number"]');
     const expiryInput = document.querySelector('input[name="expiry_date"]');
     const cvvInput = document.querySelector('input[name="cvv"]');
-    const form = document.querySelector('form');
+    const form = document.querySelector('#new-card-form form');
     const saveInfoCheckbox = document.getElementById('save_payment_info');
+    const payWithSelectedCardBtn = document.getElementById('pay-with-selected-card');
+    const showNewCardFormBtn = document.getElementById('show-new-card-form');
+    const newCardForm = document.getElementById('new-card-form');
+    const savedCards = document.querySelectorAll('.saved-card');
+    let selectedCardId = null;
     let transactionMessage = null;
 
-    // Si les éléments de formulaire existent
+    // Si aucune carte enregistrée, afficher directement le formulaire
+    if (savedCards.length === 0) {
+        if (newCardForm) {
+            newCardForm.style.display = 'block';
+        }
+    }
+
+    // Gestion de la sélection des cartes
+    savedCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Éviter de déclencher lors du clic sur les boutons d'action
+            if (e.target.closest('.card-actions') || e.target.closest('button')) {
+                return;
+            }
+            
+            // Retirer la sélection des autres cartes
+            savedCards.forEach(c => c.classList.remove('selected'));
+            // Sélectionner la carte cliquée
+            this.classList.add('selected');
+            selectedCardId = parseInt(this.dataset.cardId);
+            
+            console.log('Carte sélectionnée:', selectedCardId); // Debug
+            
+            // Activer le bouton de paiement
+            if (payWithSelectedCardBtn) {
+                payWithSelectedCardBtn.disabled = false;
+                payWithSelectedCardBtn.style.opacity = '1';
+            }
+        });
+    });
+
+    // Paiement avec carte sélectionnée
+    if (payWithSelectedCardBtn) {
+        payWithSelectedCardBtn.addEventListener('click', function() {
+            console.log('Tentative de paiement avec carte:', selectedCardId); // Debug
+            
+            if (!selectedCardId) {
+                alert('Veuillez sélectionner une carte');
+                return;
+            }
+            
+            if (!confirm('Confirmez-vous le paiement avec cette carte ?')) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('pay_with_selected_card', true);
+            formData.append('selected_card_id', selectedCardId);
+            formData.append('panier_json', '<?= htmlspecialchars($_POST['panier_json'] ?? '[]') ?>');
+            
+            // Désactiver le bouton pendant le traitement
+            this.disabled = true;
+            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement...';
+            
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showTransactionSuccess();
+                    localStorage.setItem('synapse-cart', JSON.stringify([]));
+                    setTimeout(() => window.location.href = "../Testing grounds/main.php", 3000);
+                } else {
+                    alert(data.message || "Erreur lors du traitement du paiement");
+                    // Réactiver le bouton en cas d'erreur
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fa-solid fa-check-circle"></i> Payer avec la carte sélectionnée';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Une erreur est survenue lors du traitement du paiement");
+                // Réactiver le bouton en cas d'erreur
+                this.disabled = false;
+                this.innerHTML = '<i class="fa-solid fa-check-circle"></i> Payer avec la carte sélectionnée';
+            });
+        });
+    }
+
+    // Afficher le formulaire de nouvelle carte
+    if (showNewCardFormBtn) {
+        showNewCardFormBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Affichage du formulaire de nouvelle carte'); // Debug
+            
+            if (newCardForm) {
+                newCardForm.style.display = 'block';
+                this.style.display = 'none';
+                
+                // Défaire la sélection des cartes existantes
+                savedCards.forEach(c => c.classList.remove('selected'));
+                selectedCardId = null;
+                if (payWithSelectedCardBtn) {
+                    payWithSelectedCardBtn.disabled = true;
+                    payWithSelectedCardBtn.style.opacity = '0.5';
+                }
+            }
+        });
+    }
+
+    // Validation des champs de la nouvelle carte
     if (cardInput) {
-        // Placeholder pour la carte
         cardInput.placeholder = "XXXX XXXX XXXX XXXX";
         
-        // Message d'erreur pour la carte
         let errorMsg = document.createElement('div');
         errorMsg.style = "color: #e74c3c; font-size: 0.95em; margin-bottom: 10px; display:none;";
         cardInput.parentNode.insertBefore(errorMsg, cardInput.nextSibling);
 
-        // Affichage dynamique des chiffres avec espaces tous les 4 chiffres pour la carte
         cardInput.addEventListener('input', function() {
             let numbers = this.value.replace(/\D/g, '').slice(0, 16);
             let formatted = numbers.replace(/(.{4})/g, '$1 ').trim();
             this.value = formatted;
 
-            // Affiche l'erreur si pas 16 chiffres
             if (numbers.length === 16 || numbers.length === 0) {
                 errorMsg.style.display = "none";
             } else {
@@ -405,20 +696,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (cvvInput) {
-        // Placeholder pour le CVV
         cvvInput.placeholder = "123";
         
-        // Message d'erreur pour le CVV
         let cvvErrorMsg = document.createElement('div');
         cvvErrorMsg.style = "color: #e74c3c; font-size: 0.95em; margin-bottom: 10px; display:none;";
         cvvInput.parentNode.insertBefore(cvvErrorMsg, cvvInput.nextSibling);
 
-        // CVV : 3 chiffres uniquement
         cvvInput.addEventListener('input', function() {
             let numbers = this.value.replace(/\D/g, '').slice(0, 3);
             this.value = numbers;
 
-            // Affiche l'erreur si pas 3 chiffres
             if (numbers.length === 3 || numbers.length === 0) {
                 cvvErrorMsg.style.display = "none";
             } else {
@@ -429,7 +716,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (expiryInput) {
-        // Date d'expiration : format MM/AA avec / automatique
         expiryInput.addEventListener('input', function() {
             let val = this.value.replace(/\D/g, '').slice(0, 4);
             if (val.length > 2) {
@@ -439,66 +725,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Gestion de l'option "utiliser une autre carte"
-    const showNewCardFormBtn = document.getElementById('show-new-card-form');
-    const newCardForm = document.getElementById('new-card-form');
-    
-    if (showNewCardFormBtn && newCardForm) {
-        showNewCardFormBtn.addEventListener('click', function() {
-            document.querySelector('.saved-card-info').style.display = 'none';
-            newCardForm.style.display = 'block';
-        });
-    }
-    
-    // Gestion du paiement avec carte enregistrée
-    const useSavedCardForm = document.getElementById('use-saved-card-form');
-    if (useSavedCardForm) {
-        useSavedCardForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            if (!confirm('Confirmez-vous le paiement avec votre carte enregistrée ?')) {
-                return;
-            }
-            
-            const formData = new FormData(useSavedCardForm);
-            formData.append('process_payment', true);
-            
-            fetch(useSavedCardForm.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const transactionMessage = document.createElement('div');
-                    transactionMessage.textContent = "Transaction validée";
-                    transactionMessage.style = "color: #45cf91; font-weight: bold; font-size: 1.3em; margin: 20px 0; text-align:center;";
-                    useSavedCardForm.parentNode.insertBefore(transactionMessage, useSavedCardForm.nextSibling);
-                    
-                    useSavedCardForm.querySelector('button[type="submit"]').disabled = true;
-                    if (showNewCardFormBtn) showNewCardFormBtn.disabled = true;
-                    
-                    localStorage.setItem('synapse-cart', JSON.stringify([]));
-                    
-                    setTimeout(function() {
-                        window.location.href = "../Testing grounds/main.php";
-                    }, 3000);
-                } else {
-                    alert(data.message || "Erreur lors du traitement du paiement");
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert("Une erreur est survenue lors du traitement du paiement");
-            });
-        });
-    }
-
-    // Confirmation pour nouveau paiement
+    // Soumission du formulaire de nouvelle carte
     if (form) {
         form.addEventListener('submit', function(e) {
-            // Ne pas valider pour le formulaire de carte sauvegardée
-            if (this.id === 'use-saved-card-form') return;
+            e.preventDefault();
             
             let valid = true;
             
@@ -524,62 +754,118 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (!valid) {
-                e.preventDefault();
                 return;
             }
             
-            e.preventDefault();
             if (!confirm('Confirmez-vous le paiement ?')) {
                 return;
             }
 
-            // Préparation des données du formulaire pour l'envoi AJAX
             const formData = new FormData(form);
             formData.append('process_payment', true);
             
-            // Si la case "Enregistrer mes informations" est cochée
             if (saveInfoCheckbox && saveInfoCheckbox.checked) {
                 formData.append('save_info', true);
             }
             
-            // Envoyer la requête AJAX pour traiter le paiement
-            fetch(form.action, {
+            // Désactiver le bouton pendant le traitement
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement...';
+            }
+            
+            fetch(form.action || window.location.href, {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Afficher le message de validation
-                    if (!transactionMessage) {
-                        transactionMessage = document.createElement('div');
-                        transactionMessage.textContent = "Transaction validée";
-                        transactionMessage.style = "color: #45cf91; font-weight: bold; font-size: 1.3em; margin: 20px 0; text-align:center;";
-                        form.parentNode.insertBefore(transactionMessage, form.nextSibling);
-                    }
-                    // Désactiver le bouton
-                    form.querySelector('button[type="submit"]').disabled = true;
-                    
-                    // Vider le localStorage pour le panier
+                    showTransactionSuccess();
                     localStorage.setItem('synapse-cart', JSON.stringify([]));
-                    
-                    // Redirige après 3 secondes
-                    setTimeout(function() {
-                        window.location.href = "../Testing grounds/main.php";
-                    }, 3000);
+                    setTimeout(() => window.location.href = "../Testing grounds/main.php", 3000);
                 } else {
-                    // Afficher un message d'erreur
                     alert(data.message || "Erreur lors du traitement du paiement");
+                    // Réactiver le bouton en cas d'erreur
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-credit-card"></i> Payer maintenant';
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert("Une erreur est survenue lors du traitement du paiement");
+                // Réactiver le bouton en cas d'erreur
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-credit-card"></i> Payer maintenant';
+                }
             });
         });
     }
+
+    function showTransactionSuccess() {
+        if (!transactionMessage) {
+            transactionMessage = document.createElement('div');
+            transactionMessage.textContent = "Transaction validée";
+            transactionMessage.style = "color: #45cf91; font-weight: bold; font-size: 1.3em; margin: 20px 0; text-align:center;";
+            document.querySelector('.paiement-container').appendChild(transactionMessage);
+        }
+    }
 });
+
+// Fonctions globales pour la gestion des cartes
+function deleteCard(cardId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette carte ?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('delete_card', true);
+    formData.append('card_id', cardId);
+    
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erreur lors de la suppression de la carte');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Une erreur est survenue');
+    });
+}
+
+function setDefaultCard(cardId) {
+    const formData = new FormData();
+    formData.append('set_default_card', true);
+    formData.append('card_id', cardId);
+    
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erreur lors de la définition de la carte par défaut');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Une erreur est survenue');
+    });
+}
 </script>
 </body>
 </html>
-<!-- cvq -->

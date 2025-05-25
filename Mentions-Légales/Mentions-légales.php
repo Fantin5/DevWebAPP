@@ -26,6 +26,26 @@ include_once '../Connexion-Inscription/config.php';
             box-sizing: border-box;
         }
 
+        /* Header fix - prevent conflicts with Nouveauhead.css */
+        header.header, 
+        .header {
+            background: #4f7259 !important;
+            opacity: 1 !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(20px) !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            z-index: 999 !important;
+        }
+
+        /* Ensure all header elements are visible */
+        header *, .header * {
+            opacity: 1 !important;
+        }
+
         :root {
             --primary: #828977;
             --secondary: #E4D8C8;

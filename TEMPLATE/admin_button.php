@@ -3,8 +3,9 @@
 if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && 
     isset($_SESSION['user_type']) && ($_SESSION['user_type'] == 1 || $_SESSION['user_type'] == 2)) {
     
-    echo '<a href="../Admin/admin.php" class="admin-button">';
-    echo '<i class="fa-solid fa-seedling"></i> Admin';
+    echo '<a href="../Admin/admin.php" class="admin-button" title="Administration">';
+    echo '<i class="fa-solid fa-seedling"></i>';
+    echo '<span class="admin-text">Admin</span>';
     echo '</a>';
 }
 ?>

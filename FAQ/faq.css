@@ -1,51 +1,4 @@
-/* Fix for transparent header */
-header.header, 
-.header {
-    background-color: #828977 !important; /* Force solid background */
-    opacity: 1 !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Do not inherit transparency from any parent elements */
-body > header,
-body > .header {
-    background-color: #828977 !important; 
-    opacity: 1 !important;
-}
-.contact-description {
-    text-align: center;
-    color: #666;
-    margin-bottom: 20px;
-    font-style: italic;
-    line-height: 1.5;
-    padding: 0 20px;
-}
-/* halo */
-/* Explicitly set the header z-index to ensure it's on top */
-header, .header {
-    z-index: 1000 !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-}
-
-/* Ensure all header elements inherit the opacity */
-header *, .header * {
-    opacity: 1 !important;
-}
-
-/* Reset any transparency that might be applied */
-* {
-    background-color: transparent;
-}
-
-body {
-    background-color: #E4D8C8;
-}
-
-/* End of header fix */
+/* Enhanced faq.css - Includes search functionality styling */
 
 * {
     margin: 0;
@@ -97,14 +50,146 @@ body {
     border-radius: 3px;
 }
 
-/* Override any header styles from the original file */
-.faq-titre {
-    display: none; /* Hide original title */
+/* Search Section Styles */
+.faq-search-section {
+    margin-bottom: 30px;
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-header {
-    background-color: transparent !important;
-    box-shadow: none !important;
+.search-title {
+    font-family: serif;
+    font-style: italic;
+    font-size: 24px;
+    color: #828977;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.search-input-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+#faq-search {
+    width: 100%;
+    padding: 12px 45px 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #f9f7f3;
+    transition: all 0.3s ease;
+}
+
+#faq-search:focus {
+    border-color: #828977;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(130, 137, 119, 0.2);
+}
+
+.search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #828977;
+    font-size: 18px;
+    pointer-events: none;
+}
+
+#clear-search {
+    padding: 12px 20px;
+    background-color: #828977;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#clear-search:hover {
+    background-color: #6b7263;
+    transform: translateY(-1px);
+}
+
+/* Search Results Info */
+.search-info {
+    margin: 15px 0;
+    text-align: center;
+}
+
+#search-counter {
+    display: none;
+    color: #666;
+    font-style: italic;
+    padding: 8px 15px;
+    background-color: #f0f8ff;
+    border-radius: 5px;
+    font-size: 14px;
+    border-left: 4px solid #828977;
+}
+
+#no-results {
+    display: none;
+    text-align: center;
+    padding: 30px;
+    color: #666;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+#no-results i {
+    font-size: 48px;
+    color: #f39c12;
+    margin-bottom: 15px;
+}
+
+#no-results h3 {
+    color: #856404;
+    margin-bottom: 8px;
+}
+
+#no-results p {
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.search-term {
+    font-weight: bold;
+    color: #828977;
+}
+
+/* Search Highlight Styles */
+.search-highlight {
+    background-color: transparent;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+    font-weight: inherit;
+    box-shadow: none;
+    display: inline;
+    margin: 0;
+    line-height: inherit;
+    letter-spacing: normal;
+    word-spacing: normal;
 }
 
 /* FAQ Section */
@@ -177,6 +262,16 @@ header {
     color: #828977;
     font-weight: bold;
     margin-right: 10px;
+}
+
+/* Contact section styling */
+.contact-description {
+    text-align: center;
+    color: #666;
+    margin-bottom: 20px;
+    font-style: italic;
+    line-height: 1.5;
+    padding: 0 20px;
 }
 
 /* Contact form styling */
@@ -377,7 +472,8 @@ textarea.form-control {
     }
     
     .contact-section, 
-    .login-message {
+    .login-message,
+    .faq-search-section {
         margin-left: 15px;
         margin-right: 15px;
         padding: 20px;
@@ -386,5 +482,40 @@ textarea.form-control {
     .page-container {
         padding: 10px;
     }
+    
+    .search-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    #clear-search {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .faq-page-title h1 {
+        font-size: 32px;
+    }
+    
+    .search-title {
+        font-size: 20px;
+    }
 }
+
+/* Animation for search results */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.faq-item {
+    animation: fadeIn 0.3s ease;
+}
+
 /* cvq */
