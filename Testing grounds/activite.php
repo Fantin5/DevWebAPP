@@ -91,10 +91,10 @@ if (preg_match('/<!--CREATOR:([^-]+)-->/', $activity["description"], $matches)) 
         // Remove the creator info from the description for display
         $activity["description"] = preg_replace('/<!--CREATOR:[^-]+-->/', '', $activity["description"]);
         
-        // If we have user_id, try to get the latest information from database
+        // If we have user_id, try to get the latest information from database INCLUDING SOCIAL MEDIA URLS
         if (isset($creator_data['user_id'])) {
             $user_id = $creator_data['user_id'];
-            $user_sql = "SELECT name, first_name, email, phone_nb FROM user_form WHERE id = ?";
+            $user_sql = "SELECT name, first_name, email, phone_nb, instagram_url, facebook_url, twitter_url FROM user_form WHERE id = ?";
             $user_stmt = $user_conn->prepare($user_sql);
             $user_stmt->bind_param("i", $user_id);
             $user_stmt->execute();
@@ -106,7 +106,11 @@ if (preg_match('/<!--CREATOR:([^-]+)-->/', $activity["description"], $matches)) 
                 $creator_data['first_name'] = $user_data['first_name'];
                 $creator_data['email'] = $user_data['email'];
                 $creator_data['phone_nb'] = $user_data['phone_nb'];
+                $creator_data['instagram_url'] = $user_data['instagram_url'];
+                $creator_data['facebook_url'] = $user_data['facebook_url'];
+                $creator_data['twitter_url'] = $user_data['twitter_url'];
             }
+            $user_stmt->close();
         }
     } catch (Exception $e) {
         // If there's an error parsing, just continue without creator data
@@ -1967,6 +1971,34 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                                 <span><?php echo htmlspecialchars(formatPhoneNumber($creator_data['phone_nb'])); ?></span>
                             </div>
                             <?php endif; ?>
+                            
+                            <?php 
+                            // Check if creator has social media links
+                            $has_social = !empty($creator_data['instagram_url']) || !empty($creator_data['facebook_url']) || !empty($creator_data['twitter_url']);
+                            if ($has_social): ?>
+                            <div class="creator-detail">
+                                <i class="fa-solid fa-share-nodes"></i>
+                                <div class="creator-social-links">
+                                    <?php if (!empty($creator_data['instagram_url'])): ?>
+                                    <a href="<?php echo htmlspecialchars($creator_data['instagram_url']); ?>" target="_blank" class="creator-social-link instagram" title="Instagram">
+                                        <i class="fa-brands fa-instagram"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (!empty($creator_data['facebook_url'])): ?>
+                                    <a href="<?php echo htmlspecialchars($creator_data['facebook_url']); ?>" target="_blank" class="creator-social-link facebook" title="Facebook">
+                                        <i class="fa-brands fa-facebook"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (!empty($creator_data['twitter_url'])): ?>
+                                    <a href="<?php echo htmlspecialchars($creator_data['twitter_url']); ?>" target="_blank" class="creator-social-link twitter" title="X (Twitter)">
+                                        <i class="fa-brands fa-x-twitter"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endif; ?>
@@ -2128,39 +2160,6 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                                 <strong>Statut :</strong> Inscriptions ouvertes pour <?php echo htmlspecialchars($activity["date_ou_periode"]); ?>
                             </p>
                         </div>
-                    <?php endif; ?>
-                    
-                    <?php if (!empty($activity["location"])): ?>
-                    <!-- Enhanced Location Section in Sidebar -->
-                    <div class="location-section">
-                        <h3><i class="fa-solid fa-map-marker-alt"></i> Localisation</h3>
-                        <div class="location-card">
-                            <div class="location-address-sidebar">
-                                <i class="fa-solid fa-location-dot"></i>
-                                <span><?php echo htmlspecialchars($activity["location"]); ?></span>
-                            </div>
-                            <button class="location-maps-button" onclick="openGoogleMaps('<?php echo htmlspecialchars($activity["location"]); ?>')">
-                                <i class="fa-solid fa-map"></i>
-                                <span>Ouvrir dans Maps</span>
-                            </button>
-                            <div class="location-preview">
-                                <i class="fa-solid fa-map-location-dot"></i>
-                                <span>Cliquez pour voir l'itinéraire</span>
-                            </div>
-                        </div>
-                    </div>
-                    <?php else: ?>
-                    <!-- No location available -->
-                    <div class="location-section">
-                        <h3><i class="fa-solid fa-map-marker-alt"></i> Localisation</h3>
-                        <div class="location-card unavailable">
-                            <div class="location-unavailable">
-                                <i class="fa-solid fa-map-location"></i>
-                                <span>Localisation non spécifiée</span>
-                                <p>L'organisateur n'a pas fourni d'adresse précise</p>
-                            </div>
-                        </div>
-                    </div>
                     <?php endif; ?>
                     
                     <!-- Social Sharing -->

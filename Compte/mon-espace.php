@@ -80,6 +80,9 @@ if (isset($_POST['update_profile'])) {
     $email = $_POST['email'];
     $phone = $_POST['phone'];
     $birthday = $_POST['birthday'];
+    $instagram_url = $_POST['instagram_url'];
+    $facebook_url = $_POST['facebook_url'];
+    $twitter_url = $_POST['twitter_url'];
     
     // Format birthday from DD/MM/YYYY to YYYY-MM-DD for database
     if (!empty($birthday)) {
@@ -90,9 +93,9 @@ if (isset($_POST['update_profile'])) {
     }
     
     // Update user information
-    $sql = "UPDATE user_form SET name = ?, email = ?, first_name = ?, birthday = ?, phone_nb = ? WHERE id = ?";
+    $sql = "UPDATE user_form SET name = ?, email = ?, first_name = ?, birthday = ?, phone_nb = ?, instagram_url = ?, facebook_url = ?, twitter_url = ? WHERE id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssssii", $last_name, $email, $first_name, $birthday, $phone, $user_id);
+    $stmt->bind_param("ssssisssi", $last_name, $email, $first_name, $birthday, $phone, $instagram_url, $facebook_url, $twitter_url, $user_id);
     
     if ($stmt->execute()) {
         $message = "Votre profil a été mis à jour avec succès !";
@@ -1165,6 +1168,49 @@ input:checked + .slider:before {
                     <i class="fa-solid fa-basket-shopping"></i> Voir mon panier
                 </a>
             </div>
+            
+            <!-- Social Networks Card -->
+            <div class="dashboard-card">
+                <div class="card-decoration"></div>
+                <div class="dashboard-card-header">
+                    <div class="dashboard-card-icon">
+                        <i class="fa-solid fa-share-nodes"></i>
+                    </div>
+                    <h2 class="dashboard-card-title">Réseaux Sociaux</h2>
+                </div>
+                
+                <div class="social-networks-preview">
+                    <p>Partagez vos activités sur vos réseaux</p>
+                    
+                    <div class="social-links-preview">
+                        <?php if (!empty($user['instagram_url'])): ?>
+                        <a href="<?php echo htmlspecialchars($user['instagram_url']); ?>" target="_blank" class="social-preview-link">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($user['facebook_url'])): ?>
+                        <a href="<?php echo htmlspecialchars($user['facebook_url']); ?>" target="_blank" class="social-preview-link">
+                            <i class="fa-brands fa-facebook"></i>
+                        </a>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($user['twitter_url'])): ?>
+                        <a href="<?php echo htmlspecialchars($user['twitter_url']); ?>" target="_blank" class="social-preview-link">
+                            <i class="fa-brands fa-x-twitter"></i>
+                        </a>
+                        <?php endif; ?>
+                        
+                        <?php if (empty($user['instagram_url']) && empty($user['facebook_url']) && empty($user['twitter_url'])): ?>
+                        <p class="no-social-message">Aucun réseau social configuré</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                
+                <button id="edit-social-btn" class="activity-link">
+                    <i class="fa-solid fa-pen"></i> Modifier mes réseaux sociaux
+                </button>
+            </div>
         </div>
       <!--message card -->
 <div class="dashboard-card">
@@ -1263,6 +1309,21 @@ input:checked + .slider:before {
                     <input type="text" class="form-control" id="birthday" name="birthday" value="<?php echo $formatted_birthday; ?>" placeholder="JJ/MM/AAAA">
                 </div>
                 
+                <div class="form-group">
+                    <label class="form-label" for="instagram_url">Instagram (URL complète)</label>
+                    <input type="url" class="form-control" id="instagram_url" name="instagram_url" value="<?php echo htmlspecialchars($user['instagram_url'] ?? ''); ?>" placeholder="https://instagram.com/votre_profil">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="facebook_url">Facebook (URL complète)</label>
+                    <input type="url" class="form-control" id="facebook_url" name="facebook_url" value="<?php echo htmlspecialchars($user['facebook_url'] ?? ''); ?>" placeholder="https://facebook.com/votre_profil">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="twitter_url">X (Twitter) (URL complète)</label>
+                    <input type="url" class="form-control" id="twitter_url" name="twitter_url" value="<?php echo htmlspecialchars($user['twitter_url'] ?? ''); ?>" placeholder="https://x.com/votre_profil">
+                </div>
+                
                 <div class="form-actions">
                     <button type="button" class="form-button form-cancel" id="cancel-edit-profile">Annuler</button>
                     <button type="submit" class="form-button form-submit" name="update_profile">Enregistrer</button>
@@ -1322,11 +1383,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const editProfileModal = document.getElementById('edit-profile-modal');
     const openEditProfileBtn = document.getElementById('edit-profile-btn');
     const cancelEditProfileBtn = document.getElementById('cancel-edit-profile');
+    const editSocialBtn = document.getElementById('edit-social-btn');
     
     if (openEditProfileBtn) {
         openEditProfileBtn.addEventListener('click', function() {
             editProfileModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden'; // Prevent scrolling
+            document.body.style.overflow = 'hidden';
+        });
+    }
+    
+    if (editSocialBtn) {
+        editSocialBtn.addEventListener('click', function() {
+            editProfileModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
         });
     }
     

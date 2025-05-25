@@ -1837,389 +1837,6 @@ main {
     font-size: 16px;
 }
 
-/* Enhanced Sidebar Location Section */
-.location-section {
-    margin-top: 30px;
-}
-
-.location-section h3 {
-    font-size: 20px;
-    color: #444;
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.location-section h3 i {
-    color: var(--primary-color);
-    font-size: 22px;
-}
-
-.location-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border-radius: 25px;
-    padding: 30px;
-    box-shadow: 
-        0 10px 30px rgba(0, 0, 0, 0.1),
-        0 1px 8px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(230, 230, 230, 0.8);
-    transition: all 0.4s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.location-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(135deg, #4285f4 0%, #1a73e8 50%, #0d47a1 100%);
-    background-size: 200% 200%;
-    animation: locationGradientMove 3s ease infinite;
-}
-
-@keyframes locationGradientMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-.location-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 
-        0 20px 40px rgba(0, 0, 0, 0.15),
-        0 5px 20px rgba(66, 133, 244, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-.location-address-sidebar {
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
-    margin-bottom: 25px;
-    padding: 20px;
-    background: linear-gradient(135deg, rgba(66, 133, 244, 0.08) 0%, rgba(26, 115, 232, 0.05) 100%);
-    border-radius: 18px;
-    border-left: 4px solid #4285f4;
-    position: relative;
-    overflow: hidden;
-}
-
-.location-address-sidebar::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
-    transform: translateX(-100%);
-    transition: transform 0.6s ease;
-}
-
-.location-card:hover .location-address-sidebar::before {
-    transform: translateX(100%);
-}
-
-.location-address-sidebar i {
-    color: #4285f4;
-    font-size: 22px;
-    margin-top: 2px;
-    flex-shrink: 0;
-    animation: locationPulse 2s ease-in-out infinite;
-}
-
-@keyframes locationPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-.location-address-sidebar span {
-    color: #2c3e50;
-    font-size: 16px;
-    line-height: 1.6;
-    font-weight: 600;
-    position: relative;
-    z-index: 1;
-}
-
-.location-maps-button {
-    background: linear-gradient(135deg, #4285f4 0%, #1a73e8 70%, #0d47a1 100%);
-    color: white;
-    border: none;
-    padding: 16px 25px;
-    border-radius: 50px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    transition: all 0.4s ease;
-    box-shadow: 
-        0 8px 25px rgba(66, 133, 244, 0.3),
-        0 3px 10px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    margin-bottom: 20px;
-    position: relative;
-    overflow: hidden;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.location-maps-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-        rgba(255, 255, 255, 0) 0%, 
-        rgba(255, 255, 255, 0.3) 50%, 
-        rgba(255, 255, 255, 0) 100%);
-    transform: skewX(-25deg);
-    transition: left 0.8s ease;
-}
-
-.location-maps-button::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: all 0.4s ease;
-}
-
-.location-maps-button:hover {
-    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 70%, #1565c0 100%);
-    transform: translateY(-3px);
-    box-shadow: 
-        0 12px 35px rgba(66, 133, 244, 0.4),
-        0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.location-maps-button:hover::before {
-    left: 100%;
-}
-
-.location-maps-button:hover::after {
-    width: 100px;
-    height: 100px;
-}
-
-.location-maps-button:active {
-    transform: translateY(-1px);
-    box-shadow: 
-        0 6px 20px rgba(66, 133, 244, 0.3),
-        0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.location-maps-button i {
-    font-size: 20px;
-    z-index: 2;
-    transition: transform 0.3s ease;
-}
-
-.location-maps-button:hover i {
-    transform: scale(1.1) rotate(5deg);
-}
-
-.location-maps-button span {
-    z-index: 2;
-}
-
-.location-preview {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
-    background: linear-gradient(135deg, rgba(66, 133, 244, 0.05) 0%, rgba(26, 115, 232, 0.08) 100%);
-    border-radius: 15px;
-    color: #5f6368;
-    font-size: 14px;
-    text-align: center;
-    justify-content: center;
-    border: 1px solid rgba(66, 133, 244, 0.1);
-    transition: all 0.3s ease;
-}
-
-.location-preview:hover {
-    background: linear-gradient(135deg, rgba(66, 133, 244, 0.08) 0%, rgba(26, 115, 232, 0.12) 100%);
-    border-color: rgba(66, 133, 244, 0.2);
-    transform: translateY(-2px);
-}
-
-.location-preview i {
-    color: #4285f4;
-    font-size: 18px;
-    animation: locationPreviewFloat 3s ease-in-out infinite;
-}
-
-@keyframes locationPreviewFloat {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-}
-
-/* Enhanced unavailable location styling */
-.location-card.unavailable {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-color: #dee2e6;
-    opacity: 0.8;
-}
-
-.location-card.unavailable::before {
-    background: linear-gradient(135deg, #6c757d 0%, #adb5bd 100%);
-}
-
-.location-unavailable {
-    text-align: center;
-    padding: 30px 20px;
-    color: #6c757d;
-    position: relative;
-}
-
-.location-unavailable::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(173, 181, 189, 0.1) 100%);
-    border-radius: 50%;
-    z-index: 0;
-}
-
-.location-unavailable i {
-    font-size: 36px;
-    margin-bottom: 15px;
-    opacity: 0.6;
-    position: relative;
-    z-index: 1;
-    animation: unavailableFloat 4s ease-in-out infinite;
-}
-
-@keyframes unavailableFloat {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    25% { transform: translateY(-5px) rotate(-2deg); }
-    75% { transform: translateY(-3px) rotate(2deg); }
-}
-
-.location-unavailable span {
-    display: block;
-    font-weight: 700;
-    margin-bottom: 10px;
-    font-size: 18px;
-    position: relative;
-    z-index: 1;
-}
-
-.location-unavailable p {
-    font-size: 14px;
-    line-height: 1.5;
-    margin: 0;
-    opacity: 0.8;
-    position: relative;
-    z-index: 1;
-    font-style: italic;
-}
-
-/* Add subtle animations for the entire location section */
-.location-section {
-    animation: locationSectionFadeIn 0.8s ease-out;
-}
-
-@keyframes locationSectionFadeIn {
-    0% {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Responsive adjustments for location section */
-@media (max-width: 768px) {
-    .location-card {
-        padding: 25px 20px;
-        border-radius: 20px;
-    }
-    
-    .location-address-sidebar {
-        padding: 16px;
-        margin-bottom: 20px;
-    }
-    
-    .location-address-sidebar i {
-        font-size: 20px;
-    }
-    
-    .location-address-sidebar span {
-        font-size: 15px;
-    }
-    
-    .location-maps-button {
-        padding: 14px 20px;
-        font-size: 15px;
-    }
-    
-    .location-maps-button i {
-        font-size: 18px;
-    }
-    
-    .location-preview {
-        padding: 14px 16px;
-        font-size: 13px;
-    }
-    
-    .location-unavailable {
-        padding: 25px 15px;
-    }
-    
-    .location-unavailable i {
-        font-size: 32px;
-    }
-    
-    .location-unavailable span {
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 576px) {
-    .location-section h3 {
-        font-size: 18px;
-    }
-    
-    .location-card {
-        padding: 20px 15px;
-        border-radius: 18px;
-    }
-    
-    .location-address-sidebar {
-        gap: 12px;
-        padding: 14px;
-    }
-    
-    .location-maps-button {
-        padding: 12px 18px;
-        font-size: 14px;
-        letter-spacing: 0.3px;
-    }
-}
-
 /* Google Maps integration styling for other pages */
 .google-maps-container {
     position: relative;
@@ -2412,4 +2029,162 @@ main {
 .location-loading-text {
     font-size: 16px;
     font-weight: 500;
+}
+
+/* Account Switcher Styles */
+.saved-account-item {
+    padding: 12px 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.saved-account-item:hover {
+    background-color: rgba(60, 140, 92, 0.1);
+}
+
+.account-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.account-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.account-details {
+    flex-grow: 1;
+    margin-left: 15px;
+}
+
+.account-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.account-email {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.toggle-label {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Social Networks Styles */
+.social-networks-preview {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.social-links-preview {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.social-preview-link {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.social-preview-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.social-preview-link i[class*="instagram"] {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.social-preview-link i[class*="facebook"] {
+    background: #1877f2;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.social-preview-link i[class*="twitter"], .social-preview-link i[class*="x-twitter"] {
+    background: #1da1f2;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.no-social-message {
+    color: var(--text-secondary);
+    font-style: italic;
+    margin: 20px 0;
+}
+
+/* Creator social links on activity pages */
+.creator-social-links {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.creator-social-link {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.creator-social-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.creator-social-link.instagram {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+
+.creator-social-link.facebook {
+    background: #1877f2;
+}
+
+.creator-social-link.twitter {
+    background: #1da1f2;
 }
