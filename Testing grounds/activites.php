@@ -947,37 +947,71 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
             background: #dc2626;
         }
 
+        @media (max-width: 1200px) {
+            .activities-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 1rem;
+            }
+        }
+
         @media (max-width: 768px) {
             .search-container {
                 padding: 1rem;
             }
 
             .search-header h1 {
-                font-size: 2rem;
+                font-size: 1.8rem;
+            }
+
+            .search-header p {
+                font-size: 1rem;
+                padding: 0 1rem;
             }
 
             .filters-section {
-                padding: 1.5rem;
+                padding: 1rem;
+            }
+
+            .price-range {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .price-input {
+                flex: 1 1 calc(50% - 1rem);
+                min-width: 100px;
+            }
+
+            .filter-button {
+                width: 100%;
+                margin-top: 0.5rem;
             }
 
             .activities-grid {
                 grid-template-columns: 1fr;
-                gap: 1rem;
+                max-width: 500px;
+                margin: 0 auto;
             }
+        }
 
-            .results-header {
+        @media (max-width: 480px) {
+            .card-footer {
                 flex-direction: column;
                 gap: 1rem;
                 align-items: stretch;
             }
 
+            .add-to-cart-btn {
+                width: 100%;
+            }
+
             .filter-pills {
-                gap: 0.5rem;
+                gap: 0.25rem;
             }
 
             .filter-pill {
-                font-size: 0.85rem;
-                padding: 0.4rem 0.8rem;
+                padding: 0.35rem 0.6rem;
+                font-size: 0.8rem;
             }
         }
     </style>
