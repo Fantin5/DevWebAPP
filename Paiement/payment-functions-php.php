@@ -134,6 +134,9 @@ function getUserCards() {
 /**
  * Traite un paiement direct avec une carte spécifique
  */
+/**
+ * Traite un paiement direct avec une carte spécifique
+ */
 function processDirectPayment() {
     // Vérifier si l'utilisateur est connecté
     if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -153,27 +156,33 @@ function processDirectPayment() {
     $user_id = $_SESSION['user_id'];
     $card_id = isset($data['card_id']) ? intval($data['card_id']) : null;
 
-    // Si un card_id est spécifié, vérifier qu'il appartient à l'utilisateur
-    if ($card_id) {
-        $user_conn = new mysqli('localhost', 'root', '', 'user_db');
-        if ($user_conn->connect_error) {
-            echo json_encode(['success' => false, 'message' => 'Erreur de connexion à la base de données']);
-            exit;
-        }
-
-        $stmt = $user_conn->prepare("SELECT id FROM payment_info WHERE id = ? AND user_id = ?");
-        $stmt->bind_param("ii", $card_id, $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result->num_rows == 0) {
-            echo json_encode(['success' => false, 'message' => 'Carte non trouvée']);
-            $user_conn->close();
-            exit;
-        }
-
-        $user_conn->close();
+    // CORRECTION: Vérifier qu'un card_id est fourni (obligatoire pour le paiement)
+    if (!$card_id) {
+        echo json_encode(['success' => false, 'message' => 'Aucune carte de paiement sélectionnée']);
+        exit;
     }
+
+    // Vérifier que la carte appartient à l'utilisateur
+    $user_conn = new mysqli('localhost', 'root', '', 'user_db');
+    if ($user_conn->connect_error) {
+        echo json_encode(['success' => false, 'message' => 'Erreur de connexion à la base de données']);
+        exit;
+    }
+
+    $stmt = $user_conn->prepare("SELECT id FROM payment_info WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $card_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows == 0) {
+        echo json_encode(['success' => false, 'message' => 'Carte non trouvée ou non autorisée']);
+        $stmt->close();
+        $user_conn->close();
+        exit;
+    }
+
+    $stmt->close();
+    $user_conn->close();
 
     // Récupérer les ID des activités
     $activity_ids = array_map(function($item) {
@@ -199,6 +208,7 @@ function processDirectPayment() {
     // Enregistrer les achats dans la base de données
     $stmt = $conn->prepare("INSERT INTO activites_achats (user_id, activite_id) VALUES (?, ?)");
     $success = true;
+    $processed_activities = [];
 
     foreach ($activity_ids as $activity_id) {
         // Vérifier si l'utilisateur est déjà inscrit à cette activité
@@ -210,7 +220,9 @@ function processDirectPayment() {
         // Seulement ajouter si l'utilisateur n'est pas déjà inscrit
         if ($check_result->num_rows == 0) {
             $stmt->bind_param("ii", $user_id, $activity_id);
-            if (!$stmt->execute()) {
+            if ($stmt->execute()) {
+                $processed_activities[] = $activity_id;
+            } else {
                 $success = false;
                 break;
             }
@@ -224,7 +236,9 @@ function processDirectPayment() {
 
     echo json_encode([
         'success' => $success,
-        'message' => $success ? 'Paiement traité avec succès' : 'Erreur lors du traitement du paiement'
+        'message' => $success ? 'Paiement traité avec succès' : 'Erreur lors du traitement du paiement',
+        'processed_activities' => $processed_activities,
+        'card_used' => $card_id
     ]);
 }
 

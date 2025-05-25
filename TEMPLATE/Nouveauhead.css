@@ -1376,12 +1376,12 @@ footer a:hover {
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
     .dropdown-content {
-        background: #2a2a2a;
-        color: #e4d8c8;
+        background: #f6e6e6;
+        color: #75634c;
     }
     
     .dropdown-link {
-        color: #e4d8c8;
+        color: #9c805a;
     }
     
     .dropdown-link:hover {

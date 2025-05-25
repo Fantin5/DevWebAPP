@@ -39,16 +39,12 @@ if (isset($_GET['tag']) && !empty($_GET['tag'])) {
 
 // Handle multiple tag filters
 if (isset($_GET['tags']) && is_array($_GET['tags'])) {
-    $tagPlaceholders = str_repeat('?,', count($_GET['tags']));
-    $tagPlaceholders = rtrim($tagPlaceholders, ',');
-    
-    $where_clauses[] = "EXISTS (
-        SELECT 1 FROM activity_tags at2 
-        JOIN tag_definitions td2 ON at2.tag_definition_id = td2.id 
-        WHERE at2.activity_id = a.id AND td2.name IN ($tagPlaceholders)
-    )";
-    
     foreach ($_GET['tags'] as $tag) {
+        $where_clauses[] = "EXISTS (
+            SELECT 1 FROM activity_tags at2 
+            JOIN tag_definitions td2 ON at2.tag_definition_id = td2.id 
+            WHERE at2.activity_id = a.id AND td2.name = ?
+        )";
         $params[] = $tag;
         $types .= "s";
     }

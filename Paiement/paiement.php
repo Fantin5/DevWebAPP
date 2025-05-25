@@ -189,32 +189,37 @@ if (isset($_POST['pay_with_selected_card'])) {
     $result = $stmt->get_result();
     
     if ($result->num_rows == 0) {
+        $user_conn->close();
         echo json_encode(['success' => false, 'message' => 'Carte non trouvée']);
         exit;
     }
     
+    $stmt->close();
     $user_conn->close();
     
     // Traiter le panier
     if (isset($_POST['panier_json'])) {
-        $panier = json_decode($_POST['panier_json'], true);
+        // Decode HTML entities before parsing JSON
+        $panier_json = html_entity_decode($_POST['panier_json'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $panier = json_decode($panier_json, true);
         
         if (is_array($panier)) {
             $conn = new mysqli('localhost', 'root', '', 'activity');
-            if (!$conn->connect_error) {
-                $conn->query("CREATE TABLE IF NOT EXISTS activites_achats (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id INT NOT NULL,
-                    activite_id INT NOT NULL,
-                    date_achat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (activite_id) REFERENCES activites(id)
-                )");
-                
+            if ($conn->connect_error) {
+                echo json_encode(['success' => false, 'message' => 'Erreur de connexion à la base de données']);
+                exit;
+            }
+            
+            // Start transaction
+            $conn->begin_transaction();
+            
+            try {
                 $stmt = $conn->prepare("INSERT INTO activites_achats (user_id, activite_id) VALUES (?, ?)");
                 
                 foreach ($panier as $item) {
-                    $activity_id = $item['id'];
+                    $activity_id = intval($item['id']);
                     
+                    // Check if already purchased
                     $check_stmt = $conn->prepare("SELECT id FROM activites_achats WHERE user_id = ? AND activite_id = ?");
                     $check_stmt->bind_param("ii", $user_id, $activity_id);
                     $check_stmt->execute();
@@ -222,21 +227,33 @@ if (isset($_POST['pay_with_selected_card'])) {
                     
                     if ($check_result->num_rows == 0) {
                         $stmt->bind_param("ii", $user_id, $activity_id);
-                        $stmt->execute();
+                        if (!$stmt->execute()) {
+                            throw new Exception("Erreur lors de l'insertion de l'activité");
+                        }
                     }
                     
                     $check_stmt->close();
                 }
                 
-                $stmt->close();
+                // If we get here, all inserts were successful
+                $conn->commit();
+                $_SESSION['panier'] = [];
+                
+                echo json_encode(['success' => true, 'message' => 'Paiement traité avec succès']);
+                exit;
+                
+            } catch (Exception $e) {
+                $conn->rollback();
+                echo json_encode(['success' => false, 'message' => 'Erreur lors du traitement: ' . $e->getMessage()]);
+                exit;
+            } finally {
+                if (isset($stmt)) $stmt->close();
                 $conn->close();
             }
-            
-            $_SESSION['panier'] = [];
         }
     }
     
-    echo json_encode(['success' => true, 'message' => 'Paiement traité avec succès']);
+    echo json_encode(['success' => false, 'message' => 'Format de panier invalide']);
     exit;
 }
 
