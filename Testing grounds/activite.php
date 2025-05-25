@@ -3497,11 +3497,7 @@ document.addEventListener('keydown', function(e) {
 
 <?php
 // Close database connections
-$stmt->close();
 $conn->close();
-if (isset($user_stmt)) {
-    $user_stmt->close();
-}
 $user_conn->close();
 ?>
 <!-- cvq -->
