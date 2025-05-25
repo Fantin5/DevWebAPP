@@ -48,33 +48,34 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
       </div>
 
       <!-- Center section: Enhanced Navigation -->
-      <nav class="nav-links">
+<!-- Center section: Compact Navigation -->
+<nav class="nav-links">
         <ul>
           <li class="nav-item">
-            <a href="../Testing grounds/main.php" class="nav-link">
+            <a href="../Testing grounds/main.php" class="nav-link" title="Accueil">
               <i class="fa-solid fa-home nav-icon"></i>
               <span>Accueil</span>
               <div class="nav-ripple"></div>
             </a>
           </li>
           <li class="nav-item">
-            <a href="../Concept/concept.php" class="nav-link">
+            <a href="../Concept/concept.php" class="nav-link" title="Notre concept">
               <i class="fa-solid fa-lightbulb nav-icon"></i>
               <span>Concept</span>
               <div class="nav-ripple"></div>
             </a>
           </li>
           <li class="nav-item">
-            <a href="../Testing grounds/activites.php" class="nav-link">
+            <a href="../Testing grounds/activites.php" class="nav-link" title="Découvrir les activités">
               <i class="fa-solid fa-search nav-icon"></i>
-              <span>Découvrir les activités</span>
+              <span>Découvrir</span>
               <div class="nav-ripple"></div>
             </a>
           </li>
           <li class="nav-item special">
-            <a href="../Testing grounds/jenis.php" class="nav-link create-activity">
+            <a href="../Testing grounds/jenis.php" class="nav-link create-activity" title="Créer une activité">
               <i class="fa-solid fa-plus nav-icon"></i>
-              <span>Créer une activité</span>
+              <span>Créer</span>
               <div class="nav-ripple"></div>
               <div class="glow-effect"></div>
             </a>

@@ -71,6 +71,21 @@ if ($result_registered && $result_registered->num_rows > 0) {
 }
 
 $stmt_registered->close();
+
+// Count user reviews
+$reviews_count = 0;
+$sql_reviews = "SELECT COUNT(*) as count FROM evaluations WHERE utilisateur_id = ?";
+$stmt_reviews = $conn_activity->prepare($sql_reviews);
+$stmt_reviews->bind_param("i", $user_id);
+$stmt_reviews->execute();
+$result_reviews = $stmt_reviews->get_result();
+
+if ($result_reviews && $result_reviews->num_rows > 0) {
+    $row_reviews = $result_reviews->fetch_assoc();
+    $reviews_count = $row_reviews['count'];
+}
+
+$stmt_reviews->close();
 $conn_activity->close();
 
 // Handle profile update
@@ -1157,7 +1172,7 @@ input:checked + .slider:before {
                 <h2 class="dashboard-card-title">Mes Avis</h2>
             </div>
             
-            <div class="activities-count" id="reviews-count">0</div>
+            <div class="activities-count" id="reviews-count"><?php echo $reviews_count; ?></div>
             <p class="center-text">Avis laissés par vous</p>
             
             <a href="../Testing grounds/mes_avis_page.php" class="activity-link">
@@ -1398,6 +1413,12 @@ document.addEventListener('DOMContentLoaded', function() {
         dashboardCartCount.textContent = cart.length;
     }
     
+    // Set initial reviews count from PHP
+    const reviewsCountElement = document.getElementById('reviews-count');
+    if (reviewsCountElement) {
+        reviewsCountElement.textContent = <?php echo $reviews_count; ?>;
+    }
+    
     // Edit profile modal functionality
     const editProfileModal = document.getElementById('edit-profile-modal');
     const openEditProfileBtn = document.getElementById('edit-profile-btn');
@@ -1457,31 +1478,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 this.value = `${day}/${month}/${year}`;
             }
-            // Update reviews count
-function updateReviewsCount() {
-    fetch('review_system.php?action=get_user_reviews_count', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const countElement = document.getElementById('reviews-count');
-            if (countElement) {
-                countElement.textContent = data.count;
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching reviews count:', error);
-    });
-}
-
-// Call it once on page load
-updateReviewsCount();
         });
     }
     
