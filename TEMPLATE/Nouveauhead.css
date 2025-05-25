@@ -1376,7 +1376,7 @@ footer a:hover {
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
     .dropdown-content {
-        background: #2a2a2a;
+        background: #f6e6e6;
         color: #e4d8c8;
     }
     
