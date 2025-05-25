@@ -1148,7 +1148,27 @@ input:checked + .slider:before {
                     <i class="fa-solid fa-compass"></i> Explorer d'autres activités
                 </a>
             </div>
+                <div class="dashboard-card">
+            <div class="card-decoration"></div>
+            <div class="dashboard-card-header">
+                <div class="dashboard-card-icon">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <h2 class="dashboard-card-title">Mes Avis</h2>
+            </div>
             
+            <div class="activities-count" id="reviews-count">0</div>
+            <p class="center-text">Avis laissés par vous</p>
+            
+            <a href="../Testing grounds/mes_avis_page.php" class="activity-link">
+                <i class="fa-solid fa-comments"></i> Voir mes avis
+            </a>
+            
+            <a href="../Testing grounds/activites_a_evaluer_page.php" class="activity-link">
+                <i class="fa-solid fa-pen-to-square"></i> Activités à évaluer
+            </a>
+        </div>
+                
             <!-- My Cart Card -->
             <div class="dashboard-card">
                 <div class="card-decoration"></div>
@@ -1221,7 +1241,6 @@ input:checked + .slider:before {
         </div>
         <h2 class="dashboard-card-title">Messagerie</h2>
     </div>
-    
     <div class="activities-count">
         <span id="conversations-count">0</span>
     </div>
@@ -1438,6 +1457,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 this.value = `${day}/${month}/${year}`;
             }
+            // Update reviews count
+function updateReviewsCount() {
+    fetch('review_system.php?action=get_user_reviews_count', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const countElement = document.getElementById('reviews-count');
+            if (countElement) {
+                countElement.textContent = data.count;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching reviews count:', error);
+    });
+}
+
+// Call it once on page load
+updateReviewsCount();
         });
     }
     
