@@ -331,7 +331,7 @@ Ce lien expirera dans 24 heures.';
       </div>
    </main>
 
-   <?php include '../TEMPLATE/footer.php'; ?>
+ 
    
    <script src="switch.js"></script>
 </body>
