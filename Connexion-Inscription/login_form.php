@@ -215,8 +215,8 @@ Ce lien expirera dans 24 heures.';
     
    <main class="login-page-main">
       <div class="switch">
-        <div class="left-curved-container filled" id="box1">Se connecter</div>
-<div class="right-curved-container empty" id="box2">Créer un compte</div>
+         <div class="left-curved-container filled" id="box1">Se connecter</div>
+         <div class="right-curved-container empty" id="box2">Créer un compte</div>
       </div>
 
       <!-- Affichage "Se connecter" -->
@@ -229,24 +229,24 @@ Ce lien expirera dans 24 heures.';
                }
             }
             ?>
-            <div class="formulaire" >
+            <div class="formulaire">
                <div class="column column--gap">
                   <div class="curved-container">
-                     <span class="label">E-mail</span>
-                     <input type="email" name="email" required class="input-zone">
+                     <span class="label">📧 E-mail</span>
+                     <input type="email" name="email" required class="input-zone" placeholder="Entrez votre adresse email">
                   </div>
                   <div class="curved-container">
                      <div class="row centered">
                         <div class="column">
-                           <span class="label">Mot de passe</span>
-                           <input id="login-password" type="password" name="password" required class="input-zone">
+                           <span class="label">🔒 Mot de passe</span>
+                           <input id="login-password" type="password" name="password" required class="input-zone" placeholder="Entrez votre mot de passe">
                         </div>
                         <div style="display:inline-block">
-                           <i id="toggle-login-password" class="fa-regular fa-eye fa-xl" style="color: #828977"></i>
+                           <i id="toggle-login-password" class="fa-regular fa-eye fa-xl"></i>
                         </div>
                      </div>
                   </div>
-                  <a href="forgot_password.php" class="forgot-password">Mot de passe oublié</a>
+                  <a href="forgot_password.php" class="forgot-password">🔐 Mot de passe oublié ?</a>
                </div>
                <input type="submit" name="login_submit" value="Se connecter" class="button">
             </div>
@@ -256,14 +256,14 @@ Ce lien expirera dans 24 heures.';
       <!-- Affichage "Créer un compte" -->
       <div id="register-section" class="form-container">
          <?php if(isset($register_success)): ?>
-            <div class="success-message"><?php echo $register_success; ?></div>
+            <div class="success-message">✅ <?php echo $register_success; ?></div>
          <?php endif; ?>
          
          <form action="" method="post" onsubmit="return validateForm()">
             <?php
             if(isset($register_error)){
                foreach($register_error as $error){
-                   echo '<span class="error-msg">'.$error.'</span>';
+                   echo '<span class="error-msg">❌ '.$error.'</span>';
                }
             }
             ?>
@@ -272,28 +272,28 @@ Ce lien expirera dans 24 heures.';
                   <div class="column column--gap">
                      <div class="row row--full">
                         <div class="curved-container">
-                              <span class="label">Nom</span>
-                              <input type="text" name="name" required class="input-zone">
+                           <span class="label">👤 Nom</span>
+                           <input type="text" name="name" required class="input-zone" placeholder="Votre nom de famille">
                         </div>
                         <div class="curved-container">
-                              <span class="label">Prénom</span>
-                              <input type="text" name="first_name" required class="input-zone">
+                           <span class="label">👤 Prénom</span>
+                           <input type="text" name="first_name" required class="input-zone" placeholder="Votre prénom">
                         </div>
                      </div>
                      <div class="row row--full">
                         <div class="curved-container">
-                              <span class="label">Date de naissance</span>
-                              <input type="date" name="birthday" required class="input-zone">
+                           <span class="label">📅 Date de naissance</span>
+                           <input type="date" name="birthday" required class="input-zone">
                         </div>
                         <div class="curved-container">
-                              <span class="label">Tel</span>
-                              <input type="tel" name="phone_nb" pattern="[0-9]{10}" title="Entrez un numéro à 10 chiffres." required class="input-zone">
+                           <span class="label">📞 Téléphone</span>
+                           <input type="tel" name="phone_nb" pattern="[0-9]{10}" title="Entrez un numéro à 10 chiffres." required class="input-zone" placeholder="0123456789">
                         </div>
                      </div>
                      
                      <div class="curved-container">
-                        <span class="label">E-mail</span>
-                        <input type="email" name="email" required class="input-zone">
+                        <span class="label">📧 E-mail</span>
+                        <input type="email" name="email" required class="input-zone" placeholder="votre.email@exemple.com">
                      </div>
                   </div>
                
@@ -301,11 +301,11 @@ Ce lien expirera dans 24 heures.';
                      <div class="curved-container">
                         <div class="row centered">
                            <div class="column">
-                              <span class="label">Mot de passe</span>
-                              <input id="register-password" type="password" name="password" required class="input-zone">
+                              <span class="label">🔒 Mot de passe</span>
+                              <input id="register-password" type="password" name="password" required class="input-zone" placeholder="Créez un mot de passe sécurisé">
                            </div>
                            <div style="display:inline-block">
-                              <i id="toggle-register-password" class="fa-regular fa-eye fa-xl" style="color: #828977"></i>
+                              <i id="toggle-register-password" class="fa-regular fa-eye fa-xl"></i>
                            </div>
                         </div>
                      </div>
@@ -313,18 +313,16 @@ Ce lien expirera dans 24 heures.';
                      <div class="curved-container">
                         <div class="row centered">
                            <div class="column">
-                              <span class="label">Confirmation du mot de passe</span>
-                              <input id="register-confirm" type="password" name="cpassword" required class="input-zone">
+                              <span class="label">🔒 Confirmation</span>
+                              <input id="register-confirm" type="password" name="cpassword" required class="input-zone" placeholder="Confirmez votre mot de passe">
                            </div>
                            <div style="display:inline-block">
-                              <i id="toggle-register-confirm" class="fa-regular fa-eye fa-xl" style="color: #828977"></i>
+                              <i id="toggle-register-confirm" class="fa-regular fa-eye fa-xl"></i>
                            </div>
                         </div>
                      </div>
-                     <p id="password-validation-message" class="password-rules">
-                     </p>
-                     <p id="confirm-validation-message" class="password-rules">
-                     </p>
+                     <p id="password-validation-message" class="password-rules"></p>
+                     <p id="confirm-validation-message" class="password-rules"></p>
                   </div>
                </div>
                <input type="submit" name="register_submit" value="Créer un compte" class="button">

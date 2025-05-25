@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cool Connection Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2d5016 0%, #3a5f2a 25%, #4a7c59 50%, #556b2f 75%, #2f4f2f 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .auth-container {
+            width: 400px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(144, 238, 144, 0.2);
+            box-shadow: 0 8px 32px rgba(46, 125, 50, 0.25);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .form-header {
+            background: linear-gradient(45deg, #228B22, #32CD32, #9ACD32);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+
+        .form-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .form-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            transition: all 0.3s ease;
+        }
+
+        .form-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            margin: 20px;
+            padding: 4px;
+            position: relative;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .toggle-btn.active {
+            color: #2ecc71;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            height: calc(100% - 8px);
+            background: white;
+            border-radius: 20px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-slider.register {
+            transform: translateX(100%);
+        }
+
+        .form-container {
+            position: relative;
+            height: 350px;
+            overflow: hidden;
+        }
+
+        .form {
+            position: absolute;
+            width: 100%;
+            padding: 30px;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .form.login {
+            transform: translateX(0);
+        }
+
+        .form.login.slide-out {
+            transform: translateX(-100%);
+        }
+
+        .form.register {
+            transform: translateX(100%);
+        }
+
+        .form.register.slide-in {
+            transform: translateX(0);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid rgba(144, 238, 144, 0.3);
+            border-radius: 25px;
+            background: rgba(245, 255, 250, 0.95);
+            outline: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: #32CD32;
+            background: #f0fff0;
+            box-shadow: 0 0 0 3px rgba(50, 205, 50, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .input-field::placeholder {
+            color: #556b2f;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #228B22, #32CD32, #9ACD32);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(50, 205, 50, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .form-footer {
+            text-align: center;
+            padding: 20px;
+            color: rgba(240, 255, 240, 0.9);
+            font-size: 14px;
+        }
+
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #228B22, #32CD32);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(50, 205, 50, 0.3);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .success-message.show {
+            transform: translateX(0);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-container {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .input-group:nth-child(1) { animation-delay: 0.1s; }
+        .input-group:nth-child(2) { animation-delay: 0.2s; }
+        .input-group:nth-child(3) { animation-delay: 0.3s; }
+        .input-group:nth-child(4) { animation-delay: 0.4s; }
+
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .shape {
+            position: absolute;
+            background: rgba(144, 238, 144, 0.15);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+            background: rgba(50, 205, 50, 0.1);
+        }
+
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 10%;
+            animation-delay: 2s;
+            background: rgba(154, 205, 50, 0.1);
+        }
+
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 20%;
+            left: 20%;
+            animation-delay: 4s;
+            background: rgba(34, 139, 34, 0.1);
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <div class="auth-container">
+        <div class="form-header">
+            <h1 class="form-title" id="formTitle">Welcome Back</h1>
+            <p class="form-subtitle" id="formSubtitle">Sign in to your account</p>
+        </div>
+
+        <div class="form-toggle">
+            <button class="toggle-btn active" id="loginToggle">Login</button>
+            <button class="toggle-btn" id="registerToggle">Register</button>
+            <div class="toggle-slider" id="toggleSlider"></div>
+        </div>
+
+        <div class="form-container">
+            <form class="form login" id="loginForm">
+                <div class="input-group">
+                    <input type="email" class="input-field" placeholder="📧 Email Address" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" class="input-field" placeholder="🔒 Password" required>
+                </div>
+                <button type="submit" class="submit-btn">Sign In</button>
+            </form>
+
+            <form class="form register" id="registerForm">
+                <div class="input-group">
+                    <input type="text" class="input-field" placeholder="👤 Full Name" required>
+                </div>
+                <div class="input-group">
+                    <input type="email" class="input-field" placeholder="📧 Email Address" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" class="input-field" placeholder="🔒 Password" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" class="input-field" placeholder="🔒 Confirm Password" required>
+                </div>
+                <button type="submit" class="submit-btn">Create Account</button>
+            </form>
+        </div>
+
+        <div class="form-footer">
+            <p>Secure connection with end-to-end encryption 🔐</p>
+        </div>
+    </div>
+
+    <div class="success-message" id="successMessage">
+        ✅ Success! Welcome to the messaging system!
+    </div>
+
+    <script>
+        const loginToggle = document.getElementById('loginToggle');
+        const registerToggle = document.getElementById('registerToggle');
+        const toggleSlider = document.getElementById('toggleSlider');
+        const formTitle = document.getElementById('formTitle');
+        const formSubtitle = document.getElementById('formSubtitle');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const successMessage = document.getElementById('successMessage');
+
+        let isLoginMode = true;
+
+        function switchToLogin() {
+            if (!isLoginMode) {
+                isLoginMode = true;
+                
+                loginToggle.classList.add('active');
+                registerToggle.classList.remove('active');
+                toggleSlider.classList.remove('register');
+                
+                formTitle.textContent = 'Welcome Back';
+                formSubtitle.textContent = 'Sign in to your account';
+                
+                registerForm.classList.remove('slide-in');
+                loginForm.classList.remove('slide-out');
+            }
+        }
+
+        function switchToRegister() {
+            if (isLoginMode) {
+                isLoginMode = false;
+                
+                registerToggle.classList.add('active');
+                loginToggle.classList.remove('active');
+                toggleSlider.classList.add('register');
+                
+                formTitle.textContent = 'Join Us';
+                formSubtitle.textContent = 'Create your new account';
+                
+                loginForm.classList.add('slide-out');
+                registerForm.classList.add('slide-in');
+            }
+        }
+
+        function showSuccessMessage() {
+            successMessage.classList.add('show');
+            setTimeout(() => {
+                successMessage.classList.remove('show');
+                // Redirect to messaging page
+                setTimeout(() => {
+                    window.location.href = 'messagerie.html';
+                }, 500);
+            }, 2000);
+        }
+
+        loginToggle.addEventListener('click', switchToLogin);
+        registerToggle.addEventListener('click', switchToRegister);
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            showSuccessMessage();
+        });
+
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const passwords = registerForm.querySelectorAll('input[type="password"]');
+            if (passwords[0].value !== passwords[1].value) {
+                alert('Passwords do not match!');
+                return;
+            }
+            showSuccessMessage();
+        });
+
+        // Add floating animation to input fields
+        document.querySelectorAll('.input-field').forEach(field => {
+            field.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+            });
+            
+            field.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

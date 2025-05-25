@@ -4,40 +4,91 @@ function swapStyles() {
     let loginSection = document.getElementById("login-section");
     let registerSection = document.getElementById("register-section");
 
-    // Échanger les classes pour changer la couleur
+    // Toggle active states
     box1.classList.toggle("filled");
     box1.classList.toggle("empty");
     box2.classList.toggle("filled");
     box2.classList.toggle("empty");
 
-    // Vérifier quel bouton est actif et afficher la section correspondante
-    if (box1.classList.contains("filled")) {
-        loginSection.style.display = "none";
-        registerSection.style.display = "flex";
+    // Smooth transition between forms
+    if (box2.classList.contains("filled")) {
+        // Switching to register
+        loginSection.style.transform = "translateX(-100%)";
+        loginSection.style.opacity = "0";
+        
+        setTimeout(() => {
+            loginSection.style.display = "none";
+            registerSection.style.display = "flex";
+            registerSection.style.transform = "translateX(100%)";
+            registerSection.style.opacity = "0";
+            
+            setTimeout(() => {
+                registerSection.style.transform = "translateX(0)";
+                registerSection.style.opacity = "1";
+            }, 50);
+        }, 200);
+        
+        // Update pointer events
         box1.style.pointerEvents = "auto";
         box2.style.pointerEvents = "none";
-
     } else {
-        loginSection.style.display = "flex";
-        registerSection.style.display = "none";
+        // Switching to login
+        registerSection.style.transform = "translateX(100%)";
+        registerSection.style.opacity = "0";
+        
+        setTimeout(() => {
+            registerSection.style.display = "none";
+            loginSection.style.display = "flex";
+            loginSection.style.transform = "translateX(-100%)";
+            loginSection.style.opacity = "0";
+            
+            setTimeout(() => {
+                loginSection.style.transform = "translateX(0)";
+                loginSection.style.opacity = "1";
+            }, 50);
+        }, 200);
+        
+        // Update pointer events
         box1.style.pointerEvents = "none";
         box2.style.pointerEvents = "auto";
     }
 }
 
-
-
-// Masquer la section "Créer un compte" au chargement
+// Initialize page state and event listeners
 document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("register-section").style.display = "none";
-    // Rendre le premier bouton non cliquable (par défaut actif)
-    document.getElementById("box1").style.pointerEvents = "none";
+    // Set initial state
+    const loginSection = document.getElementById("login-section");
+    const registerSection = document.getElementById("register-section");
+    const box1 = document.getElementById("box1");
+    const box2 = document.getElementById("box2");
+    
+    // Initialize login section as active
+    loginSection.style.display = "flex";
+    loginSection.style.transform = "translateX(0)";
+    loginSection.style.opacity = "1";
+    loginSection.style.transition = "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+    
+    // Initialize register section as hidden
+    registerSection.style.display = "none";
+    registerSection.style.transform = "translateX(100%)";
+    registerSection.style.opacity = "0";
+    registerSection.style.transition = "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+    
+    // Set initial button states
+    box1.classList.add("filled");
+    box1.classList.remove("empty");
+    box2.classList.add("empty");
+    box2.classList.remove("filled");
+    
+    // Set initial pointer events
+    box1.style.pointerEvents = "none";
+    box2.style.pointerEvents = "auto";
 
-    // Gestion des boutons de bascule
-    document.getElementById("box1").addEventListener("click", swapStyles);
-    document.getElementById("box2").addEventListener("click", swapStyles);
+    // Add event listeners for switch buttons
+    box1.addEventListener("click", swapStyles);
+    box2.addEventListener("click", swapStyles);
 
-    // Affichage / masquage du mot de passe (connexion)
+    // Password toggle functionality
     const toggleConfigs = [
         { toggleId: "toggle-login-password", inputId: "login-password" },
         { toggleId: "toggle-register-password", inputId: "register-password" },
@@ -57,77 +108,60 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-
-
-    // Variables globales pour la validation du mot de passe
-        // Variables pour les champs de mot de passe
+    // Password validation functionality
     const passwordInput = document.getElementById("register-password");
     const confirmInput = document.getElementById("register-confirm");
-        // Variables pour les messages de validation
     const passwordValidationMessage = document.getElementById("password-validation-message");
     const confirmValidationMessage = document.getElementById("confirm-validation-message");
     
-    // Ajout d'écouteurs d'événements pour la validation du mot de passe
-    passwordInput.addEventListener('input', validatePasswordFormat);
-    passwordInput.addEventListener('blur', validatePasswordFormat);
-    confirmInput.addEventListener('input', validateForm);
-    confirmInput.addEventListener('blur', validateForm);
+    if (passwordInput && confirmInput && passwordValidationMessage && confirmValidationMessage) {
+        passwordInput.addEventListener('input', validatePasswordFormat);
+        passwordInput.addEventListener('blur', validatePasswordFormat);
+        confirmInput.addEventListener('input', validateForm);
+        confirmInput.addEventListener('blur', validateForm);
 
-    // Validation du formulaire d'inscription
-    function validateForm() {
-        console.log("confirmValidationMessage:", confirmValidationMessage);
-        const password = passwordInput.value.trim();
-        const confirmPassword = confirmInput.value.trim();
-    
-        if (password && confirmPassword && password !== confirmPassword) {
-            confirmValidationMessage.textContent = "Les mots de passe ne correspondent pas.";
-            confirmValidationMessage.style.color = "#e74c3c";
-            confirmInput.style.borderColor = "#e74c3c";
-            return false;
-        } else if (confirmPassword && password === confirmPassword) {
-            confirmValidationMessage.textContent = "✓ Les mots de passe correspondent";
-            confirmValidationMessage.style.color = "#2ecc71";
-            confirmInput.style.borderColor = "#2ecc71";
-            return true;
-        } else {
-            confirmValidationMessage.textContent = "";
-            confirmInput.style.borderColor = ""; // ou un style neutre
-            return false;
+        function validateForm() {
+            const password = passwordInput.value.trim();
+            const confirmPassword = confirmInput.value.trim();
+        
+            if (password && confirmPassword && password !== confirmPassword) {
+                confirmValidationMessage.textContent = "❌ Les mots de passe ne correspondent pas";
+                confirmValidationMessage.style.color = "#ff4757";
+                confirmInput.style.borderColor = "#ff4757";
+                return false;
+            } else if (confirmPassword && password === confirmPassword) {
+                confirmValidationMessage.textContent = "✅ Les mots de passe correspondent";
+                confirmValidationMessage.style.color = "#2ed573";
+                confirmInput.style.borderColor = "#2ed573";
+                return true;
+            } else {
+                confirmValidationMessage.textContent = "";
+                confirmInput.style.borderColor = "";
+                return false;
+            }
+        }
+
+        function validatePasswordFormat() {
+            const passwordValue = passwordInput.value.trim();
+            const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+        
+            if (!passwordValue) {
+                passwordValidationMessage.textContent = "⚠️ Ce champ est requis";
+                passwordValidationMessage.style.color = "#ff4757";
+                passwordInput.style.borderColor = "#ff4757";
+            } else if (passwordRegex.test(passwordValue)) {
+                passwordValidationMessage.textContent = "✅ Mot de passe valide";
+                passwordValidationMessage.style.color = "#2ed573";
+                passwordInput.style.borderColor = "#2ed573";
+            } else {
+                passwordValidationMessage.textContent = "⚠️ Minimum 8 caractères avec majuscule, minuscule, chiffre et caractère spécial";
+                passwordValidationMessage.style.color = "#ff4757";
+                passwordInput.style.borderColor = "#ff4757";
+            }
+        
+            validateForm();
         }
     }
-
-
-    function validatePasswordFormat() {
-        const passwordValue = passwordInput.value.trim();
-        let isValid = false;
-    
-        const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
-    
-        if (!passwordValue) {
-            passwordValidationMessage.textContent = "Ce champ est requis.";
-            passwordValidationMessage.style.color = "#e74c3c";
-            passwordInput.style.borderColor = "#e74c3c";
-            isValid = false;
-        } else if (passwordRegex.test(passwordValue)) {
-            passwordValidationMessage.textContent = "✓ Mot de passe valide";
-            passwordValidationMessage.style.color = "#2ecc71";
-            passwordInput.style.borderColor = "#2ecc71";
-            isValid = true;
-        } else {
-            passwordValidationMessage.textContent = "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.";
-            passwordValidationMessage.style.color = "#e74c3c";
-            passwordInput.style.borderColor = "#e74c3c";
-            isValid = false;
-        }
-    
-        // Toujours revalider la correspondance après le format
-        validateForm();
-    
-        return isValid;
-    }
-
-
-
 });
 
 

@@ -464,6 +464,7 @@ function formatMessageTime($timestamp) {
             margin-bottom: 15px;
             position: relative;
             word-wrap: break-word;
+            transition: all 0.3s ease-out;
         }
         
         .message-bubble.mine {
@@ -476,6 +477,29 @@ function formatMessageTime($timestamp) {
             background-color: #f1f1f1;
             border-bottom-left-radius: 5px;
             align-self: flex-start;
+        }
+        
+        /* Animation for new messages */
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message-input:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .send-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .message-time {
@@ -889,6 +913,14 @@ function formatMessageTime($timestamp) {
                     this.style.height = 'auto';
                     this.style.height = (this.scrollHeight) + 'px';
                 });
+                
+                // Allow Enter to send message, Shift+Enter for new line
+                textarea.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
             }
             
             // Scroll to bottom of messages
@@ -909,63 +941,146 @@ function formatMessageTime($timestamp) {
                 });
             }
             
-            // Form submission with AJAX
+            // Function to get current time
+            function getCurrentTime() {
+                const now = new Date();
+                return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            
+            // Function to add message to UI immediately
+            function addMessageToUI(messageText, messageId = null, timestamp = null) {
+                const messageContentDiv = document.getElementById('message-content');
+                if (!messageContentDiv) return;
+                
+                const messageBubble = document.createElement('div');
+                messageBubble.className = 'message-bubble mine';
+                if (messageId) {
+                    messageBubble.setAttribute('data-id', messageId);
+                }
+                if (timestamp) {
+                    messageBubble.setAttribute('data-timestamp', timestamp);
+                }
+                
+                // Format message with line breaks
+                const formattedText = messageText.replace(/\n/g, '<br>');
+                
+                messageBubble.innerHTML = `
+                    ${formattedText}
+                    <div class="message-time">${getCurrentTime()}</div>
+                `;
+                
+                // Add animation
+                messageBubble.style.opacity = '0';
+                messageBubble.style.transform = 'translateY(20px)';
+                
+                // Remove empty state if it exists
+                const emptyState = messageContentDiv.querySelector('.empty-state');
+                if (emptyState) {
+                    emptyState.remove();
+                }
+                
+                // Add to content
+                messageContentDiv.appendChild(messageBubble);
+                
+                // Animate in
+                setTimeout(() => {
+                    messageBubble.style.transition = 'all 0.3s ease-out';
+                    messageBubble.style.opacity = '1';
+                    messageBubble.style.transform = 'translateY(0)';
+                }, 10);
+                
+                // Scroll to bottom
+                messageContentDiv.scrollTop = messageContentDiv.scrollHeight;
+            }
+            
+            // Function to send message
+            function sendMessage() {
+                const messageInput = document.getElementById('message-input');
+                const sendButton = document.querySelector('.send-button');
+                const messageForm = document.getElementById('message-form');
+                
+                if (!messageInput || !messageForm) return;
+                
+                const messageContent = messageInput.value.trim();
+                if (!messageContent) return;
+                
+                // Disable input and button
+                messageInput.disabled = true;
+                if (sendButton) {
+                    sendButton.disabled = true;
+                    sendButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                }
+                
+                // Add message to UI immediately for better UX
+                addMessageToUI(messageContent);
+                
+                // Clear input immediately
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+                
+                // Send to server
+                const formData = new FormData(messageForm);
+                formData.set('message_content', messageContent); // Ensure we use the trimmed content
+                
+                fetch('message_api.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Update the message with proper data attributes
+                        const messages = document.querySelectorAll('.message-bubble.mine');
+                        const lastMessage = messages[messages.length - 1];
+                        if (lastMessage && !lastMessage.getAttribute('data-id')) {
+                            lastMessage.setAttribute('data-id', data.message_id);
+                            lastMessage.setAttribute('data-timestamp', data.timestamp);
+                            // Update time with server time
+                            const timeElement = lastMessage.querySelector('.message-time');
+                            if (timeElement && data.formatted_time) {
+                                timeElement.textContent = data.formatted_time;
+                            }
+                        }
+                    } else {
+                        console.error('API Error:', data);
+                        // Could show a retry option or error indicator
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch Error:', error);
+                    // Could show a retry option or error indicator
+                })
+                .finally(() => {
+                    // Re-enable input and button
+                    messageInput.disabled = false;
+                    if (sendButton) {
+                        sendButton.disabled = false;
+                        sendButton.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+                    }
+                    messageInput.focus();
+                });
+            }
+            
+            // Form submission handler
             const messageForm = document.getElementById('message-form');
             if (messageForm) {
                 messageForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    
-                    const formData = new FormData(this);
-                    const messageInput = document.getElementById('message-input');
-                    
-                    // Simple validation
-                    const messageContent = messageInput.value.trim();
-                    if (!messageContent) {
-                        return false;
-                    }
-                    
-                    fetch('message_api.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Add message to UI
-                            const messageContentDiv = document.getElementById('message-content');
-                            const messageBubble = document.createElement('div');
-                            messageBubble.className = 'message-bubble mine';
-                            messageBubble.setAttribute('data-id', data.message_id);
-                            
-                            // Format message with line breaks
-                            const messageText = messageContent.replace(/\n/g, '<br>');
-                            
-                            messageBubble.innerHTML = `
-                                ${messageText}
-                                <div class="message-time">À l'instant</div>
-                            `;
-                            
-                            // Add to content and scroll to bottom
-                            messageContentDiv.appendChild(messageBubble);
-                            messageContentDiv.scrollTop = messageContentDiv.scrollHeight;
-                            
-                            // Clear input
-                            messageInput.value = '';
-                            messageInput.style.height = 'auto';
-                            
-                            // Remove empty state if it exists
-                            const emptyState = messageContentDiv.querySelector('.empty-state');
-                            if (emptyState) {
-                                emptyState.remove();
-                            }
-                        } else {
-                            alert('Erreur lors de l\'envoi du message: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Une erreur est survenue lors de l\'envoi du message.');
-                    });
+                    sendMessage();
+                });
+            }
+            
+            // Send button click handler
+            const sendButton = document.querySelector('.send-button');
+            if (sendButton) {
+                sendButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    sendMessage();
                 });
             }
             
@@ -981,12 +1096,10 @@ function formatMessageTime($timestamp) {
                 const messages = messageContentDiv.querySelectorAll('.message-bubble');
                 let lastTimestamp = '';
                 if (messages.length > 0) {
-                    // Try to get the timestamp from the last message's data attribute
-                    // If not set, use the current server time which will be handled server-side
                     lastTimestamp = messages[messages.length - 1].getAttribute('data-timestamp') || '';
                 }
                 
-                fetch(`message_api.php?action=check_new_messages&conversation_id=${conversationId}&last_timestamp=${lastTimestamp}`)
+                fetch(`message_api.php?action=check_new_messages&conversation_id=${conversationId}&last_timestamp=${encodeURIComponent(lastTimestamp)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.new_messages && data.new_messages.length > 0) {
@@ -996,7 +1109,7 @@ function formatMessageTime($timestamp) {
                             emptyState.remove();
                         }
                         
-                        // Add each new message
+                        // Add each new message with animation
                         data.new_messages.forEach(message => {
                             // Check if this message already exists
                             if (!document.querySelector(`.message-bubble[data-id="${message.id}"]`)) {
@@ -1006,11 +1119,23 @@ function formatMessageTime($timestamp) {
                                 messageBubble.setAttribute('data-timestamp', message.timestamp);
                                 
                                 messageBubble.innerHTML = `
-                                    ${message.message_content.replace(/\n/g, '<br>')}
+                                    ${message.message_content}
                                     <div class="message-time">${message.formatted_time}</div>
                                 `;
                                 
+                                // Add animation for incoming messages
+                                messageBubble.style.opacity = '0';
+                                messageBubble.style.transform = 'translateY(20px)';
+                                
                                 messageContentDiv.appendChild(messageBubble);
+                                
+                                // Animate in
+                                setTimeout(() => {
+                                    messageBubble.style.transition = 'all 0.3s ease-out';
+                                    messageBubble.style.opacity = '1';
+                                    messageBubble.style.transform = 'translateY(0)';
+                                }, 10);
+                                
                                 messageContentDiv.scrollTop = messageContentDiv.scrollHeight;
                             }
                         });
@@ -1021,9 +1146,9 @@ function formatMessageTime($timestamp) {
                 });
             }
             
-            // Check for new messages every 5 seconds
+            // Check for new messages every 3 seconds
             if (new URLSearchParams(window.location.search).get('conversation_id')) {
-                setInterval(checkNewMessages, 5000);
+                setInterval(checkNewMessages, 3000);
             }
 
             // Handle conversation deletion
@@ -1039,58 +1164,57 @@ function formatMessageTime($timestamp) {
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    // Get conversation ID
                     conversationToDelete = this.getAttribute('data-id');
-                    
-                    // Show confirmation dialog
                     deleteDialog.classList.add('show');
                 });
             });
 
             // Cancel delete
-            cancelDelete.addEventListener('click', function() {
-                deleteDialog.classList.remove('show');
-                conversationToDelete = null;
-            });
-
-            // Confirm delete
-            confirmDelete.addEventListener('click', function() {
-                if (conversationToDelete) {
-                    // Send delete request
-                    const formData = new FormData();
-                    formData.append('action', 'delete_conversation');
-                    formData.append('conversation_id', conversationToDelete);
-                    
-                    fetch('message_api.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Reload the page to show updated conversation list
-                            window.location.href = 'messagerie.php';
-                        } else {
-                            alert('Erreur: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Une erreur est survenue lors de la suppression de la conversation.');
-                    });
-                }
-                
-                // Hide dialog
-                deleteDialog.classList.remove('show');
-            });
-
-            // Close dialog when clicking outside
-            deleteDialog.addEventListener('click', function(e) {
-                if (e.target === deleteDialog) {
+            if (cancelDelete) {
+                cancelDelete.addEventListener('click', function() {
                     deleteDialog.classList.remove('show');
                     conversationToDelete = null;
-                }
-            });
+                });
+            }
+
+            // Confirm delete
+            if (confirmDelete) {
+                confirmDelete.addEventListener('click', function() {
+                    if (conversationToDelete) {
+                        const formData = new FormData();
+                        formData.append('action', 'delete_conversation');
+                        formData.append('conversation_id', conversationToDelete);
+                        
+                        fetch('message_api.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                window.location.href = 'messagerie.php';
+                            } else {
+                                console.error('Delete Error:', data);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                    }
+                    
+                    deleteDialog.classList.remove('show');
+                });
+            }
+
+            // Close dialog when clicking outside
+            if (deleteDialog) {
+                deleteDialog.addEventListener('click', function(e) {
+                    if (e.target === deleteDialog) {
+                        deleteDialog.classList.remove('show');
+                        conversationToDelete = null;
+                    }
+                });
+            }
         });
     </script>
 </body>

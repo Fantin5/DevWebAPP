@@ -274,7 +274,7 @@ if(isset($_POST['reset_submit'])){
                   passwordInput.style.borderColor = "#2ecc71";
                   isValid = true;
               } else {
-                  passwordValidationMessage.textContent = "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.";
+                  passwordValidationMessage.textContent = "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial (!@#$%^&*.).";
                   passwordValidationMessage.style.color = "#e74c3c";
                   passwordInput.style.borderColor = "#e74c3c";
                   isValid = false;
