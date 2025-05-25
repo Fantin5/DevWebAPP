@@ -1377,11 +1377,11 @@ footer a:hover {
 @media (prefers-color-scheme: dark) {
     .dropdown-content {
         background: #f6e6e6;
-        color: #e4d8c8;
+        color: #75634c;
     }
     
     .dropdown-link {
-        color: #e4d8c8;
+        color: #9c805a;
     }
     
     .dropdown-link:hover {
