@@ -1,184 +1,752 @@
-/* Styles spécifiques pour la page de connexion */
+/* Modern Green Login Page Styles - Compatible with existing site structure */
+/* NOTE: This CSS works with switch.js for proper tab switching behavior */
+/* IMPORTANT: Update your login_form.php to have correct initial classes: */
+/* <div class="left-curved-container filled" id="box1">Se connecter</div> */
+/* <div class="right-curved-container empty" id="box2">Créer un compte</div> */
+
+/* Import Google Fonts for modern typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Color variables for consistency */
+:root {
+   --primary-green: #6B8E6B;
+   --light-green: #8FBC8F;
+   --accent-green: #90EE90;
+   --success-green: #32CD32;
+   --earth-tone: #828977;
+   --cream: #E4D8C8;
+   --white-glass: rgba(255, 255, 255, 0.1);
+   --white-border: rgba(255, 255, 255, 0.2);
+   --shadow-light: 0 8px 25px rgba(107, 142, 107, 0.2);
+   --shadow-medium: 0 15px 35px rgba(107, 142, 107, 0.3);
+   --shadow-heavy: 0 25px 50px rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced body background for login page */
+body {
+   background: linear-gradient(135deg, #4A7C59 0%, #5D8A66 25%, #6B8E6B 50%, #7BA36E 75%, #8FBC8F 100%);
+   background-size: 400% 400%;
+   animation: gradientShift 15s ease infinite;
+   min-height: 100vh;
+   font-family: 'Inter', sans-serif;
+   position: relative;
+   overflow-x: hidden;
+}
+
+@keyframes gradientShift {
+   0% { background-position: 0% 50%; }
+   50% { background-position: 100% 50%; }
+   100% { background-position: 0% 50%; }
+}
+
+/* Floating particles background effect */
+body::before {
+   content: '';
+   position: fixed;
+   top: 0;
+   left: 0;
+   width: 100%;
+   height: 100%;
+   background-image: 
+      radial-gradient(circle at 20% 80%, rgba(69, 161, 99, 0.4) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(144, 238, 144, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(107, 142, 107, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 60% 20%, rgba(50, 205, 50, 0.2) 0%, transparent 40%);
+   z-index: -1;
+   animation: floatParticles 20s ease-in-out infinite;
+}
+
+@keyframes floatParticles {
+   0%, 100% { transform: translateY(0px) rotate(0deg); }
+   33% { transform: translateY(-20px) rotate(120deg); }
+   66% { transform: translateY(-40px) rotate(240deg); }
+}
+
+/* Main container styles */
 .login-page-main {
    margin: auto;
    display: flex;
    flex-direction: column;
    align-items: center;
-   margin-top: 100px;
-   padding-top: 20px;
-   gap: 50px;
+   margin-top: 120px; /* Account for header */
+   padding: 20px;
+   gap: 40px;
    width: 100%;
    max-width: 1200px;
    flex: 1 0 auto;
+   min-height: calc(100vh - 200px);
+   justify-content: center;
 }
 
-/* Switch styles */
+/* Enhanced Switch Design */
 .switch {
    position: relative;
    display: flex;
-   background-color: #828977;
-   color: #E4D8C8;
-   height: 52.4px;
-   width: 300px;
-   border-radius: 10px;
-   justify-content: center;
-   align-items: stretch;
-   text-align: center;
-   font-size: 1.2em;
-   cursor: default;
+   background: rgba(255, 255, 255, 0.15);
+   backdrop-filter: blur(25px);
+   border: 2px solid rgba(144, 238, 144, 0.4);
+   border-radius: 30px;
+   padding: 6px;
+   margin-bottom: 2rem;
+   box-shadow: 0 15px 35px rgba(69, 161, 99, 0.4);
+   transition: all 0.3s ease;
+   overflow: hidden;
+   width: 350px;
 }
 
-.left-curved-container {
-   width: 50%;
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   text-align: center;
-   background-color: #828977;
-   border-top-left-radius: 10px;
-   border-bottom-left-radius: 10px;
-   border-top-right-radius: 0%;   
-   border-bottom-right-radius: 0%;
+.switch:hover {
+   box-shadow: 0 20px 45px rgba(69, 161, 99, 0.6);
+   transform: translateY(-3px);
+   border-color: rgba(144, 238, 144, 0.6);
 }
 
+.switch::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: -100%;
+   width: 100%;
+   height: 100%;
+   background: linear-gradient(90deg, transparent, rgba(144, 238, 144, 0.3), transparent);
+   animation: switchShine 3s ease-in-out infinite;
+}
+
+@keyframes switchShine {
+   0%, 100% { left: -100%; }
+   50% { left: 100%; }
+}
+
+/* Switch container base styles */
+.left-curved-container,
 .right-curved-container {
    width: 50%;
    display: flex;
    align-items: center;
    justify-content: center;
    text-align: center;
-   background-color: #828977;
-   border-top-right-radius: 10px;
-   border-bottom-right-radius: 10px;
-   border-top-left-radius: 0%;   
-   border-bottom-left-radius: 0%;
-}
-
-/* Container styles */
-.filled {
-   background-color: transparent;
-   color: #E4D8C8;
-   border: 3.5px solid #828977;
+   padding: 12px 28px;
+   border-radius: 25px;
    cursor: pointer;
+   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+   font-weight: 600;
+   position: relative;
+   overflow: hidden;
+   font-family: 'Inter', sans-serif;
+   text-transform: uppercase;
+   letter-spacing: 0.5px;
+   font-size: 0.9rem;
 }
 
+/* Base states - will be overridden by filled/empty classes */
+.left-curved-container,
+.right-curved-container {
+   background: rgba(255, 255, 255, 0.1);
+   color: rgba(255, 255, 255, 0.9);
+}
+
+/* Active/Filled state */
+.filled {
+   background: linear-gradient(135deg, #45a163 0%, #32CD32 100%) !important;
+   color: white !important;
+   box-shadow: 0 10px 25px rgba(69, 161, 99, 0.6) !important;
+   transform: scale(1.05) !important;
+   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Inactive/Empty state */
 .empty {
-   background-color: #E4D8C8;
-   color: #828977;
-   border: 3.5px solid #828977;
-   cursor: default;
+   background: rgba(255, 255, 255, 0.1) !important;
+   color: rgba(255, 255, 255, 0.9) !important;
+   transform: scale(1) !important;
+   box-shadow: none !important;
+   text-shadow: none !important;
 }
 
-/* Form styles */
+.empty:hover {
+   background: rgba(144, 238, 144, 0.2) !important;
+   color: white !important;
+   transform: scale(1.02) !important;
+}
+
+.left-curved-container::before,
+.right-curved-container::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: -100%;
+   width: 100%;
+   height: 100%;
+   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+   transition: left 0.5s;
+}
+
+.left-curved-container:hover::before,
+.right-curved-container:hover::before {
+   left: 100%;
+}
+
+/* Enhanced Form Container */
 .form-container {
    width: 100%;
    display: flex;
    justify-content: center;
+   margin-top: 1rem;
 }
 
 .formulaire {
    display: flex;
    flex-direction: column;
-   gap: 40px;
+   gap: 2.5rem;
    flex-wrap: wrap;
-   max-width: 1000px;
+   max-width: 900px;
    justify-content: center;
    align-items: center;
    margin: 0 auto;
+   background: rgba(255, 255, 255, 0.12);
+   backdrop-filter: blur(40px);
+   border: 1px solid rgba(144, 238, 144, 0.3);
+   border-radius: 24px;
+   padding: 3rem;
+   box-shadow: 
+      0 25px 50px rgba(0, 0, 0, 0.3),
+      0 15px 35px rgba(69, 161, 99, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+   position: relative;
+   overflow: hidden;
 }
 
+.formulaire::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: 0;
+   right: 0;
+   height: 4px;
+   background: linear-gradient(90deg, #45a163, #32CD32, #90EE90, #32CD32, #45a163);
+   background-size: 200% 100%;
+   animation: gradientFlow 3s ease-in-out infinite;
+}
+
+@keyframes gradientFlow {
+   0%, 100% { background-position: 0% 50%; }
+   50% { background-position: 100% 50%; }
+}
+
+.form-container:hover .formulaire {
+   transform: translateY(-5px);
+   box-shadow: 
+      0 35px 70px rgba(0, 0, 0, 0.4),
+      0 20px 45px rgba(69, 161, 99, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+   border-color: rgba(144, 238, 144, 0.5);
+}
+
+/* Layout classes */
 .column {
    display: flex;
    flex-direction: column;
    width: 300px;
+   min-width: 280px;
 }
 
 .column--gap {
-   gap: 20px;
+   gap: 1.5rem;
 }
 
 .row {
    display: flex;
    flex-direction: row;
-   align-items: start;
+   align-items: flex-start;
 }
 
 .row--full {
    width: 100%;
-   gap: 20px;
+   gap: 1.5rem;
 }
 
 .row--auto {
    width: max-content;
-   gap: 40px;
+   gap: 2.5rem;
+   align-items: stretch;
 }
 
 .centered {
    align-items: center;
 }
 
+/* Enhanced Input Containers */
 .curved-container {
    flex: 1;
    display: flex;
    flex-direction: column;
-   height: 52.4px;
+   min-height: 70px;
    width: 100%;
    max-width: 620px;
-   padding: 2px;
-   border: 3.5px solid #828977;
-   border-radius: 10px;
-   background-color: transparent;
-   color: #828977;
+   padding: 16px 20px;
+   border: 2px solid rgba(144, 238, 144, 0.3);
+   border-radius: 16px;
+   background: rgba(255, 255, 255, 0.05);
+   backdrop-filter: blur(15px);
+   color: white;
    text-align: left;
+   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   position: relative;
+   overflow: hidden;
 }
 
+.curved-container::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   background: linear-gradient(135deg, rgba(144, 238, 144, 0.08), rgba(69, 161, 99, 0.03));
+   opacity: 0;
+   transition: opacity 0.3s ease;
+   pointer-events: none;
+}
+
+.curved-container:hover::before,
+.curved-container:focus-within::before {
+   opacity: 1;
+}
+
+.curved-container:hover,
+.curved-container:focus-within {
+   border-color: #32CD32;
+   background: rgba(255, 255, 255, 0.08);
+   box-shadow: 
+      0 0 25px rgba(50, 205, 50, 0.3),
+      0 8px 32px rgba(69, 161, 99, 0.2);
+   transform: translateY(-2px);
+}
+
+/* Enhanced Labels */
 .label {
-   font-size: 0.9em;
-   margin-bottom: 4px;
+   font-size: 0.85rem;
+   margin-bottom: 8px;
+   color: #90EE90;
+   font-weight: 600;
+   text-transform: uppercase;
+   letter-spacing: 0.5px;
+   transition: all 0.3s ease;
+   font-family: 'Inter', sans-serif;
+   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
+.curved-container:hover .label,
+.curved-container:focus-within .label {
+   color: #32CD32;
+   transform: translateY(-2px);
+   text-shadow: 0 0 8px rgba(50, 205, 50, 0.5);
+}
+
+/* Enhanced Input Fields - Fixed text colors and backgrounds */
 .input-zone {
    flex: 1;
    width: 100%;
    border: none;
    outline: none;
-   font-size: 1em;
-   background: transparent;
-   color: #828977;
+   font-size: 1rem;
+   background: rgba(255, 255, 255, 0.95) !important;
+   color: #333333 !important;
+   font-family: 'Inter', sans-serif;
+   font-weight: 400;
+   transition: all 0.3s ease;
+   border-radius: 8px;
+   padding: 8px 12px;
+   backdrop-filter: blur(5px);
 }
 
-.forgot-password {
-   color: #828977;
-   font-size: 0.8em;
-   text-decoration: none;
+.input-zone::placeholder {
+   color: rgba(0, 0, 0, 0.5) !important;
+   font-style: italic;
 }
 
+.input-zone:focus {
+   outline: none !important;
+   background: rgba(255, 255, 255, 0.98) !important;
+   color: #222222 !important;
+   box-shadow: 0 0 15px rgba(50, 205, 50, 0.3) !important;
+}
+
+.input-zone:hover {
+   background: rgba(255, 255, 255, 0.97) !important;
+}
+
+/* Enhanced Buttons */
 .button {
    position: relative;
    display: flex;
-   background-color: #828977;
-   color: #E4D8C8;
-   height: 52.4px;
-   width: 300px;
-   border-radius: 10px;
+   background: linear-gradient(135deg, #45a163 0%, #32CD32 50%, #228B22 100%);
+   color: white;
+   height: 60px;
+   width: 320px;
+   border-radius: 16px;
    justify-content: center;
    align-items: center;
    text-align: center;
-   font-size: 1.2em;
+   font-size: 1.1rem;
+   font-weight: 700;
    cursor: pointer;
    margin: 0 auto;
    border: none;
+   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+   text-transform: uppercase;
+   letter-spacing: 1px;
+   box-shadow: 
+      0 15px 35px rgba(69, 161, 99, 0.4),
+      0 8px 20px rgba(34, 139, 34, 0.3);
+   font-family: 'Inter', sans-serif;
+   overflow: hidden;
+   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.button::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: -100%;
+   width: 100%;
+   height: 100%;
+   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+   transition: left 0.6s;
+}
+
+.button:hover::before {
+   left: 100%;
+}
+
+.button:hover {
+   transform: translateY(-4px) scale(1.02);
+   box-shadow: 
+      0 20px 50px rgba(69, 161, 99, 0.6),
+      0 12px 30px rgba(34, 139, 34, 0.4);
+   background: linear-gradient(135deg, #32CD32 0%, #90EE90 50%, #00FF00 100%);
+}
+
+.button:active {
+   transform: translateY(-2px) scale(1.01);
+}
+
+/* Loading state */
+.button.loading {
+   color: transparent;
+}
+
+.button.loading::after {
+   content: '';
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   width: 20px;
+   height: 20px;
+   margin: -10px 0 0 -10px;
+   border: 2px solid transparent;
+   border-top: 2px solid white;
+   border-radius: 50%;
+   animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+   0% { transform: rotate(0deg); }
+   100% { transform: rotate(360deg); }
+}
+
+/* Eye Icons */
+.fa-eye {
+   cursor: pointer;
+   transition: all 0.3s ease;
+   padding: 8px;
+   border-radius: 8px;
+   color: #90EE90 !important;
+}
+
+.fa-eye:hover {
+   background: rgba(144, 238, 144, 0.2);
+   transform: scale(1.2);
+   color: #32CD32 !important;
+   box-shadow: 0 0 15px rgba(50, 205, 50, 0.4);
+}
+
+/* Links */
+.forgot-password {
+   color: rgba(144, 238, 144, 0.9);
+   font-size: 0.9rem;
+   text-decoration: none;
+   transition: all 0.3s ease;
+   align-self: flex-end;
+   position: relative;
+   font-family: 'Inter', sans-serif;
+   font-weight: 500;
+}
+
+.forgot-password::after {
+   content: '';
+   position: absolute;
+   bottom: -2px;
+   left: 0;
+   width: 0;
+   height: 2px;
+   background: linear-gradient(90deg, #32CD32, #90EE90);
+   transition: width 0.3s ease;
+}
+
+.forgot-password:hover {
+   color: #32CD32;
+   text-shadow: 0 0 8px rgba(50, 205, 50, 0.5);
+}
+
+.forgot-password:hover::after {
+   width: 100%;
+}
+
+/* Enhanced Messages */
+.error-msg {
+   background: linear-gradient(135deg, #ff6b6b, #ee5252);
+   color: white;
+   padding: 12px 20px;
+   border-radius: 12px;
+   margin-bottom: 1rem;
+   display: block;
+   font-weight: 500;
+   box-shadow: 0 5px 15px rgba(238, 82, 82, 0.3);
+   animation: slideInDown 0.5s ease;
+   font-family: 'Inter', sans-serif;
+}
+
+.success-message {
+   background: linear-gradient(135deg, #32CD32 0%, #90EE90 50%, #00FF7F 100%);
+   color: white;
+   padding: 16px 24px;
+   border-radius: 12px;
+   margin-bottom: 2rem;
+   text-align: center;
+   font-weight: 600;
+   box-shadow: 
+      0 8px 25px rgba(50, 205, 50, 0.4),
+      0 4px 15px rgba(0, 255, 127, 0.3);
+   animation: slideInDown 0.5s ease;
+   font-family: 'Inter', sans-serif;
+   border: 2px solid rgba(255, 255, 255, 0.2);
+   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes slideInDown {
+   from {
+      opacity: 0;
+      transform: translateY(-20px);
+   }
+   to {
+      opacity: 1;
+      transform: translateY(0);
+   }
 }
 
 .password-rules {
-   font-size: 0.62em;
-   text-align: left;
-   color: #828977;
+   color: rgba(144, 238, 144, 0.9);
+   font-size: 0.8rem;
+   line-height: 1.4;
+   margin-top: 0.5rem;
+   font-family: 'Inter', sans-serif;
+   font-weight: 400;
+   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.error-msg {
-   color: #e74c3c;
-   font-size: 0.9em;
-   margin-top: 5px;
+/* Hide register section by default and fix switch logic */
+#register-section {
+   display: none;
 }
-/* cvq */
+
+#login-section {
+   display: block;
+}
+
+/* Dynamic switch states - these will be toggled by JavaScript */
+.left-curved-container.filled {
+   background: linear-gradient(135deg, #45a163 0%, #32CD32 100%) !important;
+   color: white !important;
+   box-shadow: 0 10px 25px rgba(69, 161, 99, 0.6) !important;
+   transform: scale(1.05) !important;
+   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.right-curved-container.filled {
+   background: linear-gradient(135deg, #45a163 0%, #32CD32 100%) !important;
+   color: white !important;
+   box-shadow: 0 10px 25px rgba(69, 161, 99, 0.6) !important;
+   transform: scale(1.05) !important;
+   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.left-curved-container.empty {
+   background: rgba(255, 255, 255, 0.1) !important;
+   color: rgba(255, 255, 255, 0.9) !important;
+   transform: scale(1) !important;
+   box-shadow: none !important;
+   text-shadow: none !important;
+}
+
+.right-curved-container.empty {
+   background: rgba(255, 255, 255, 0.1) !important;
+   color: rgba(255, 255, 255, 0.9) !important;
+   transform: scale(1) !important;
+   box-shadow: none !important;
+   text-shadow: none !important;
+}
+
+.left-curved-container.empty:hover,
+.right-curved-container.empty:hover {
+   background: rgba(144, 238, 144, 0.2) !important;
+   color: white !important;
+   transform: scale(1.02) !important;
+}
+
+/* Focus states for accessibility */
+.input-zone:focus,
+.button:focus,
+.fa-eye:focus {
+   outline: 3px solid rgba(50, 205, 50, 0.6);
+   outline-offset: 2px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+   .login-page-main {
+      padding: 1rem;
+      margin-top: 100px;
+   }
+
+   .formulaire {
+      padding: 2rem;
+      max-width: 100%;
+   }
+
+   .row--auto {
+      flex-direction: column;
+      gap: 1.5rem;
+      width: 100%;
+   }
+
+   .row--full {
+      flex-direction: column;
+      gap: 1rem;
+   }
+
+   .column {
+      width: 100%;
+      min-width: auto;
+   }
+
+   .switch {
+      width: 100%;
+      max-width: 450px;
+      box-shadow: 0 12px 30px rgba(69, 161, 99, 0.5);
+   }
+
+   .button {
+      width: 100%;
+      max-width: 300px;
+   }
+}
+
+@media (max-width: 480px) {
+   .formulaire {
+      padding: 1.5rem;
+   }
+
+   .button {
+      height: 50px;
+      font-size: 1rem;
+   }
+
+   .curved-container {
+      padding: 12px 16px;
+      min-height: 60px;
+   }
+
+   .label {
+      font-size: 0.8rem;
+   }
+
+   .input-zone {
+      font-size: 0.9rem;
+   }
+}
+
+/* Smooth transitions for all elements */
+* {
+   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Remove any unwanted white backgrounds from form elements - Fixed */
+input[type="email"],
+input[type="password"],
+input[type="text"],
+input[type="tel"],
+input[type="date"] {
+   background: rgba(255, 255, 255, 0.95) !important;
+   border: none !important;
+   color: #333333 !important;
+   font-weight: 500 !important;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="text"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus {
+   background: rgba(255, 255, 255, 0.98) !important;
+   color: #222222 !important;
+   box-shadow: 0 0 15px rgba(50, 205, 50, 0.3) !important;
+}
+
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="text"]::placeholder,
+input[type="tel"]::placeholder {
+   color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Fix date input styling */
+input[type="date"]::-webkit-calendar-picker-indicator {
+   filter: invert(0);
+   opacity: 0.7;
+   cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+   opacity: 1;
+}
+
+/* Additional polish */
+.form-container {
+   animation: fadeInUp 0.8s ease;
+}
+
+@keyframes fadeInUp {
+   from {
+      opacity: 0;
+      transform: translateY(30px);
+   }
+   to {
+      opacity: 1;
+      transform: translateY(0);
+   }
+}
+
+.switch {
+   animation: fadeInDown 0.6s ease;
+}
+
+@keyframes fadeInDown {
+   from {
+      opacity: 0;
+      transform: translateY(-30px);
+   }
+   to {
+      opacity: 1;
+      transform: translateY(0);
+   }
+}

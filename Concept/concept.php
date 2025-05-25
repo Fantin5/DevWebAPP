@@ -144,7 +144,7 @@
           </p>
         </div>
         <div class="feature-image">
-          <img src="concept-banner.jpg" alt="Moments uniques" />
+          <img src="image0.jpg" alt="Moments uniques" />
         </div>
       </section>
 
