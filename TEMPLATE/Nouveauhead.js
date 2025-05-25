@@ -1,13 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialiser le panier s'il n'existe pas déjà
+    // Initialize cart if it doesn't exist
     if (!localStorage.getItem('synapse-cart')) {
         localStorage.setItem('synapse-cart', JSON.stringify([]));
     }
     
-    // Mettre à jour le compteur du panier
+    // Update cart counter
     updateCartCount();
     
-    // Fonction pour mettre à jour le compteur du panier
+    // Cart counter update function
     function updateCartCount() {
         const cart = JSON.parse(localStorage.getItem('synapse-cart')) || [];
         const cartCount = document.getElementById('panier-count');
@@ -16,36 +16,69 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Gestion du menu déroulant
-    const profileDropdown = document.querySelector('.profile-dropdown');
-    const profileButton = document.querySelector('.connexion-profil');
+    // Mobile menu toggle functionality
+    const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+    const mobileNavOverlay = document.querySelector('.mobile-nav-overlay');
+    const body = document.body;
     
-    if (profileButton && profileDropdown) {
-        // Ajouter un écouteur d'événement de clic au bouton
-        profileButton.addEventListener('click', function(e) {
-            e.preventDefault(); // Empêcher la navigation si le href est '#'
-            
-            // Basculer la classe 'show' pour ouvrir/fermer le menu
-            profileDropdown.classList.toggle('show');
-            
-            // Marquer l'événement comme traité pour éviter les conflits
-            e.stopPropagation();
+    if (mobileMenuToggle && mobileNavOverlay) {
+        mobileMenuToggle.addEventListener('click', function() {
+            mobileMenuToggle.classList.toggle('active');
+            mobileNavOverlay.classList.toggle('active');
+            body.classList.toggle('mobile-menu-open');
         });
         
-        // Fermer le menu si on clique ailleurs sur la page
+        // Close mobile menu when clicking on overlay
+        mobileNavOverlay.addEventListener('click', function(e) {
+            if (e.target === mobileNavOverlay) {
+                closeMobileMenu();
+            }
+        });
+        
+        // Close mobile menu when clicking on a link
+        const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                closeMobileMenu();
+            });
+        });
+        
+        function closeMobileMenu() {
+            mobileMenuToggle.classList.remove('active');
+            mobileNavOverlay.classList.remove('active');
+            body.classList.remove('mobile-menu-open');
+        }
+        
+        // Close mobile menu on window resize if window becomes large
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                closeMobileMenu();
+            }
+        });
+    }
+    
+    // Profile dropdown functionality
+    const profileDropdown = document.querySelector('.profile-dropdown');
+    const profileButton = document.querySelector('.profile-button');
+    
+    if (profileButton && profileDropdown) {
+        profileButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            profileDropdown.classList.toggle('show');
+        });
+        
+        // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
-            // Vérifier si le clic est en dehors du menu déroulant
             if (!profileDropdown.contains(e.target)) {
                 profileDropdown.classList.remove('show');
             }
         });
         
-        // Empêcher la fermeture du menu quand on clique sur son contenu
+        // Prevent dropdown from closing when clicking inside
         const dropdownContent = document.querySelector('.dropdown-content');
         if (dropdownContent) {
             dropdownContent.addEventListener('click', function(e) {
-                // Ne pas propager les clics dans le contenu du menu
-                // (sauf si c'est un lien, qui devrait fonctionner normalement)
                 if (e.target.tagName !== 'A') {
                     e.stopPropagation();
                 }
@@ -53,15 +86,76 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Change le style du header lors du défilement
+    // Header scroll effect
+    let lastScrollTop = 0;
+    const header = document.querySelector('header');
+    
     window.addEventListener('scroll', function() {
-        const header = document.querySelector('header');
-        if (window.scrollY > 50) {
-            header.style.padding = "10px 35px"; // Légèrement plus compact
-            header.style.boxShadow = "0 2px 10px rgba(0, 0, 0, 0.3)"; // Ombre plus prononcée
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop > lastScrollTop && scrollTop > 100) {
+            // Scrolling down - hide header
+            header.classList.add('header-hidden');
         } else {
-            header.style.padding = "15px 35px"; // Revient à la normale
-            header.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.2)"; // Ombre normale
+            // Scrolling up - show header
+            header.classList.remove('header-hidden');
+        }
+        
+        // Add shadow when scrolled
+        if (scrollTop > 50) {
+            header.classList.add('scrolled');
+        } else {
+            header.classList.remove('scrolled');
+        }
+        
+        lastScrollTop = scrollTop;
+    });
+    
+    // Touch gestures for mobile
+    let touchStartY = 0;
+    let touchEndY = 0;
+    
+    document.addEventListener('touchstart', function(e) {
+        touchStartY = e.changedTouches[0].screenY;
+    });
+    
+    document.addEventListener('touchend', function(e) {
+        touchEndY = e.changedTouches[0].screenY;
+        handleSwipe();
+    });
+    
+    function handleSwipe() {
+        const swipeThreshold = 100;
+        const diff = touchStartY - touchEndY;
+        
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0) {
+                // Swipe up - hide header
+                header.classList.add('header-hidden');
+            } else {
+                // Swipe down - show header
+                header.classList.remove('header-hidden');
+            }
+        }
+    }
+    
+    // Smooth transitions for navigation links
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        
+        link.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Add active state to current page navigation
+    const currentPath = window.location.pathname;
+    navLinks.forEach(link => {
+        if (link.getAttribute('href') && currentPath.includes(link.getAttribute('href').split('/').pop())) {
+            link.classList.add('active');
         }
     });
 });
