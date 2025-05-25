@@ -30,11 +30,6 @@ class ActivityExpirationManager {
                 e.preventDefault();
                 this.handleDirectRegistration(e.target.closest('.signup-button'));
             }
-
-            if (e.target.closest('.review-button')) {
-                e.preventDefault();
-                this.handleReviewSubmission(e.target.closest('.review-button'));
-            }
         });
 
         // Enhanced activity card clicks with expiration awareness
@@ -520,110 +515,6 @@ class ActivityExpirationManager {
     }
 }
 
-// Enhanced Review System
-class ReviewManager {
-    constructor() {
-        this.setupEventListeners();
-    }
-
-    setupEventListeners() {
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.submit-review-btn')) {
-                e.preventDefault();
-                this.handleReviewSubmission(e.target.closest('.submit-review-btn'));
-            }
-        });
-    }
-
-    async handleReviewSubmission(button) {
-        const form = button.closest('.review-form');
-        if (!form) return;
-
-        const activityId = form.getAttribute('data-activity-id');
-        const rating = form.querySelector('input[name="rating"]:checked')?.value;
-        const comment = form.querySelector('textarea[name="comment"]')?.value;
-
-        if (!rating) {
-            this.showError('Veuillez sélectionner une note');
-            return;
-        }
-
-        if (!comment || comment.trim().length < 10) {
-            this.showError('Veuillez écrire un commentaire d\'au moins 10 caractères');
-            return;
-        }
-
-        try {
-            this.setButtonLoading(button, true);
-
-            const response = await fetch('activity_functions.php?action=submit_review', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    activity_id: activityId,
-                    rating: parseInt(rating),
-                    comment: comment.trim()
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                this.showSuccess(result.message);
-                this.resetForm(form);
-            } else {
-                this.showError(result.message);
-            }
-
-        } catch (error) {
-            console.error('Error submitting review:', error);
-            this.showError('Une erreur est survenue lors de l\'envoi de votre avis');
-        } finally {
-            this.setButtonLoading(button, false);
-        }
-    }
-
-    setButtonLoading(button, isLoading) {
-        if (isLoading) {
-            button.disabled = true;
-            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Envoi en cours...';
-        } else {
-            button.disabled = false;
-            button.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Envoyer l\'avis';
-        }
-    }
-
-    resetForm(form) {
-        form.reset();
-        // Reset star ratings
-        const stars = form.querySelectorAll('.star-rating input');
-        stars.forEach(star => star.checked = false);
-    }
-
-    showSuccess(message) {
-        this.showNotification(message, 'success');
-    }
-
-    showError(message) {
-        this.showNotification(message, 'error');
-    }
-
-    showNotification(message, type) {
-        const notification = document.createElement('div');
-        notification.classList.add('notification', type);
-        notification.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.opacity = '0';
-            setTimeout(() => notification.remove(), 500);
-        }, 4000);
-    }
-}
-
 // Enhanced Cart Management
 class CartManager {
     constructor() {
@@ -752,7 +643,6 @@ class CartManager {
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize managers
     const expirationManager = new ActivityExpirationManager();
-    const reviewManager = new ReviewManager();
     const cartManager = new CartManager();
     
     // Initialize cart count
@@ -764,7 +654,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Store managers globally for debugging
     window.activityManagers = {
         expiration: expirationManager,
-        review: reviewManager,
         cart: cartManager
     };
 });

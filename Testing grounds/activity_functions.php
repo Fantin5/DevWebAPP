@@ -527,60 +527,6 @@ function cleanupUserCart($cart_items, $user_id = null) {
 }
 
 /**
- * Submit a review for an activity
- */
-function submitActivityReview($activity_id, $user_id, $rating, $comment) {
-    if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-        return ['success' => false, 'message' => 'Vous devez être connecté pour laisser un avis.'];
-    }
-
-    $user_id = $user_id ?? $_SESSION['user_id'];
-    $status = checkUserActivityStatus($activity_id, $user_id);
-    
-    if (!$status['can_review']) {
-        return ['success' => false, 'message' => 'Vous ne pouvez pas laisser d\'avis pour cette activité.'];
-    }
-
-    // Validate rating
-    if (!is_numeric($rating) || $rating < 1 || $rating > 5) {
-        return ['success' => false, 'message' => 'La note doit être comprise entre 1 et 5.'];
-    }
-
-    $conn = getActivityDBConnection();
-    if ($conn->connect_error) {
-        return ['success' => false, 'message' => 'Erreur de connexion à la base de données.'];
-    }
-
-    // Check if user already reviewed this activity
-    $check_sql = "SELECT id FROM evaluations WHERE activite_id = ? AND utilisateur_id = ?";
-    $check_stmt = $conn->prepare($check_sql);
-    $check_stmt->bind_param("ii", $activity_id, $user_id);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
-
-    if ($check_result->num_rows > 0) {
-        $check_stmt->close();
-        $conn->close();
-        return ['success' => false, 'message' => 'Vous avez déjà laissé un avis pour cette activité.'];
-    }
-
-    // Insert the review
-    $insert_sql = "INSERT INTO evaluations (activite_id, utilisateur_id, note, commentaire, date_evaluation) VALUES (?, ?, ?, ?, NOW())";
-    $insert_stmt = $conn->prepare($insert_sql);
-    $insert_stmt->bind_param("iiis", $activity_id, $user_id, $rating, $comment);
-    
-    if ($insert_stmt->execute()) {
-        $insert_stmt->close();
-        $conn->close();
-        return ['success' => true, 'message' => 'Votre avis a été enregistré avec succès.'];
-    } else {
-        $insert_stmt->close();
-        $conn->close();
-        return ['success' => false, 'message' => 'Erreur lors de l\'enregistrement de votre avis.'];
-    }
-}
-
-/**
  * Get activities with expiration status
  */
 function getActivitiesWithExpiration($filters = []) {
@@ -667,8 +613,6 @@ function getActivitiesWithExpiration($filters = []) {
     return ['success' => true, 'activities' => $activities];
 }
 
-// Existing functions (unregisterUserFromActivity, etc.) remain unchanged...
-
 function unregisterUserFromActivity($activity_id, $user_id = null) {
     if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         return ['success' => false, 'message' => 'Vous devez être connecté.'];
@@ -702,126 +646,128 @@ function unregisterUserFromActivity($activity_id, $user_id = null) {
     }
 }
 
-// Handle AJAX requests with new functionality
+// FIXED AJAX HANDLING - Only handle specific actions that belong to this file
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     
     if (isset($_GET['action'])) {
-        header('Content-Type: application/json');
+        // Define actions that this file should handle
+        $activity_actions = [
+            'check_status',
+            'register', 
+            'unregister',
+            'cleanup_cart',
+            'validate_cart_addition',
+            'validate_cart_payment',
+            'get_activities_with_expiration'
+        ];
         
-        switch ($_GET['action']) {
-            case 'check_status':
-                if (isset($input['activity_id'])) {
-                    echo json_encode(checkUserActivityStatus($input['activity_id']));
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Activity ID required']);
-                }
-                break;
-                
-            case 'register':
-                if (isset($input['activity_id'])) {
-                    echo json_encode(registerUserForActivity($input['activity_id']));
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Activity ID required']);
-                }
-                break;
-                
-            case 'unregister':
-                if (isset($input['activity_id'])) {
-                    echo json_encode(unregisterUserFromActivity($input['activity_id']));
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Activity ID required']);
-                }
-                break;
-                
-            case 'cleanup_cart':
-                if (isset($input['cart_items'])) {
-                    echo json_encode(cleanupUserCart($input['cart_items']));
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Cart items required']);
-                }
-                break;
-                
-            case 'validate_cart_addition':
-                if (isset($input['activity_id'])) {
-                    echo json_encode(validateCartAddition($input['activity_id']));
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Activity ID required']);
-                }
-                break;
+        // Only handle actions that belong to this file
+        if (in_array($_GET['action'], $activity_actions)) {
+            header('Content-Type: application/json');
+            
+            switch ($_GET['action']) {
+                case 'check_status':
+                    if (isset($input['activity_id'])) {
+                        echo json_encode(checkUserActivityStatus($input['activity_id']));
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Activity ID required']);
+                    }
+                    break;
+                    
+                case 'register':
+                    if (isset($input['activity_id'])) {
+                        echo json_encode(registerUserForActivity($input['activity_id']));
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Activity ID required']);
+                    }
+                    break;
+                    
+                case 'unregister':
+                    if (isset($input['activity_id'])) {
+                        echo json_encode(unregisterUserFromActivity($input['activity_id']));
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Activity ID required']);
+                    }
+                    break;
+                    
+                case 'cleanup_cart':
+                    if (isset($input['cart_items'])) {
+                        echo json_encode(cleanupUserCart($input['cart_items']));
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Cart items required']);
+                    }
+                    break;
+                    
+                case 'validate_cart_addition':
+                    if (isset($input['activity_id'])) {
+                        echo json_encode(validateCartAddition($input['activity_id']));
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Activity ID required']);
+                    }
+                    break;
 
-            case 'validate_cart_payment':
-                if (isset($input['cart_items'])) {
-                    echo json_encode(validateCartForPayment($input['cart_items']));
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Cart items required']);
-                }
-                break;
-                
-            case 'submit_review':
-                if (isset($input['activity_id']) && isset($input['rating'])) {
-                    echo json_encode(submitActivityReview(
-                        $input['activity_id'], 
-                        $_SESSION['user_id'] ?? null, 
-                        $input['rating'], 
-                        $input['comment'] ?? ''
-                    ));
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Activity ID and rating required']);
-                }
-                break;
-                
-            case 'get_activities_with_expiration':
-                $filters = $input['filters'] ?? [];
-                echo json_encode(getActivitiesWithExpiration($filters));
-                break;
-                
-            default:
-                echo json_encode(['success' => false, 'message' => 'Invalid action']);
+                case 'validate_cart_payment':
+                    if (isset($input['cart_items'])) {
+                        echo json_encode(validateCartForPayment($input['cart_items']));
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Cart items required']);
+                    }
+                    break;
+                    
+                case 'get_activities_with_expiration':
+                    $filters = $input['filters'] ?? [];
+                    echo json_encode(getActivitiesWithExpiration($filters));
+                    break;
+            }
+            exit;
         }
-        exit;
+        // If action is not in our list, let other files handle it (don't exit)
     }
 }
 
 // Handle GET requests for expiration data
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
-    header('Content-Type: application/json');
+    // Define GET actions that this file should handle
+    $activity_get_actions = ['get_expiration_status'];
     
-    switch ($_GET['action']) {
-        case 'get_expiration_status':
-            if (isset($_GET['activity_id'])) {
-                $conn = getActivityDBConnection();
-                $expiration_manager = new ActivityExpirationManager($conn);
-                
-                $activity_sql = "SELECT date_ou_periode FROM activites WHERE id = ?";
-                $stmt = $conn->prepare($activity_sql);
-                $stmt->bind_param("i", $_GET['activity_id']);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                
-                if ($result->num_rows > 0) {
-                    $activity = $result->fetch_assoc();
-                    echo json_encode([
-                        'success' => true,
-                        'is_expired' => $expiration_manager->isActivityExpired($activity['date_ou_periode']),
-                        'is_expiring_soon' => $expiration_manager->isActivityExpiringSoon($activity['date_ou_periode']),
-                        'days_until_expiration' => $expiration_manager->getDaysUntilExpiration($activity['date_ou_periode'])
-                    ]);
+    // Only handle GET actions that belong to this file
+    if (in_array($_GET['action'], $activity_get_actions)) {
+        header('Content-Type: application/json');
+        
+        switch ($_GET['action']) {
+            case 'get_expiration_status':
+                if (isset($_GET['activity_id'])) {
+                    $conn = getActivityDBConnection();
+                    $expiration_manager = new ActivityExpirationManager($conn);
+                    
+                    $activity_sql = "SELECT date_ou_periode FROM activites WHERE id = ?";
+                    $stmt = $conn->prepare($activity_sql);
+                    $stmt->bind_param("i", $_GET['activity_id']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
+                    if ($result->num_rows > 0) {
+                        $activity = $result->fetch_assoc();
+                        echo json_encode([
+                            'success' => true,
+                            'is_expired' => $expiration_manager->isActivityExpired($activity['date_ou_periode']),
+                            'is_expiring_soon' => $expiration_manager->isActivityExpiringSoon($activity['date_ou_periode']),
+                            'days_until_expiration' => $expiration_manager->getDaysUntilExpiration($activity['date_ou_periode'])
+                        ]);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Activity not found']);
+                    }
+                    
+                    $stmt->close();
+                    $conn->close();
                 } else {
-                    echo json_encode(['success' => false, 'message' => 'Activity not found']);
+                    echo json_encode(['success' => false, 'message' => 'Activity ID required']);
                 }
-                
-                $stmt->close();
-                $conn->close();
-            } else {
-                echo json_encode(['success' => false, 'message' => 'Activity ID required']);
-            }
-            break;
-            
-        default:
-            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+                break;
+        }
+        exit;
     }
-    exit;
 }
 
 /**
