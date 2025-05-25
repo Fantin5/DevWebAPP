@@ -22,97 +22,83 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
     />
   </head>
   <body>
-    <!-- Enhanced Header with floating elements -->
+    <!-- Responsive Header -->
     <header class="header">
-      <!-- Animated background elements -->
-      <div class="header-bg-elements">
-        <div class="floating-leaf leaf-1"><i class="fa-solid fa-leaf"></i></div>
-        <div class="floating-leaf leaf-2"><i class="fa-solid fa-seedling"></i></div>
-        <div class="floating-leaf leaf-3"><i class="fa-solid fa-spa"></i></div>
-        <div class="floating-particle particle-1"></div>
-        <div class="floating-particle particle-2"></div>
-        <div class="floating-particle particle-3"></div>
-      </div>
+      <!-- Mobile Menu Toggle -->
+      <button class="mobile-menu-toggle" aria-label="Menu mobile">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
 
-      <!-- Left section: Logo with enhanced styling -->
+      <!-- Left section: Logo -->
       <div class="header-left">
         <a href="../Testing grounds/main.php" class="logo-container">
-          <div class="logo-background">
-            <img
-              class="logo"
-              src="../Connexion-Inscription/logo-transparent-pdf.png"
-              alt="Logo Synapse"
-            />
-          </div>
+          <img
+            class="logo"
+            src="../Connexion-Inscription/logo-transparent-pdf.png"
+            alt="Logo Synapse"
+          />
         </a>
       </div>
 
-      <!-- Center section: Enhanced Navigation -->
-<!-- Center section: Compact Navigation -->
-<nav class="nav-links">
-        <ul>
+      <!-- Center section: Navigation -->
+      <nav class="nav-links">
+        <ul class="nav-menu">
           <li class="nav-item">
             <a href="../Testing grounds/main.php" class="nav-link" title="Accueil">
               <i class="fa-solid fa-home nav-icon"></i>
-              <span>Accueil</span>
-              <div class="nav-ripple"></div>
+              <span class="nav-text">Accueil</span>
             </a>
           </li>
           <li class="nav-item">
             <a href="../Concept/concept.php" class="nav-link" title="Notre concept">
               <i class="fa-solid fa-lightbulb nav-icon"></i>
-              <span>Concept</span>
-              <div class="nav-ripple"></div>
+              <span class="nav-text">Concept</span>
             </a>
           </li>
           <li class="nav-item">
             <a href="../Testing grounds/activites.php" class="nav-link" title="Découvrir les activités">
               <i class="fa-solid fa-search nav-icon"></i>
-              <span>Découvrir</span>
-              <div class="nav-ripple"></div>
+              <span class="nav-text">Découvrir</span>
             </a>
           </li>
           <li class="nav-item special">
             <a href="../Testing grounds/jenis.php" class="nav-link create-activity" title="Créer une activité">
               <i class="fa-solid fa-plus nav-icon"></i>
-              <span>Créer</span>
-              <div class="nav-ripple"></div>
+              <span class="nav-text">Créer</span>
               <div class="glow-effect"></div>
             </a>
           </li>
         </ul>
       </nav>
     
-      <!-- Right section: Enhanced Icons -->
+      <!-- Right section: User Actions -->
       <div class="header-right">
         <?php include '../TEMPLATE/admin_button.php'; ?>
         
-        <!-- Enhanced Cart -->
+        <!-- Cart -->
         <div class="cart-container">
-          <a href="../Testing grounds/panier.php" class="panier-link" aria-label="Panier">
-            <div class="cart-icon-wrapper">
-              <i class="fa-solid fa-cart-shopping"></i>
-              <div class="cart-pulse"></div>
-            </div>
-            <span class="panier-count" id="panier-count">0</span>
+          <a href="../Testing grounds/panier.php" class="cart-link" aria-label="Panier">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span class="cart-count" id="panier-count">0</span>
           </a>
         </div>
 
         <?php if($logged_in): ?>
-        <!-- Enhanced Profile Dropdown -->
-        <div class="profile-dropdown enhanced">
-          <a href="#" class="connexion-profil enhanced-profile" aria-label="Profil">
+        <!-- Profile Dropdown -->
+        <div class="profile-dropdown">
+          <button class="profile-button" aria-label="Menu profil">
             <div class="profile-avatar">
               <i class="fa-solid fa-user"></i>
-              <div class="profile-status"></div>
             </div>
             <div class="profile-info">
               <span class="profile-name"><?= htmlspecialchars($user_name) ?></span>
               <span class="profile-role">Membre</span>
             </div>
             <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
-          </a>
-          <div class="dropdown-content enhanced-dropdown">
+          </button>
+          <div class="dropdown-content">
             <div class="dropdown-header">
               <div class="user-avatar-large">
                 <i class="fa-solid fa-user"></i>
@@ -122,40 +108,52 @@ $user_name = $logged_in ? $_SESSION['user_first_name'] : '';
                 <span>Explorateur de nature</span>
               </div>
             </div>
-            <div class="dropdown-divider"></div>
             <a href="../Compte/mon-espace.php" class="dropdown-link">
               <i class="fa-solid fa-gear"></i> 
               <span>Mon profil</span>
-              <i class="fa-solid fa-arrow-right link-arrow"></i>
             </a>
             <a href="../Testing grounds/mes-activites.php" class="dropdown-link">
               <i class="fa-solid fa-calendar-days"></i> 
               <span>Mes activités</span>
-              <i class="fa-solid fa-arrow-right link-arrow"></i>
             </a>
             <a href="../Testing grounds/mes-activites-registered.php" class="dropdown-link">
               <i class="fa-solid fa-clipboard-list"></i> 
               <span>Activités inscrites</span>
-              <i class="fa-solid fa-arrow-right link-arrow"></i>
             </a>
             <div class="dropdown-divider"></div>
             <a href="../Connexion-Inscription/logout.php" class="dropdown-link logout">
               <i class="fa-solid fa-right-from-bracket"></i> 
               <span>Déconnexion</span>
-              <i class="fa-solid fa-arrow-right link-arrow"></i>
             </a>
           </div>
         </div>
         <?php else: ?>
-        <!-- Enhanced Login Link -->
-        <a href="../Connexion-Inscription/login_form.php" class="connexion-profil login-btn" aria-label="Connexion">
-          <div class="login-icon-wrapper">
-            <i class="fa-solid fa-user"></i>
-            <div class="login-pulse"></div>
-          </div>
+        <!-- Login Link -->
+        <a href="../Connexion-Inscription/login_form.php" class="login-btn" aria-label="Connexion">
+          <i class="fa-solid fa-user"></i>
           <span class="login-text">Connexion</span>
         </a>
         <?php endif; ?>
+      </div>
+
+      <!-- Mobile Navigation Overlay -->
+      <div class="mobile-nav-overlay">
+        <nav class="mobile-nav">
+          <ul class="mobile-nav-menu">
+            <li><a href="../Testing grounds/main.php" class="mobile-nav-link">
+              <i class="fa-solid fa-home"></i> Accueil
+            </a></li>
+            <li><a href="../Concept/concept.php" class="mobile-nav-link">
+              <i class="fa-solid fa-lightbulb"></i> Concept
+            </a></li>
+            <li><a href="../Testing grounds/activites.php" class="mobile-nav-link">
+              <i class="fa-solid fa-search"></i> Découvrir
+            </a></li>
+            <li><a href="../Testing grounds/jenis.php" class="mobile-nav-link special">
+              <i class="fa-solid fa-plus"></i> Créer une activité
+            </a></li>
+          </ul>
+        </nav>
       </div>
     </header>
     

@@ -5,7 +5,7 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true &&
     
     echo '<a href="../Admin/admin.php" class="admin-button" title="Administration">';
     echo '<i class="fa-solid fa-seedling"></i>';
-    echo '<span>Admin</span>';
+    echo '<span class="admin-text">Admin</span>';
     echo '</a>';
 }
 ?>
