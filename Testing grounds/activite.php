@@ -314,6 +314,7 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     
     <style>
+        
         /* Enhanced activity detail page styles */
         body {
             background-image: 
@@ -2188,7 +2189,114 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
             transform: none;
             box-shadow: none;
         }
+
+        
+    /* Contact Owner Button Styles */
+    .contact-owner-button {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+        padding: 16px 30px;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        transition: all 0.4s ease;
+        box-shadow: 0 12px 25px rgba(52, 152, 219, 0.3);
+        width: 100%;
+        text-decoration: none;
+        position: relative;
+        overflow: hidden;
+        margin-top: 15px;
+    }
+
+    .contact-owner-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+            rgba(255, 255, 255, 0) 0%, 
+            rgba(255, 255, 255, 0.2) 50%, 
+            rgba(255, 255, 255, 0) 100%);
+        transform: skewX(-25deg);
+        transition: left 0.7s ease;
+        z-index: 1;
+    }
+
+    .contact-owner-button:hover {
+        background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(52, 152, 219, 0.4);
+        text-decoration: none;
+        color: white;
+    }
+
+    .contact-owner-button:hover::before {
+        left: 100%;
+    }
+
+    .contact-owner-button i, .contact-owner-button span {
+        position: relative;
+        z-index: 2;
+    }
+
+    .contact-owner-button i {
+        font-size: 20px;
+        transition: transform 0.3s ease;
+    }
+
+    .contact-owner-button:hover i {
+        transform: translateY(-3px);
+    }
+
+    .contact-owner-section {
+        margin-top: 20px;
+    }
+
+    .contact-owner-notice {
+        background-color: rgba(52, 152, 219, 0.1);
+        border-left: 4px solid #3498db;
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-top: 15px;
+        color: #2c3e50;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .contact-owner-notice i {
+        color: #3498db;
+        font-size: 16px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .contact-owner-button {
+            padding: 14px 25px;
+            font-size: 15px;
+            gap: 10px;
+        }
+        
+        .contact-owner-button i {
+            font-size: 18px;
+        }
+        
+        .contact-owner-notice {
+            padding: 12px 16px;
+            font-size: 13px;
+        }
+    }
     </style>
+   
 </head>
 <body>
     <?php include '../TEMPLATE/Nouveauhead.php'; ?>
@@ -2602,6 +2710,27 @@ $isLandscape = $imageDimensions[0] >= $imageDimensions[1];
                                 data-tags="<?php echo htmlspecialchars($activity['tags']); ?>">
                             <i class="fa-solid fa-cart-shopping"></i> <span>Ajouter au panier</span>
                         </button>
+                    <?php endif; ?>
+                    
+                    <!-- Contact Owner Button Section -->
+                    <?php if ($creator_data && isset($creator_data['user_id'])): ?>
+                        <div class="contact-owner-section">
+                            <?php if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true): ?>
+                                <!-- User not logged in - show info -->
+                                <div class="contact-owner-notice">
+                                    <i class="fa-solid fa-info-circle"></i>
+                                    Connectez-vous pour contacter l'organisateur
+                                </div>
+                            <?php elseif (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $creator_data['user_id']): ?>
+                                <!-- User is the owner - don't show contact button (owner badge already shown above) -->
+                            <?php else: ?>
+                                <!-- User can contact the owner -->
+                                <a href="../Messagerie/message_api.php?action=start_conversation&user_id=<?php echo $creator_data['user_id']; ?>" class="contact-owner-button">
+                                    <i class="fa-solid fa-envelope"></i>
+                                    <span>Contacter l'organisateur</span>
+                                </a>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
                     
                     <?php if ($activity["date_ou_periode"]): ?>
@@ -3310,6 +3439,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 notification.remove();
             }, 500);
         }, 3000);
+    }
+    
+    // Contact owner functionality
+    function contactOwner(userId, userName) {
+        // Check if user is logged in
+        <?php if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true): ?>
+            // Redirect to login page
+            window.location.href = '../Connexion-Inscription/login_form.php';
+            return;
+        <?php else: ?>
+            // Check if user is trying to contact themselves
+            const currentUserId = <?php echo isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'null'; ?>;
+            if (currentUserId && currentUserId == userId) {
+                showNotification('Vous ne pouvez pas vous envoyer un message à vous-même.', 'info');
+                return;
+            }
+            
+            // Store contact info for messaging page
+            sessionStorage.setItem('contactUser', JSON.stringify({
+                userId: userId,
+                userName: userName
+            }));
+            
+            // Redirect to start conversation
+            window.location.href = `message_api.php?action=start_conversation&user_id=${userId}`;
+        <?php endif; ?>
     }
     
     // Function to create ambient particles
