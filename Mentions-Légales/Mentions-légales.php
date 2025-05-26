@@ -314,11 +314,11 @@ include_once '../Connexion-Inscription/config.php';
             <div class="mentions-nav">
                 <h2>Sommaire</h2>
                 <ul class="nav-list">
-                    <li><a href="#editeur" class="active"><i class="fas fa-building"></i> Informations sur l'éditeur</a></li>
+                    <li><a href="#editeur"><i class="fas fa-building"></i> Informations sur l&#039;éditeur</a></li>
                     <li><a href="#hebergement"><i class="fas fa-server"></i> Hébergement</a></li>
                     <li><a href="#propriete"><i class="fas fa-copyright"></i> Propriété intellectuelle</a></li>
-                    <li><a href="#donnees"><i class="fas fa-shield-alt"></i> Données personnelles</a></li>
-                    <li><a href="#responsabilite"><i class="fas fa-exclamation-circle"></i> Responsabilité</a></li>
+                    <li><a href="#donnees"><i class="fas fa-shield-alt"></i> Protection des données personnelles</a></li>
+                    <li><a href="#responsabilite"><i class="fas fa-exclamation-circle"></i> Limitation de responsabilité</a></li>
                     <li><a href="#liens"><i class="fas fa-link"></i> Liens hypertextes</a></li>
                 </ul>
             </div>
@@ -326,49 +326,32 @@ include_once '../Connexion-Inscription/config.php';
             <!-- Content area with cards -->
             <div class="mentions-content">
                 <div id="editeur" class="mentions-card" style="animation-delay: 0.1s;">
-                    <h2><i class="fas fa-building"></i> Informations sur l'éditeur</h2>
-                    <p>Le site Synapse est édité par :</p>
-                    <ul>
-                        <li>Société : Synapse</li>
-                        <li>Siège social : 10 rue de Vanves, Issy-les-Moulineaux 92130</li>
-                        <li>Numéro SIRET : 123 456 789 10110</li>
-                        <li>Contact : synapse@gmail.com</li>
-                        <li>Téléphone : ‪+33 (0)6 01 02 03 04‬</li>
-                    </ul>
+                    <h2><i class="fas fa-building"></i> Informations sur l&#039;éditeur</h2>
+                    <p>Le site <strong>Synapse</strong> est édité par :</p><ul><li><strong>Société :</strong> Synapse SAS</li><li><strong>Siège social :</strong> 10 rue de Vanves, 92130 Issy-les-Moulineaux</li><li><strong>SIRET :</strong> 123 456 789 00110</li><li><strong>Email :</strong> contact@synapse.com</li><li><strong>Téléphone :</strong> +33 (0)1 23 45 67 89</li></ul>
                 </div>
-                
                 <div id="hebergement" class="mentions-card" style="animation-delay: 0.2s;">
                     <h2><i class="fas fa-server"></i> Hébergement</h2>
-                    <p>Le site est hébergé par :</p>
-                    <ul>
-                        <li>Hébergeur : OVHcloud</li>
-                        <li>Siège social : 2 Rue Kellermann, 59100 Roubaix, France</li>
-                        <li>Contact : www.ovhcloud.com</li>
-                    </ul>
+                    <p>Le site est hébergé par :</p><ul><li><strong>Hébergeur :</strong> OVHcloud</li><li><strong>Adresse :</strong> 2 Rue Kellermann, 59100 Roubaix, France</li><li><strong>Site web :</strong> <a href="https://www.ovhcloud.com" target="_blank">www.ovhcloud.com</a></li></ul>
                 </div>
-                
                 <div id="propriete" class="mentions-card" style="animation-delay: 0.3s;">
                     <h2><i class="fas fa-copyright"></i> Propriété intellectuelle</h2>
-                    <p>Tous les contenus présents sur le site (textes, images, logos, vidéos, etc.) sont protégés par le droit d'auteur. Toute reproduction ou utilisation non autorisée est strictement interdite sans l'accord préalable de Synapse.</p>
+                    <p>L'ensemble des contenus présents sur ce site (textes, images, logos, vidéos, etc.) sont protégés par le droit d'auteur et la propriété intellectuelle. Toute reproduction, représentation, modification, publication, transmission, dénaturation de tout ou partie des éléments du site, par quelque procédé que ce soit, est interdite sans l'autorisation écrite préalable de Synapse.</p>
                 </div>
-                
                 <div id="donnees" class="mentions-card" style="animation-delay: 0.4s;">
-                    <h2><i class="fas fa-shield-alt"></i> Données personnelles</h2>
-                    <p>Conformément au Règlement Général sur la Protection des Données (RGPD), vos informations personnelles collectées sur ce site sont utilisées uniquement pour la gestion de votre compte et de vos réservations. Vous pouvez exercer vos droits d'accès, de rectification ou de suppression en nous contactant dans contact.</p>
+                    <h2><i class="fas fa-shield-alt"></i> Protection des données personnelles</h2>
+                    <p>Conformément au Règlement Général sur la Protection des Données (RGPD) et à la loi Informatique et Libertés, les informations personnelles collectées font l'objet d'un traitement informatique destiné à la gestion des comptes utilisateurs et des services proposés.</p><p>Vous disposez d'un droit d'accès, de rectification, de portabilité et d'effacement de vos données personnelles. Pour exercer ces droits, contactez-nous à l'adresse : dpo@synapse.com</p>
                 </div>
-                
                 <div id="responsabilite" class="mentions-card" style="animation-delay: 0.5s;">
-                    <h2><i class="fas fa-exclamation-circle"></i> Responsabilité</h2>
-                    <p>Synapse décline toute responsabilité en cas de dommages liés à l'utilisation du site, y compris les interruptions de service ou les erreurs techniques. Les utilisateurs sont responsables de leur utilisation du site et des informations qu'ils y saisissent.</p>
+                    <h2><i class="fas fa-exclamation-circle"></i> Limitation de responsabilité</h2>
+                    <p>Synapse met tout en œuvre pour offrir aux utilisateurs des informations et des outils disponibles et vérifiés, mais ne saurait être tenu responsable des erreurs, d'une absence de disponibilité des informations et/ou de la présence de virus sur son site.</p>
                 </div>
-                
                 <div id="liens" class="mentions-card" style="animation-delay: 0.6s;">
                     <h2><i class="fas fa-link"></i> Liens hypertextes</h2>
-                    <p>Ce site peut contenir des liens vers des sites externes. Synapse n'est pas responsable des contenus ou des politiques de confidentialité de ces sites tiers.</p>
+                    <p>Le site peut contenir des liens vers d'autres sites internet. Synapse n'exerce aucun contrôle sur ces sites et décline toute responsabilité quant à leur contenu ou leur politique de confidentialité.</p>
                 </div>
                 
                 <div class="mentions-card copyright-card" style="animation-delay: 0.7s;">
-                    <p>© 2024 Synapse - Tous droits réservés.</p>
+                    <p>© 2025 Synapse - Tous droits réservés.</p>
                 </div>
             </div>
         </div>
@@ -463,4 +446,3 @@ include_once '../Connexion-Inscription/config.php';
     </script>
 </body>
 </html>
-<!-- cvq -->
