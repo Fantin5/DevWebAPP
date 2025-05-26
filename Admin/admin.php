@@ -39,12 +39,7 @@
             <tr>
                 <td><a href="admin_activites.php">Gestion des activités</a></td>
             </tr>
-            <tr>
-                <td><a href="admin_avis.php">Gestion des avis</a></td>
-            </tr>
-            <tr>
-                <td><a href="admin_messages.php">Gestion des messages</a></td>
-            </tr>
+          
             <tr>
                 <td><a href="admin_faq.php">Gestion de la FAQ</a></td>
             </tr>

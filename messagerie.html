@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messagerie - Contact Organisateur</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .chat-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .chat-header {
+            background: #3498db;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .chat-header h2 {
+            margin: 0 0 5px 0;
+        }
+        .chat-subtitle {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .messages-area {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .message {
+            margin: 15px 0;
+            display: flex;
+            align-items: flex-start;
+        }
+        .message.sent {
+            justify-content: flex-end;
+        }
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+        }
+        .message.received .message-bubble {
+            background: white;
+            border: 1px solid #e0e0e0;
+        }
+        .message.sent .message-bubble {
+            background: #3498db;
+            color: white;
+        }
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        .message.received .message-time {
+            color: #666;
+        }
+        .message.sent .message-time {
+            color: #ecf0f1;
+            text-align: right;
+        }
+        .sender-name {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #666;
+        }
+        .message.sent .sender-name {
+            display: none;
+        }
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+        }
+        .send-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .send-btn:hover {
+            background: #2980b9;
+        }
+        .back-btn {
+            background: #95a5a6;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            background: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <a href="activite.html" class="back-btn">← Retour à l'activité</a>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Marie Dubois</h2>
+            <div class="chat-subtitle">Organisateur - Randonnée en Montagne</div>
+        </div>
+
+        <div class="messages-area" id="messagesArea">
+            <div class="message received">
+                <div>
+                    <div class="sender-name">Marie Dubois</div>
+                    <div class="message-bubble">
+                        Bonjour ! Merci pour votre intérêt pour la randonnée au Lac des Merveilles. N'hésitez pas si vous avez des questions !
+                    </div>
+                    <div class="message-time">Hier 14:30</div>
+                </div>
+            </div>
+
+            <div class="message sent">
+                <div>
+                    <div class="message-bubble">
+                        Bonjour Marie ! J'aimerais savoir quel niveau de difficulté exactement ? Je fais de la randonnée mais pas très souvent.
+                    </div>
+                    <div class="message-time">Hier 15:15</div>
+                </div>
+            </div>
+
+            <div class="message received">
+                <div>
+                    <div class="sender-name">Marie Dubois</div>
+                    <div class="message-bubble">
+                        C'est parfait ! La randonnée fait environ 8km avec 600m de dénivelé. C'est accessible si vous avez un minimum de condition physique. On prend notre temps et on fait des pauses régulières.
+                    </div>
+                    <div class="message-time">Hier 15:45</div>
+                </div>
+            </div>
+
+            <div class="message sent">
+                <div>
+                    <div class="message-bubble">
+                        Parfait ! Et au niveau équipement, mes baskets de sport suffisent ou il faut vraiment des chaussures de rando ?
+                    </div>
+                    <div class="message-time">Hier 16:20</div>
+                </div>
+            </div>
+
+            <div class="message received">
+                <div>
+                    <div class="sender-name">Marie Dubois</div>
+                    <div class="message-bubble">
+                        Je recommande vraiment des chaussures de randonnée, surtout avec la météo récente. Le sentier peut être glissant et vous aurez besoin d'une bonne adhérence. Si vous n'en avez pas, vous pouvez en louer au magasin près de la gare.
+                    </div>
+                    <div class="message-time">Aujourd'hui 09:12</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-container">
+                <input type="text" class="message-input" id="messageInput" placeholder="Tapez votre message...">
+                <button class="send-btn" onclick="sendMessage()">📤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const messagesArea = document.getElementById('messagesArea');
+            
+            if (input.value.trim() !== '') {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message sent';
+                
+                const now = new Date();
+                const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
+                               now.getMinutes().toString().padStart(2, '0');
+                
+                messageDiv.innerHTML = `
+                    <div>
+                        <div class="message-bubble">
+                            ${input.value}
+                        </div>
+                        <div class="message-time">Aujourd'hui ${timeStr}</div>
+                    </div>
+                `;
+                
+                messagesArea.appendChild(messageDiv);
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+                input.value = '';
+            }
+        }
+
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Auto-scroll to bottom on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const messagesArea = document.getElementById('messagesArea');
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        });
+    </script>
+</body>
+</html>

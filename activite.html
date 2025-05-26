@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Randonnée en Montagne - Activité</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .activity-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .activity-header {
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        .activity-title {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+        }
+        .organizer {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+        .activity-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .detail-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #34495e;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .contact-btn {
+            background: #3498db;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        .contact-btn:hover {
+            background: #2980b9;
+        }
+        .description {
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="activity-card">
+        <div class="activity-header">
+            <h1 class="activity-title">Randonnée en Montagne - Lac des Merveilles</h1>
+            <p class="organizer">Organisé par <strong>Marie Dubois</strong></p>
+        </div>
+
+        <div class="activity-details">
+            <div class="detail-item">
+                <span class="detail-label">📅 Date</span>
+                Samedi 15 Juin 2024
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">⏰ Heure</span>
+                08:00 - 17:00
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">📍 Lieu de RDV</span>
+                Parking de la Gare, Chamonix
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">👥 Participants</span>
+                6/12 inscrits
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">💰 Prix</span>
+                25€ par personne
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">🎯 Difficulté</span>
+                Intermédiaire
+            </div>
+        </div>
+
+        <div class="description">
+            <h3>Description de l'activité</h3>
+            <p>Rejoignez-nous pour une magnifique randonnée jusqu'au Lac des Merveilles ! Cette sortie de niveau intermédiaire nous mènera à travers des sentiers de montagne offrant des vues spectaculaires sur les Alpes.</p>
+            
+            <p><strong>Ce qui est inclus :</strong></p>
+            <ul>
+                <li>Guide expérimenté</li>
+                <li>Carte et boussole</li>
+                <li>Trousse de premiers secours</li>
+                <li>Collation énergétique</li>
+            </ul>
+
+            <p><strong>À prévoir :</strong></p>
+            <ul>
+                <li>Chaussures de randonnée</li>
+                <li>Vêtements adaptés à la météo</li>
+                <li>Sac à dos avec eau (2L minimum)</li>
+                <li>Déjeuner</li>
+            </ul>
+        </div>
+
+        <a href="messagerie.html?organizer=Marie Dubois&activity=Randonnée en Montagne" class="contact-btn">
+            💬 Contacter l'organisateur
+        </a>
+    </div>
+</body>
+</html>
